@@ -98,6 +98,11 @@ Výstup: `composeApp/build/previews/*.png`.
 
 Pak spustit testy (`BundledDataTest`, `ItemDataTest` ověří, že data jdou načíst).
 
+## Verze
+
+`-PappVersion=1.2.3` nastaví verzi Android appky i desktopových instalátorů (bez parametru `1.0.0`),
+`-PversionCode=N` Android versionCode. CI je bere z git tagu – viz [deploy.md](deploy.md).
+
 ## Kontrola před vydáním
 
 - [ ] `desktopTest` zelené
@@ -106,3 +111,4 @@ Pak spustit testy (`BundledDataTest`, `ItemDataTest` ověří, že data jdou na�
 - [ ] iOS: `compileKotlinIosArm64` (cross) projde, na Macu build v Xcode
 - [ ] náhledy designu prohlédnuté
 - [ ] `CLAUDE.md` a `docs/` odpovídají změnám
+- [ ] vydání: `git tag vX.Y.Z && git push origin vX.Y.Z` (viz [deploy.md](deploy.md))

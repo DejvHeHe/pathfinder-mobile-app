@@ -96,6 +96,14 @@ compose.resources {
     generateResClass = always
 }
 
+// Verze appky: -PappVersion=1.2.3 (CI ji bere z tagu v1.2.3), jinak 1.0.0. Android versionCode: -PversionCode=N.
+val appVersion: String = (findProperty("appVersion") as String?)?.removePrefix("v")
+    ?.takeIf { Regex("""[1-9]\d*\.\d+\.\d+""").matches(it) } ?: "1.0.0"
+val appVersionCode: Int = (findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+
+// Podpis release APK: keystore z proměnných prostředí (CI secrets). Bez nich se release podepíše debug klíčem.
+val releaseKeystore: File? = System.getenv("ANDROID_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+
 android {
     namespace = "cz.pfspells"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -104,14 +112,27 @@ android {
         applicationId = "cz.pfspells"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersion
     }
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
-        getByName("release") { isMinifyEnabled = false }
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -125,7 +146,17 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "PF Spellbook"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
+            description = "Pathfinder 1e spellbook & inventory"
+            vendor = "PF Spellbook"
+            windows {
+                menu = true
+                shortcut = true
+                dirChooser = true
+                upgradeUuid = "4f6b2c1e-8d3a-4b7e-9a51-2c0d6e9f1a73" // neměnit – umožňuje aktualizaci přes nový .msi
+            }
+            macOS { bundleID = "cz.pfspells" }
+            linux { packageName = "pf-spellbook" }
         }
     }
 }

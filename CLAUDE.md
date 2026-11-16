@@ -53,6 +53,16 @@ composeApp/src/commonTest  pravidla class + parser;  src/desktopTest  ověření
 iosApp/                    Xcode projekt (SwiftUI obal), viz sekce iOS
 ```
 
+## Vydání a nasazení
+- Remote: `https://github.com/DejvHeHe/pathfinder-mobile-app` (uživatel commituje a pushuje sám – necommitovat bez požádání).
+- `.github/workflows/release.yml`: tag `v*.*.*` → APK, MSI, DMG, DEB, web zip do GitHub Release + Docker image `ghcr.io/dejvhehe/pf-spellbook-web`.
+  `ci.yml`: testy + Android + web + iOS framework na push/PR. Workflowy nebyly spuštěny na GitHubu – ověřeno jen lokálně
+  (`assembleRelease`, `packageDistributionForCurrentOS` → .msi, YAML syntaxe).
+- Verze: `-PappVersion`, `-PversionCode`; podpis APK přes env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (jinak debug klíč).
+- Docker: `Dockerfile` (temurin 21 build → stage `export` = jen soubory, stage `runtime` = nginx 1.27), `compose.yaml` (127.0.0.1:8888 – výchozí PORT, image z GHCR nebo build). Uživatel má vlastní nginx na hostiteli jako reverzní proxy → `docker/proxy-nginx.example.conf`. Build funguje i v podsložce (ověřeno).
+  Build v kontejneru bez Android SDK funguje díky prázdné složce v `ANDROID_HOME` (ověřeno lokálně). Docker build sám neověřen (Docker není na PC).
+- `gradlew` má v gitu exec bit (100755). Podrobnosti: docs/deploy.md.
+
 ## Web (Kotlin/Wasm)
 - `wasmJsMain`: `main.kt` (ComposeViewport, Esc = zpět), `Platform.wasmJs.kt` (AppFiles → IndexedDB přes `js()` + `Promise.await`,
   `HttpClient(Js)`, export = stažení Blobu, import = `<input type=file>`), `resources/index.html` (loading obrazovka).

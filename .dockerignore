@@ -1,0 +1,13 @@
+.git
+.gradle
+.kotlin
+.idea
+**/build
+build
+local.properties
+iosApp
+licenses
+docs
+tools
+*.md
+!README.md

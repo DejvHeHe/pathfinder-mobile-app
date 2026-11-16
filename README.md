@@ -14,6 +14,15 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Aktualizace | spelly i itemy jdou tlačítkem stáhnout znovu ze zdroje |
 | Vzhled | design „Linkovaný zápisník“, mobil i třísloupcové široké okno |
 
+## Stažení
+
+Hotové buildy (Android `.apk`, Windows `.msi`, macOS `.dmg`, Linux `.deb`, web `.zip`) jsou na stránce
+**[Releases](https://github.com/DejvHeHe/pathfinder-mobile-app/releases)**. Webovou verzi jde nasadit i Dockerem:
+
+```bash
+docker compose up -d      # 127.0.0.1:8888 pro vaši reverzní proxy – viz docs/deploy.md
+```
+
 ## Rychlý start
 
 ```bash
@@ -34,6 +43,7 @@ iOS: otevřít `iosApp/iosApp.xcodeproj` v Xcode na Macu a spustit (podrobnosti 
 | [docs/architecture.md](docs/architecture.md) | vývojář | jak to funguje uvnitř: vrstvy, stav, navigace, UI, platformy |
 | [docs/data.md](docs/data.md) | vývojář | odkud jsou spelly a itemy, formáty, aktualizace, pravidla PF1 v kódu |
 | [docs/build.md](docs/build.md) | vývojář | build pro jednotlivé platformy, testy, náhledy designu, regenerace dat |
+| [docs/deploy.md](docs/deploy.md) | vývojář / správce | vydání verze na GitHub Releases (CI), podepsání APK, web v Dockeru, HTTPS |
 | [CLAUDE.md](CLAUDE.md) | AI asistent | stručné poznámky, rozhodnutí a TODO pro Claude Code |
 
 ## Licence dat
