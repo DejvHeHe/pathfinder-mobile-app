@@ -1,0 +1,37 @@
+name,proficiency,section,is_simple,is_martial,is_exotic,is_unarmed,is_light,is_one_handed,is_two_handed,is_ranged,is_ammunition,cost,damage_small,damage_medium,critical,range,weight,damage_type,special,source
+"Bolt(s), crossbow (10)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,1 gp,-,-,-,-,1 lb.,-,-,PZO1110
+"Bolt(s), acid (1)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,40 gp,-,-,-,-,0.1 lb.,-,see text,PAP15
+"Bolt(s), Drow poison (1)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,100 gp,-,-,-,-,0.1 lb.,-,see text,PAP15
+"Bolt(s), fire (1)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,50 gp,-,-,-,-,0.1 lb.,-,see text,PAP15
+"Bullet(s), groaning (10)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,2 gp,-,-,-,-,5 lbs.,-,see text,PPZO9410
+"Bullet(s), sling (10)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,1 sp,-,-,-,-,5 lbs.,-,-,PZO1110
+"Bullet(s), smoke (10)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,100 gp,-,-,-,-,5 lbs.,-,see text,PCS
+"Dart(s), blowgun (10)",Simple,Ammunition,1,0,0,0,0,0,0,1,1,5 sp,-,-,-,-,1 lb.,-,-,PZO1110
+"Arrows, common (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,1 gp,-,-,-,-,3 lbs.,P,-,PZO1110
+"Arrows/bolts, barbed (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,2 gp,see text,see text,see text,see text,3 lbs.,P,grapple,PPC:RTT
+"Arrow, bleeding (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,360 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrows, blunt (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,2 gp,-,-,-,-,3 lbs.,B,see text,PZO1115
+"Arrow, distance (iron-tipped) (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,1 gp,-,-,-,-,4 lbs.,-,-,PRG:UC
+"Arrow, durable (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,1 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, dye (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,1 gp,see text,see text,see text,see text,4 lbs.,-,see text,PPC:Elves
+"Arrows, flight (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,2 gp,-,-,-,see text,3 lbs.,P,see text,PZO1115
+"Arrows/bolts, incendiary (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,10 gp,see text,see text,see text,see text,3 lbs.,see text,see text,PPC:RTT
+"Arrow, lodestone (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,10 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, pheromone (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,15 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrows/bolts, pronged (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,2 gp,see text,see text,see text,see text,3 lbs.,see text,see text,PPC:RTT
+"Arrow, raining (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,30 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, slow burn (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,150 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, smoke (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,10 gp,-,-,-,-,-,P,see text,PZO1115
+"Arrow, splintercloud (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,25 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, tanglefoot (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,20 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrow, thistle (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,1 gp,-,-,-,-,0.15 lbs,P,see text,PPZO9410
+"Arrow, throwing (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,5 sp,see text,see text,see text,see text,1/2 lb.,see text,see text,PPC:RTT
+"Arrow, trip (1)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,25 gp,see text,see text,see text,see text,see text,see text,see text,PPC:Elves
+"Arrows, whistling (20)",Martial,Ammunition,0,1,0,0,0,0,0,1,1,2 gp,-,-,-,-,3 lbs.,-,-,PZO1118
+"Crossbow bolt(s), heavy/light/hand (10)",Exotic,Ammunition,0,0,1,0,0,0,0,1,1,1 gp,-,-,-,-,1 lb.,-,-,PZO1110
+"Crossbow bolt(s), repeating, heavy/light (5)",Exotic,Ammunition,0,0,1,0,0,0,0,1,1,1 gp,-,-,-,-,1 lb.,-,-,PZO1110
+Little starstones (10),Exotic,Ammunition,0,0,1,0,0,0,0,1,1,5 cp,1,1,-,-,2 lbs.,B,nonlethal,PPC:Halflings
+Sharpstones (10),Exotic,Ammunition,0,0,1,0,0,0,0,1,1,1 gp,1d3,1d4,-,-,5 lbs.,P or S,-,PPC:Halflings
+Softstones (10),Exotic,Ammunition,0,0,1,0,0,0,0,1,1,1 sp,-,-,-,-,4 lbs.,B,nonlethal,PPC:Halflings
+Spongestones (10),Exotic,Ammunition,0,0,1,0,0,0,0,1,1,10 gp,-,-,-,-,2 lbs.,P,-,PPC:Halflings
+Thorn (20),Exotic,Ammunition,0,0,1,0,0,0,0,1,1,1 gp,-,-,-,-,1 lb.,-,-,ModuleW1

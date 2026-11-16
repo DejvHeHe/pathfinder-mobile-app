@@ -1,0 +1,5 @@
+// Vyplň svůj Apple Team ID (Xcode → Settings → Accounts), jinak podepisuj ručně v Signing & Capabilities.
+TEAM_ID=
+
+BUNDLE_ID=cz.pfspells.PfSpells
+APP_NAME=PF Spellbook
