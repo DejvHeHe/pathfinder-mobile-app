@@ -1,0 +1,90 @@
+# Build, testy a vydání
+
+## Požadavky
+
+| Co | Kde je potřeba |
+|---|---|
+| JDK 17+ (doporučeno 21) | všude – Gradle i Kotlin |
+| Android SDK (platform 35, build-tools 35) | Android build; cesta v `local.properties` (`sdk.dir=…`, soubor není v gitu) |
+| macOS + Xcode 15+ | iOS (Kotlin/Native framework se linkuje jen na Macu) |
+| Python 3 + `pyyaml` | jen pro přegenerování dat itemů (`tools/build_items.py`) |
+
+Na vývojovém PC (Windows) je systémová Java 8, proto před Gradlem:
+
+```powershell
+$env:JAVA_HOME = "$env:USERPROFILE\.jdks\ms-21.0.10"
+```
+
+## Desktop (Windows / macOS / Linux)
+
+```bash
+./gradlew :composeApp:run                              # spustit
+./gradlew :composeApp:packageDistributionForCurrentOS  # instalátor pro aktuální OS (.msi / .dmg / .deb)
+```
+
+Desktopová verze běží na JVM, takže stejný kód funguje na všech třech systémech. Instalátor pro daný OS se ale dá
+sestavit jen na tom OS (`.msi` na Windows, `.dmg` na Macu). Okno má 1360×880 – od šířky 1000 px se ukáže třísloupcové
+rozložení; zúžením okna se přepne na mobilní.
+
+## Android
+
+```bash
+./gradlew :composeApp:assembleDebug    # APK: composeApp/build/outputs/apk/debug/composeApp-debug.apk
+./gradlew :composeApp:installDebug     # nainstalovat na připojené zařízení / emulátor
+```
+
+`minSdk` 24 (Android 7), `targetSdk` 35. Oprávnění: jen `INTERNET` (stahování aktualizací).
+Release build zatím nemá podepisování ani minifikaci.
+
+## iOS
+
+1. Na Macu nainstalovat Xcode a JDK 17+ (Xcode nedědí proměnné z shellu – případně nastavit
+   `org.gradle.java.home` v `~/.gradle/gradle.properties`).
+2. Otevřít `iosApp/iosApp.xcodeproj`.
+3. V `iosApp/Configuration/Config.xcconfig` vyplnit `TEAM_ID`, nebo vybrat tým v *Signing & Capabilities*
+   (na vlastní iPhone stačí bezplatný Apple účet, podpis platí 7 dní).
+4. Spustit ▶. Build fáze „Compile Kotlin Framework“ zavolá `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode`.
+
+Na Windows se dá iOS Kotlin kód aspoň zkompilovat (bez linkování) – hodí se jako kontrola:
+
+```bash
+./gradlew :composeApp:compileKotlinIosArm64 -Pkotlin.native.enableKlibsCrossCompilation=true
+```
+
+Projekt Xcode je napsaný ručně podle KMP šablony; ikona appky zatím chybí (Xcode jen varuje).
+
+## Testy
+
+```bash
+./gradlew :composeApp:desktopTest
+```
+
+Výsledky: `composeApp/build/test-results/desktopTest/*.xml`. Přehled testů je v [architecture.md](architecture.md#testy).
+
+## Náhledy designu
+
+Vykreslí hlavní obrazovky (mobil 390×844 i desktop 1440×1000) do PNG – s ukázkovými decky a inventářem
+v dočasném úložišti, skutečná data se nezmění:
+
+```bash
+./gradlew :composeApp:desktopTest --tests "cz.pfspells.PreviewRender" -Ppreviews=true
+```
+
+Výstup: `composeApp/build/previews/*.png`.
+
+## Přegenerování dat
+
+| Co | Jak |
+|---|---|
+| Spelly | stáhnout aktuální `SpellList.json` ze [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e/tree/main/data) do `composeResources/files/` |
+| Itemy | `pip install pyyaml && python tools/build_items.py` |
+
+Pak spustit testy (`BundledDataTest`, `ItemDataTest` ověří, že data jdou načíst).
+
+## Kontrola před vydáním
+
+- [ ] `desktopTest` zelené
+- [ ] `assembleDebug` projde
+- [ ] iOS: `compileKotlinIosArm64` (cross) projde, na Macu build v Xcode
+- [ ] náhledy designu prohlédnuté
+- [ ] `CLAUDE.md` a `docs/` odpovídají změnám
