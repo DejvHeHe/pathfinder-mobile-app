@@ -20,7 +20,7 @@ Hotové buildy (Android `.apk`, Windows `.msi`, macOS `.dmg`, Linux `.deb`, web 
 **[Releases](https://github.com/DejvHeHe/pathfinder-mobile-app/releases)**. Webovou verzi jde nasadit i Dockerem:
 
 ```bash
-docker compose up -d      # 127.0.0.1:8888 pro vaši reverzní proxy – viz docs/deploy.md
+docker compose pull && docker compose up -d   # 127.0.0.1:8888 pro vaši reverzní proxy – viz docs/deploy.md
 ```
 
 ## Rychlý start

@@ -1,23 +1,25 @@
 # Webová verze PF1 Spellbook – kontejner za vlastní reverzní proxy (nginx na hostiteli).
 #
-# Kontejner poslouchá jen na 127.0.0.1:${PORT} – zvenku je dostupný pouze přes vaši nginx,
-# která řeší doménu a HTTPS (ukázka: docker/proxy-nginx.example.conf).
+# Image se sestavuje na GitHubu (.github/workflows/docker.yml), server ho jen stáhne – nic nekompiluje.
+# Kontejner poslouchá jen na 127.0.0.1:${PORT} – zvenku je dostupný pouze přes vaši nginx
+# (ukázka: docker/proxy-nginx.example.conf).
 #
-#   docker compose pull && docker compose up -d   # hotový image z GitHubu (po prvním vydání)
-#   docker compose up -d --build                  # nebo sestavit na serveru (~4 GB RAM, první build ~10 min)
-#   PORT=8765 docker compose up -d                # jiný port na hostiteli (výchozí 8888)
-#   TAG=1.0.0 docker compose up -d                # konkrétní verze místo latest
+#   docker compose pull && docker compose up -d       # stáhnout a spustit (výchozí TAG=latest = poslední vydaná verze)
+#   TAG=edge docker compose pull && TAG=edge docker compose up -d   # nejnovější kód z main
+#   TAG=1.0.0 docker compose up -d                     # konkrétní verze
+#   PORT=8765 docker compose up -d                     # jiný port na hostiteli (výchozí 8888)
+#
+# TAG a PORT jde trvale nastavit v souboru .env vedle compose.yaml (např. TAG=edge).
+#
+# Sestavení přímo na serveru (potřebuje ~4 GB RAM a několik jader – na malé VPS nedoporučeno):
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
 #
 # Kontejner je bezstavový – data uživatelů jsou v jejich prohlížečích.
 
 services:
   web:
     image: ghcr.io/dejvhehe/pf-spellbook-web:${TAG:-latest}
-    build:
-      context: .
-      target: runtime
-      args:
-        APP_VERSION: ${TAG:-1.0.0}
+    pull_policy: missing
     container_name: pf-spellbook-web
     ports:
       - "127.0.0.1:${PORT:-8888}:80"
