@@ -3,7 +3,7 @@
 Offline aplikace pro hráče **Pathfinder 1e**: skládání spellbooků („decků“) podle classy a úrovně postavy
 a vedení **inventáře** s itemy z databáze. Bez účtu a bez serveru, všechno se ukládá lokálně v zařízení.
 
-Běží na **Androidu, iOS a desktopu** (Windows, macOS, Linux). Je to jedna sdílená aplikace
+Běží na **Androidu, iOS, desktopu** (Windows, macOS, Linux) **a v prohlížeči** (Kotlin/Wasm). Je to jedna sdílená aplikace
 v Kotlin Multiplatform + Compose Multiplatform.
 
 | | |
@@ -20,6 +20,7 @@ v Kotlin Multiplatform + Compose Multiplatform.
 # JDK 17+ (na vývojovém PC: %USERPROFILE%\.jdks\ms-21.0.10)
 ./gradlew :composeApp:run              # desktop
 ./gradlew :composeApp:installDebug     # Android na připojený telefon / emulátor
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # web na http://localhost:8080
 ./gradlew :composeApp:desktopTest      # testy
 ```
 

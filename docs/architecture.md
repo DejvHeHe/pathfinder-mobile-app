@@ -3,13 +3,13 @@
 ## Přehled
 
 Jedna Kotlin Multiplatform aplikace (`composeApp`). Téměř všechno – data, logika i UI – je ve `commonMain`
-a sdílí se mezi Androidem, iOS a desktopem. Platformní kód řeší jen soubory, HTTP klient, dialogy pro soubory
+a sdílí se mezi Androidem, iOS, desktopem a webem. Platformní kód řeší jen soubory, HTTP klient, dialogy pro soubory
 a vstupní bod appky.
 
 ```mermaid
 flowchart TB
-  subgraph Platform["Platformy (androidMain / iosMain / desktopMain)"]
-    MA[MainActivity] & MVC[MainViewController] & MAIN[main.kt]
+  subgraph Platform["Platformy (androidMain / iosMain / desktopMain / wasmJsMain)"]
+    MA[MainActivity] & MVC[MainViewController] & MAIN[main.kt desktop] & WEB[main.kt web]
     PF["AppFiles · createHttpClient · deckFileIo · nowDisplayText"]
   end
   subgraph UI["UI (commonMain/ui, Compose Material 3)"]
@@ -24,7 +24,7 @@ flowchart TB
   end
   RES[(composeResources/files: SpellList.json, ItemsBase.json, *.csv)]
   NET[(GitHub raw: SpellTable-pf1e, randomitemgenerator)]
-  MA & MVC & MAIN --> APP
+  MA & MVC & MAIN & WEB --> APP
   SCREENS <--> STATE
   STATE --> DATA
   SR & IR --> RES
@@ -40,8 +40,8 @@ flowchart TB
 | UI | Compose Multiplatform 1.7.3, Material 3, `material-icons-core` |
 | Data | kotlinx-serialization-json 1.7.3, kotlinx-coroutines 1.9.0 |
 | Úložiště | multiplatform-settings 1.3.0 (decky, inventáře) + vlastní `AppFiles` (velké soubory) |
-| Síť | Ktor 3.0.3 (OkHttp na Androidu/desktopu, Darwin na iOS) |
-| Targety | `androidTarget`, `jvm("desktop")`, `iosX64`, `iosArm64`, `iosSimulatorArm64` (framework `ComposeApp`) |
+| Síť | Ktor 3.0.3 (OkHttp na Androidu/desktopu, Darwin na iOS, Js na webu) |
+| Targety | `androidTarget`, `jvm("desktop")`, `iosX64`, `iosArm64`, `iosSimulatorArm64` (framework `ComposeApp`), `wasmJs` (web) |
 
 Verze jsou v `gradle/libs.versions.toml`.
 
@@ -81,6 +81,7 @@ composeApp/src/
   androidMain/   MainActivity, AndroidManifest, Platform.android.kt, DeckFileIo.android.kt
   desktopMain/   main.kt (okno 1360×880, Esc = zpět), Platform.desktop.kt, DeckFileIo.desktop.kt
   iosMain/       MainViewController.kt, Platform.ios.kt, DeckFileIo.ios.kt
+  wasmJsMain/    main.kt (ComposeViewport), Platform.wasmJs.kt (IndexedDB, Ktor Js, stažení/výběr souboru), resources/index.html
   commonTest/, desktopTest/   testy + PreviewRender (náhledy obrazovek do PNG)
 iosApp/          Xcode projekt (SwiftUI obal kolem ComposeApp)
 tools/build_items.py   sestavení přibalené databáze itemů
@@ -129,6 +130,7 @@ a při přechodu do inventáře spustí líné načtení databáze itemů.
 - Android: `onBackPressedDispatcher` → `state.pop()`, na kořeni zavře appku.
 - Desktop: klávesa Esc → `pop()`.
 - iOS: jen šipka v UI.
+- Web: Esc → `pop()`; tlačítko Zpět prohlížeče zatím navigaci appky neovládá.
 
 ## Data a perzistence
 
@@ -142,6 +144,16 @@ a při přechodu do inventáře spustí líné načtení databáze itemů.
 
 Každá změna decku/inventáře se hned uloží (`persist()`), žádné „Uložit“.
 Při změně schématu je potřeba zvýšit verzi klíče (`decks_v2`…) nebo napsat migraci.
+
+### Úložiště na platformách
+`AppFiles` má `suspend` API, protože na webu je asynchronní:
+
+| Platforma | `Settings` (decky, inventáře) | `AppFiles` (stažené databáze) |
+|---|---|---|
+| Android | SharedPreferences | `filesDir` |
+| iOS | NSUserDefaults | Documents |
+| Desktop | Java Preferences | `~/.pfspells/` |
+| Web | `localStorage` | IndexedDB `pfspells` / store `files` (localStorage má limit ~5 MB) |
 
 ### Načítání databází
 - **Spelly** se načtou při startu (`SpellRepository.load` na `Dispatchers.Default`, ~0,35 s). Do té doby je vidět „Loading spells…“.
@@ -179,6 +191,7 @@ Uložení/otevření souboru řeší platformní `deckFileIo`:
 | Desktop | AWT `FileDialog` – uložit `.pfdeck.json` / `.pfinv.json` | `FileDialog` – otevřít |
 | Android | systémové sdílení (text) | `ActivityResultContracts.OpenDocument` |
 | iOS | `UIActivityViewController` | – (jen schránka) |
+| Web | stažení souboru (Blob + `<a download>`) | `<input type=file>` |
 
 ## Skryté ceny (10 ťuknutí)
 
@@ -199,6 +212,7 @@ Design „Linkovaný zápisník“ (podle návrhu uživatele v Claude Design):
 - `Common.kt`: `NbScreen`, `SectionHeader` („*Level 1* - - -“), `CountStepper`, tlačítka `NbPrimaryButton` / `NbFab` /
   `NbDashedButton` / `NbSquareButton`, `NbTag`, `NbPanel`, `NbFilterChip`, `NbSearchField`, `SimpleDropdown`.
 - Texty UI jsou anglicky; komentáře v kódu česky.
+- Na webu nemá Compose záložní systémové fonty – znak, který v přibalených fontech není, se nezobrazí. Proto v UI textech nepoužívat exotické symboly (např. „⋮“).
 
 ## Pravidla Pathfinderu v kódu
 

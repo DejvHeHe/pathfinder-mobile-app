@@ -23,18 +23,18 @@ actual object AppFiles {
 
     private fun path(name: String) = "$dir/$name"
 
-    actual fun readText(name: String): String? {
+    actual suspend fun readText(name: String): String? {
         val p = path(name)
         if (!NSFileManager.defaultManager.fileExistsAtPath(p)) return null
         return NSString.create(contentsOfFile = p, encoding = NSUTF8StringEncoding, error = null)?.toString()
     }
 
     @Suppress("CAST_NEVER_SUCCEEDS")
-    actual fun writeText(name: String, text: String) {
+    actual suspend fun writeText(name: String, text: String) {
         (text as NSString).writeToFile(path(name), atomically = true, encoding = NSUTF8StringEncoding, error = null)
     }
 
-    actual fun delete(name: String) {
+    actual suspend fun delete(name: String) {
         NSFileManager.defaultManager.removeItemAtPath(path(name), error = null)
     }
 }

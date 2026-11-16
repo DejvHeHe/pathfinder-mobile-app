@@ -12,10 +12,10 @@ actual object AppFiles {
         File(System.getProperty("user.home"), ".pfspells").apply { mkdirs() }
     }
 
-    actual fun readText(name: String): String? =
+    actual suspend fun readText(name: String): String? =
         File(dir, name).takeIf { it.exists() }?.readText()
 
-    actual fun writeText(name: String, text: String) {
+    actual suspend fun writeText(name: String, text: String) {
         val target = File(dir, name)
         val tmp = File(dir, "$name.tmp")
         tmp.writeText(text)
@@ -24,7 +24,7 @@ actual object AppFiles {
         }
     }
 
-    actual fun delete(name: String) {
+    actual suspend fun delete(name: String) {
         File(dir, name).delete()
     }
 }

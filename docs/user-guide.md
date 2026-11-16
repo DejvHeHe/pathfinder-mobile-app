@@ -98,5 +98,12 @@ Vše je jen v zařízení:
 | Android | SharedPreferences appky | soukromá složka appky |
 | iOS | NSUserDefaults | složka Documents appky |
 | Desktop | Java Preferences (Windows: registr `HKCU\Software\JavaSoft\Prefs`) | `~/.pfspells/` |
+| Web | `localStorage` prohlížeče (pro danou adresu) | IndexedDB prohlížeče |
 
-Odinstalací appky (Android/iOS) se data smažou – pro zálohu použijte **Export all**.
+Odinstalací appky (Android/iOS) nebo vymazáním dat webu v prohlížeči se data smažou – pro zálohu použijte **Export all**.
+Na webu jsou data vázaná na prohlížeč a adresu stránky.
+
+## Webová verze
+
+Appka běží i v prohlížeči (Chrome/Edge 119+, Firefox 120+, Safari 18.2+). První načtení stáhne ~26 MB, další už jdou z cache.
+Export ukládá soubor do Stažených, import otevře výběr souboru. Esc = zpět.

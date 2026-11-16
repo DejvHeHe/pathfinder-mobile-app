@@ -17,7 +17,7 @@ Podrobná dokumentace je v `README.md` a `docs/` (user-guide, architecture, data
 - `com.russhwolf:multiplatform-settings-no-arg` 1.3.0 – úložiště decků
 - Ktor client 3.0.3 (OkHttp na Androidu i desktopu, Darwin na iOS) – stažení databáze
 - `org.jetbrains.compose.material:material-icons-core` – ikony (jen core, ne extended)
-- Targety: `androidTarget`, `jvm("desktop")`, `iosX64/iosArm64/iosSimulatorArm64` (framework `ComposeApp`, static)
+- Targety: `androidTarget`, `jvm("desktop")`, `iosX64/iosArm64/iosSimulatorArm64` (framework `ComposeApp`, static), `wasmJs` (web, od 16. 11. 2026)
 - Verze jsou v `gradle/libs.versions.toml`
 
 ## Stav
@@ -52,6 +52,14 @@ composeApp/src/iosMain/…/MainViewController.kt ComposeUIViewController { App(a
 composeApp/src/commonTest  pravidla class + parser;  src/desktopTest  ověření přibalených dat
 iosApp/                    Xcode projekt (SwiftUI obal), viz sekce iOS
 ```
+
+## Web (Kotlin/Wasm)
+- `wasmJsMain`: `main.kt` (ComposeViewport, Esc = zpět), `Platform.wasmJs.kt` (AppFiles → IndexedDB přes `js()` + `Promise.await`,
+  `HttpClient(Js)`, export = stažení Blobu, import = `<input type=file>`), `resources/index.html` (loading obrazovka).
+- `AppFiles` je kvůli webu `suspend` na všech platformách.
+- Build: `wasmJsBrowserDistribution` → `composeApp/build/dist/wasmJs/productionExecutable/` (~26 MB statický web). Ověřeno v headless Chrome.
+- Web nemá fallback fonty → žádné symboly mimo přibalené fonty (kontrola glyfů: fontTools, viz docs/architecture.md).
+- Port 8080 je na vývojovém PC obsazený jiným procesem → pro lokální test produkčního buildu použít jiný port (8765).
 
 ## Inventář (od 16. 11. 2026)
 - Zadání uživatele: inventář podle designu (artboardy „Inventory – desktop/mobile“, „Add item – desktop/mobile“ na stejném plátně),

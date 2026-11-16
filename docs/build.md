@@ -26,6 +26,23 @@ Desktopová verze běží na JVM, takže stejný kód funguje na všech třech s
 sestavit jen na tom OS (`.msi` na Windows, `.dmg` na Macu). Okno má 1360×880 – od šířky 1000 px se ukáže třísloupcové
 rozložení; zúžením okna se přepne na mobilní.
 
+## Web (Kotlin/Wasm)
+
+```bash
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # vývojový server s automatickým otevřením prohlížeče (port 8080)
+./gradlew :composeApp:wasmJsBrowserDistribution     # produkční build → composeApp/build/dist/wasmJs/productionExecutable/
+```
+
+- Při prvním buildu si Gradle sám stáhne Node.js a yarn (webpack) – trvá to pár minut.
+- Výsledek je **statický web** (~26 MB: 2× `.wasm`, `composeApp.js`, `index.html`, `composeResources/` s daty a fonty).
+  Stačí ho nahrát na libovolný statický hosting (GitHub Pages, Netlify, Cloudflare Pages…).
+  Server musí posílat `.wasm` s typem `application/wasm` (běžné hostingy to dělají).
+- Lokální vyzkoušení produkčního buildu: `python -m http.server 8765` ve složce `productionExecutable` → http://localhost:8765
+  (otevřít `index.html` přímo ze souboru nefunguje – prohlížeč wasm z `file://` nenačte).
+- Prohlížeč musí podporovat WasmGC: Chrome/Edge 119+, Firefox 120+, Safari 18.2+.
+- Vstupní bod `wasmJsMain/kotlin/cz/pfspells/main.kt` (`ComposeViewport`, Esc = zpět), stránka `wasmJsMain/resources/index.html`
+  (úvodní „Loading…“ obrazovka v barvách appky, než se načte wasm).
+
 ## Android
 
 ```bash
@@ -85,6 +102,7 @@ Pak spustit testy (`BundledDataTest`, `ItemDataTest` ověří, že data jdou na�
 
 - [ ] `desktopTest` zelené
 - [ ] `assembleDebug` projde
+- [ ] `wasmJsBrowserDistribution` projde a web se v prohlížeči načte
 - [ ] iOS: `compileKotlinIosArm64` (cross) projde, na Macu build v Xcode
 - [ ] náhledy designu prohlédnuté
 - [ ] `CLAUDE.md` a `docs/` odpovídají změnám

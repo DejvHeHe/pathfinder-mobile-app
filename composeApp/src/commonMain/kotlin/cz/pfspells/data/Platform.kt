@@ -4,9 +4,9 @@ import io.ktor.client.HttpClient
 
 /** Jednoduché úložiště textových souborů v soukromém adresáři appky. */
 expect object AppFiles {
-    fun readText(name: String): String?
-    fun writeText(name: String, text: String)
-    fun delete(name: String)
+    suspend fun readText(name: String): String?
+    suspend fun writeText(name: String, text: String)
+    suspend fun delete(name: String)
 }
 
 /** HTTP klient s enginem dané platformy. */

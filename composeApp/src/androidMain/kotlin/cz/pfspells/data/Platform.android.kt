@@ -18,9 +18,9 @@ actual object AppFiles {
 
     private fun file(name: String) = File(requireNotNull(dir) { "AppFiles.init() was not called" }, name)
 
-    actual fun readText(name: String): String? = file(name).takeIf { it.exists() }?.readText()
+    actual suspend fun readText(name: String): String? = file(name).takeIf { it.exists() }?.readText()
 
-    actual fun writeText(name: String, text: String) {
+    actual suspend fun writeText(name: String, text: String) {
         val target = file(name)
         val tmp = File(target.parentFile, "$name.tmp")
         tmp.writeText(text)
@@ -29,7 +29,7 @@ actual object AppFiles {
         }
     }
 
-    actual fun delete(name: String) {
+    actual suspend fun delete(name: String) {
         file(name).delete()
     }
 }

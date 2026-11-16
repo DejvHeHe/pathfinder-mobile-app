@@ -177,7 +177,7 @@ private fun DeckItem(deck: Deck, selected: Boolean, onClick: () -> Unit, card: B
 private fun EmptyDecks(db: SpellDatabase, modifier: Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(
-            "You have no decks yet.\nCreate one for your character's class and level – only spells they can cast will be offered.\nLoad an exported deck via the ⋮ menu → Import deck.\n\n${db.spells.size} spells in the database.",
+            "You have no decks yet.\nCreate one for your character's class and level – only spells they can cast will be offered.\nLoad an exported deck via the menu (top right) → Import deck.\n\n${db.spells.size} spells in the database.",
             textAlign = TextAlign.Center,
             color = Nb.inkMuted,
             fontSize = 15.sp,
