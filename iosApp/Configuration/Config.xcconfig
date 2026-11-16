@@ -1,4 +1,8 @@
-// Vyplň svůj Apple Team ID (Xcode → Settings → Accounts), jinak podepisuj ručně v Signing & Capabilities.
+// Každý, kdo appku staví na svůj iPhone, sem vyplní SVÉ Team ID:
+//   Xcode → Settings → Accounts → (vaše Apple ID) → Team → „Personal Team“ – ID je 10 znaků, např. AB12CD34EF
+//   (nebo ho Xcode ukáže v Signing & Capabilities po výběru týmu).
+// Team ID se připojí i na konec bundle ID (cz.pfspells.PfSpellsAB12CD34EF), takže si ho každý zaregistruje sám
+// a nevadí, že stejnou appku staví víc lidí s bezplatným účtem.
 TEAM_ID=
 
 BUNDLE_ID=cz.pfspells.PfSpells

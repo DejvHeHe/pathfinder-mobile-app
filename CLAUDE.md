@@ -152,6 +152,7 @@ iosApp/                    Xcode projekt (SwiftUI obal), viz sekce iOS
 - `Configuration/Config.xcconfig`: `TEAM_ID` (prázdné → podepsat v Signing & Capabilities), `BUNDLE_ID`, `APP_NAME`.
 - `ContentView.swift` → `MainViewControllerKt.MainViewController()`; `Info.plist` má `CADisableMinimumFrameDurationOnPhone` (120 Hz).
 - Na Macu: JDK 17+ (Xcode nedědí shell env – případně `org.gradle.java.home` v `~/.gradle/gradle.properties`), `local.properties` s Android SDK pro iOS build potřeba není (Android target se ale konfiguruje – na Macu bez SDK je potřeba Android SDK doinstalovat, nebo dočasně vypnout `androidTarget`).
+- Xcode build fáze: bez Android SDK (žádný ANDROID_HOME ani sdk.dir) nastaví ANDROID_HOME na prázdnou build/empty-android-sdk. Bundle ID = $(BUNDLE_ID)$(TEAM_ID) (unikátní pro každý bezplatný účet). Návod pro kamarády: docs/ios-install.md.
 - iOS nemá systémové Zpět – navigace jen přes šipku v top baru (swipe-back gesto zatím není).
 - AppIcon je prázdný (Xcode jen varuje).
 

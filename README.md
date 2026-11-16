@@ -33,7 +33,7 @@ docker compose pull && docker compose up -d   # 127.0.0.1:8888 pro vaši reverzn
 ./gradlew :composeApp:desktopTest      # testy
 ```
 
-iOS: otevřít `iosApp/iosApp.xcodeproj` v Xcode na Macu a spustit (podrobnosti v [docs/build.md](docs/build.md)).
+iOS: na Macu si appku sestaví každý sám přes Xcode s bezplatným Apple ID – návod krok za krokem: [docs/ios-install.md](docs/ios-install.md).
 
 ## Dokumentace
 
@@ -43,6 +43,7 @@ iOS: otevřít `iosApp/iosApp.xcodeproj` v Xcode na Macu a spustit (podrobnosti 
 | [docs/architecture.md](docs/architecture.md) | vývojář | jak to funguje uvnitř: vrstvy, stav, navigace, UI, platformy |
 | [docs/data.md](docs/data.md) | vývojář | odkud jsou spelly a itemy, formáty, aktualizace, pravidla PF1 v kódu |
 | [docs/build.md](docs/build.md) | vývojář | build pro jednotlivé platformy, testy, náhledy designu, regenerace dat |
+| [docs/ios-install.md](docs/ios-install.md) | hráč s Macem | instalace na vlastní iPhone přes Xcode (bezplatné Apple ID) |
 | [docs/deploy.md](docs/deploy.md) | vývojář / správce | vydání verze na GitHub Releases (CI), podepsání APK, web v Dockeru, HTTPS |
 | [CLAUDE.md](CLAUDE.md) | AI asistent | stručné poznámky, rozhodnutí a TODO pro Claude Code |
 

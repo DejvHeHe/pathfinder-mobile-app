@@ -62,6 +62,9 @@ Release build zatím nemá podepisování ani minifikaci.
    (na vlastní iPhone stačí bezplatný Apple účet, podpis platí 7 dní).
 4. Spustit ▶. Build fáze „Compile Kotlin Framework“ zavolá `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode`.
 
+Android SDK na Macu není potřeba – build fáze v Xcode si při jeho absenci vytvoří prázdnou složku (stejně jako Docker).
+`TEAM_ID` v `Config.xcconfig` se připojuje i k bundle ID, takže appku může s bezplatným účtem stavět víc lidí. Návod pro hráče: [ios-install.md](ios-install.md).
+
 Na Windows se dá iOS Kotlin kód aspoň zkompilovat (bez linkování) – hodí se jako kontrola:
 
 ```bash
