@@ -9,7 +9,11 @@
 #   TAG=1.0.0 docker compose up -d                     # konkrétní verze
 #   PORT=8765 docker compose up -d                     # jiný port na hostiteli (výchozí 8888)
 #
-# TAG a PORT jde trvale nastavit v souboru .env vedle compose.yaml (např. TAG=edge).
+# TAG, PORT a UMAMI_* jde trvale nastavit v souboru .env vedle compose.yaml, např.:
+#   TAG=edge
+#   UMAMI_SCRIPT_URL=https://umami.example.cz/script.js
+#   UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#   UMAMI_DOMAINS=spellbook.example.cz
 #
 # Sestavení přímo na serveru (potřebuje ~4 GB RAM a několik jader – na malé VPS nedoporučeno):
 #   docker compose -f compose.yaml -f compose.build.yaml up -d --build
@@ -23,4 +27,9 @@ services:
     container_name: pf-spellbook-web
     ports:
       - "127.0.0.1:${PORT:-8888}:80"
+    environment:
+      # Umami analytika (volitelné) – nastavte v .env, po změně stačí `docker compose up -d`
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      UMAMI_DOMAINS: ${UMAMI_DOMAINS:-}
     restart: unless-stopped

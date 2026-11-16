@@ -44,6 +44,8 @@ FROM nginx:1.27-alpine AS runtime
 LABEL org.opencontainers.image.title="PF1 Spellbook (web)" \
       org.opencontainers.image.source="https://github.com/DejvHeHe/pathfinder-mobile-app"
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# volitelná analytika Umami – vkládá se při startu podle UMAMI_* proměnných (viz compose.yaml)
+COPY --chmod=755 docker/40-umami.sh /docker-entrypoint.d/40-umami.sh
 COPY --from=build /src/composeApp/build/dist/wasmJs/productionExecutable /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1/healthz || exit 1

@@ -62,6 +62,7 @@ iosApp/                    Xcode projekt (SwiftUI obal), viz sekce iOS
 - Docker image webu staví GitHub (`.github/workflows/docker.yml`: main → `:edge`, tag → `:X.Y.Z` + `:latest`). Build na VPS uživatele server položil (RAM/CPU) → `compose.yaml` záměrně BEZ `build:` (jen pull), build na serveru jen přes `compose.build.yaml`.
 - Docker: `Dockerfile` (temurin 21 build → stage `export` = jen soubory, stage `runtime` = nginx 1.27), `compose.yaml` (127.0.0.1:8888 – výchozí PORT, image z GHCR nebo build). Uživatel má vlastní nginx na hostiteli jako reverzní proxy → `docker/proxy-nginx.example.conf`. Build funguje i v podsložce (ověřeno).
   Build v kontejneru bez Android SDK funguje díky prázdné složce v `ANDROID_HOME` (ověřeno lokálně). Docker build sám neověřen (Docker není na PC).
+- Umami: `docker/40-umami.sh` (nginx entrypoint) nahradí `<!--UMAMI-->` v index.html podle env UMAMI_SCRIPT_URL / UMAMI_WEBSITE_ID / UMAMI_DOMAINS (v `.env` na VPS, ne v repu). Vychází vždy z `.index.html.orig` → změna env + `up -d` funguje. `.gitattributes` drží LF u *.sh.
 - `gradlew` má v gitu exec bit (100755). Podrobnosti: docs/deploy.md.
 
 ## Web (Kotlin/Wasm)

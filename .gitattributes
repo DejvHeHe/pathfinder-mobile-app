@@ -1,0 +1,4 @@
+# Shell skripty musí mít unixové konce řádků (běží v Linuxu / v kontejneru), i když se commitují z Windows.
+*.sh    text eol=lf
+gradlew text eol=lf
+*.bat   text eol=crlf

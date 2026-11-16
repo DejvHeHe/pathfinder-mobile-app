@@ -123,6 +123,22 @@ Balíčky v GHCR jsou **ve výchozím stavu soukromé** –
 na GitHubu v *Packages → pf-spellbook-web → Package settings* nastavit **Public**, nebo se na serveru přihlásit:
 `echo <token s read:packages> | docker login ghcr.io -u DejvHeHe --password-stdin`.
 
+### Analytika (Umami)
+Kontejner umí při startu vložit trackovací skript [Umami](https://umami.is) do `index.html`
+(skript `docker/40-umami.sh`, značka `<!--UMAMI-->` v `index.html`). ID se nedávají do repozitáře – nastavují se v `.env` na serveru:
+
+```
+UMAMI_SCRIPT_URL=https://umami.example.cz/script.js
+UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+UMAMI_DOMAINS=spellbook.example.cz        # volitelné – počítat jen produkční doménu
+```
+
+Pak `docker compose up -d` (kontejner se vytvoří znovu s novým nastavením). Bez proměnných se nic nevkládá.
+Jedna instance Umami zvládne víc webů – v Umami stačí *Settings → Websites → Add website* a použít nové Website ID.
+
+Appka je jednostránková (URL se nemění), Umami proto zaznamená jedno zobrazení stránky na návštěvu
+(návštěvníci, země, zařízení); akce uvnitř appky by šly doplnit vlastními událostmi `umami.track(...)`.
+
 ### Data uživatelů
 Server **nic neukládá**. Decky a inventáře jsou v prohlížeči každého uživatele (localStorage/IndexedDB, vázané na adresu webu).
 Kontejner je bezstavový – aktualizace ani smazání kontejneru data uživatelů neovlivní.
