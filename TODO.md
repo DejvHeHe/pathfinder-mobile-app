@@ -51,6 +51,20 @@ Teď je jen tenký pruh a malý text „Medium load · light ≤ 33 lb…“.
 - [ ] Upozornění, když přidání itemu posune postavu do vyššího zatížení
 - [ ] Volitelně velikost tvora (Small = ¾ nosnosti, Large = ×2 …) a čtyřnohé tvory
 
+### 5. Podpora featů
+Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
+
+- [ ] Databáze featů: název, typ (Combat, Metamagic, Item Creation, Teamwork, Critical, Style…), prerekvizity, benefit,
+  normal, special, zdroj
+  - zdroj dat: Foundry VTT PF1 (`packs/feats`, GPL + OGL – stejně jako běžné vybavení), případně AoN / d20pfsrd;
+    stejný princip jako spelly a itemy (přibalená verze + aktualizace tlačítkem, pokud zdroj umožní)
+- [ ] Prohlížeč featů (kompendium): hledání, filtr podle typu, detail s plným textem
+- [ ] Featy u postavy – nejlépe společně s multiclassem (bod 3), aby deck byl „postava“ se spelly i featy
+  - [ ] kontrola prerekvizit (úroveň, BAB, atributy, jiné featy) – aspoň upozornění, nevynucovat
+  - [ ] počet featů podle úrovně postavy (1 + každá lichá úroveň) + bonusové featy classy (fighter, wizard…)
+- [ ] Metamagické featy propojit se spelly (např. u spellu ukázat, o kolik levelů ho metamagie zvýší)
+- [ ] Export/import featů spolu s postavou; doplnit nový zdroj dat do `NOTICE.md`, OGL Section 15 a About obrazovky
+
 ## Další nápady
 
 - [ ] Spell sloty za den podle classy/úrovně + bonusové sloty z atributu; režim „hra“ s odškrtáváním seslaných spellů a resetem po odpočinku
