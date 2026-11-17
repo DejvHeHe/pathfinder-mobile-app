@@ -85,6 +85,7 @@ private fun Router(state: AppState, db: SpellDatabase) {
         Screen.Decks -> DeckListScreen(state, db)
         Screen.Compendium -> SpellBrowserScreen(state, db, deckId = null)
         Screen.Database -> DatabaseScreen(state, db)
+        Screen.About -> cz.pfspells.ui.AboutScreen(state)
         is Screen.DeckDetail -> DeckDetailScreen(state, db, s.deckId)
         is Screen.Picker -> SpellBrowserScreen(state, db, deckId = s.deckId)
         is Screen.SpellDetail -> SpellDetailScreen(state, db, s.spellId, s.deckId)

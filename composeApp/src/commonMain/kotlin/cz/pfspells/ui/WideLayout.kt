@@ -79,7 +79,7 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                 )
                 NbDashedButton("Compendium", { state.openRoot(Screen.Compendium) }, icon = NbIcons.Book)
             }
-            AppMenu(state, db, onDatabase = { state.openRoot(Screen.Database) })
+            AppMenu(state, db, onDatabase = { state.openRoot(Screen.Database) }, onAbout = { state.openRoot(Screen.About) })
         }
 
         Row(Modifier.weight(1f).fillMaxWidth()) {
@@ -107,6 +107,7 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                     is Screen.Picker -> SpellBrowserScreen(state, db, main.deckId, wide = true, selectedSpellId = selectedSpell)
                     Screen.Compendium -> SpellBrowserScreen(state, db, null, wide = true, selectedSpellId = selectedSpell, showSearch = false)
                     Screen.Database -> DatabaseScreen(state, db, wide = true)
+                    Screen.About -> AboutScreen(state, wide = true)
                     is Screen.InventoryDetail -> InventoryScreen(state, main.invId, wide = true, selectedEntryId = selectedItem?.entryId)
                     is Screen.ItemPicker -> ItemPickerScreen(state, main.invId, wide = true, selectedItemId = selectedItem?.itemId)
                     else -> Placeholder(db, inventorySection, state.inventories.isEmpty())

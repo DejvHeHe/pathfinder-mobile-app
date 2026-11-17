@@ -84,6 +84,8 @@ class PreviewRender {
             showItem(itemDb!!.items.first { it.name.startsWith("Bag of Holding") }.id, inv.id)
         }
         shot("phone-decks-inventory-tab", 390, 844) { switchSection(Section.INVENTORY) }
+        shot("phone-about", 390, 844) { openRoot(Screen.Decks); push(Screen.About) }
+        shot("desktop-about", 1440, 1000) { openRoot(Screen.About) }
         node.removeNode()
     }
 }

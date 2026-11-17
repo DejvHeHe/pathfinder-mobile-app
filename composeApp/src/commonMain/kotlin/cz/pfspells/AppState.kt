@@ -28,6 +28,7 @@ sealed interface Screen {
     data object Decks : Screen
     data object Compendium : Screen
     data object Database : Screen
+    data object About : Screen
     data class DeckDetail(val deckId: String) : Screen
     data class Picker(val deckId: String) : Screen
     data class SpellDetail(val spellId: String, val deckId: String? = null) : Screen

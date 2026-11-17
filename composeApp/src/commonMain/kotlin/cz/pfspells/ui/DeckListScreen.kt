@@ -187,7 +187,12 @@ private fun EmptyDecks(db: SpellDatabase, modifier: Modifier) {
 
 /** Menu ⋮: import, export, databáze. */
 @Composable
-fun AppMenu(state: AppState, db: SpellDatabase, onDatabase: () -> Unit = { state.push(Screen.Database) }) {
+fun AppMenu(
+    state: AppState,
+    db: SpellDatabase,
+    onDatabase: () -> Unit = { state.push(Screen.Database) },
+    onAbout: () -> Unit = { state.push(Screen.About) },
+) {
     var open by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
@@ -205,6 +210,7 @@ fun AppMenu(state: AppState, db: SpellDatabase, onDatabase: () -> Unit = { state
                 DropdownMenuItem(text = { Text("Export all inventories", color = Nb.ink) }, onClick = { open = false; showInvExport = true })
             }
             DropdownMenuItem(text = { Text("Spell & item database / update", color = Nb.ink) }, onClick = { open = false; onDatabase() })
+            DropdownMenuItem(text = { Text("About & licenses", color = Nb.ink) }, onClick = { open = false; onAbout() })
         }
     }
     if (showImport) ImportDialog(state, db) { showImport = false }

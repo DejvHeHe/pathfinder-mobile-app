@@ -53,6 +53,13 @@ composeApp/src/commonTest  pravidla class + parser;  src/desktopTest  ověření
 iosApp/                    Xcode projekt (SwiftUI obal), viz sekce iOS
 ```
 
+## Licence (od 17. 11. 2026)
+- Kód: **GPL-3.0** (`LICENSE`, verbatim text z gnu.org), Copyright (C) 2026 David Sobíšek. GPL zvoleno kvůli datům z Foundry VTT PF1 (GPL-3.0).
+- Herní obsah: OGL 1.0a + Paizo Community Use Policy → appka musí zůstat **zdarma** (žádné poplatky ani reklamy).
+- `NOTICE.md` (zdroje, CUP notice, OGL designace, fonty, knihovny), `licenses/OGL-1.0a.txt` = OGL se Section 15
+  (kopie v `composeResources/files/OGL.txt` pro appku). V appce menu → About & licenses (`ui/AboutScreen.kt`, `Screen.About`).
+  Section 15 je zkrácená (hlavní knihy + odkaz na zdroj u každého spellu/itemu). Při přidání nového zdroje dat ho doplnit do NOTICE, OGL Section 15 i AboutScreen.
+
 ## Vydání a nasazení
 - Remote: `https://github.com/DejvHeHe/pathfinder-mobile-app` (uživatel commituje a pushuje sám – necommitovat bez požádání).
 - `.github/workflows/release.yml`: tag `v*.*.*` → APK, MSI, DMG, DEB, web zip do GitHub Release + Docker image `ghcr.io/dejvhehe/pf-spellbook-web`.

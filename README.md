@@ -47,10 +47,15 @@ iOS: na Macu si appku sestaví každý sám přes Xcode s bezplatným Apple ID �
 | [docs/deploy.md](docs/deploy.md) | vývojář / správce | vydání verze na GitHub Releases (CI), podepsání APK, web v Dockeru, HTTPS |
 | [CLAUDE.md](CLAUDE.md) | AI asistent | stručné poznámky, rozhodnutí a TODO pro Claude Code |
 
-## Licence dat
+## Licence
 
-Herní obsah Pathfinderu je © Paizo Inc. a používá se v souladu s Open Game License / Paizo Community Use Policy.
-Spelly pochází z projektu [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) (MIT, data z Archives of Nethys),
-itemy z [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) (d20pfsrd) a
-[Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) (OGL).
-Fonty Alegreya, Alegreya Sans a IBM Plex Mono jsou pod SIL Open Font License (viz `licenses/`).
+Copyright (C) 2026 David Sobíšek. Zdrojový kód je pod licencí **GNU GPL v3** – viz [`LICENSE`](LICENSE).
+
+Herní obsah (spelly, itemy) pod GPL **není** – zůstává pod Open Game License v1.0a a Paizo Community Use Policy
+(appka je proto zdarma a nesmí se zpoplatnit). Zdroje dat, text OGL se Section 15, Paizo notice, fonty a knihovny:
+[`NOTICE.md`](NOTICE.md). Totéž je v appce v menu → **About & licenses**.
+
+*This app uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy
+([paizo.com/licenses/communityuse](https://paizo.com/licenses/communityuse)). We are expressly prohibited from charging you
+to use or access this content. This app is not published, endorsed, or specifically approved by Paizo.
+For more information about Paizo Inc. and Paizo products, visit [paizo.com](https://paizo.com).*

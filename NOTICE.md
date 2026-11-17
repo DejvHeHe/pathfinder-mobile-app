@@ -1,0 +1,52 @@
+# Notices & licenses
+
+**PF1 Spellbook** – Copyright (C) 2026 David Sobíšek.
+
+The source code of this project is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License version 3** as published by the Free Software Foundation (see [`LICENSE`](LICENSE)).
+It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+The game content bundled with or downloaded by the app (spells, items) is **not** covered by the GPL – it remains
+under its own licenses listed below.
+
+## Paizo Community Use
+
+This app uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy
+([paizo.com/licenses/communityuse](https://paizo.com/licenses/communityuse)). We are expressly prohibited from charging
+you to use or access this content. This app is not published, endorsed, or specifically approved by Paizo.
+For more information about Paizo Inc. and Paizo products, visit [paizo.com](https://paizo.com).
+
+## Open Game License
+
+Game mechanics and rules text of Pathfinder Roleplaying Game (1st edition) spells and items are Open Game Content under
+the **Open Game License v1.0a** – full text including the Section 15 copyright notice:
+[`licenses/OGL-1.0a.txt`](licenses/OGL-1.0a.txt) (the same text is shown in the app under *About & licenses*).
+
+Designation of Product Identity: proper names of the Pathfinder campaign setting (deities, places, characters, etc.)
+that appear in spell and item names or descriptions, the "Pathfinder" name and trademarks are Product Identity of Paizo Inc.
+and are used under the Community Use Policy above, not under the OGL.
+Designation of Open Game Content: the game rules text of spells and items (statistics and descriptions) as published
+under the OGL by their respective publishers.
+
+## Data sources
+
+| Data | Source | License |
+|---|---|---|
+| Spells (`SpellList.json`) | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) by Vladislav Sergeev – data from [Archives of Nethys](https://aonprd.com) | project MIT; content OGL 1.0a / Paizo CUP |
+| Weapons, ammunition, magic items (`Weapons.csv`, `Ammunition.csv`, `MagicItems.csv`) | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) – data from [d20pfsrd.com](https://www.d20pfsrd.com) | repository without a license; content OGL 1.0a / Paizo CUP |
+| Mundane gear, armor & shields, alchemical items, mounts (`ItemsBase.json`) | converted from the compendium packs of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) | project GPL-3.0; content OGL 1.0a |
+
+## Fonts
+
+| Font | License |
+|---|---|
+| Alegreya (bold instances generated from the variable font) | SIL Open Font License 1.1 – [`licenses/OFL-Alegreya.txt`](licenses/OFL-Alegreya.txt) |
+| Alegreya Sans | SIL Open Font License 1.1 – [`licenses/OFL-AlegreyaSans.txt`](licenses/OFL-AlegreyaSans.txt) |
+| IBM Plex Mono | SIL Open Font License 1.1 – [`licenses/OFL-IBMPlexMono.txt`](licenses/OFL-IBMPlexMono.txt) |
+
+## Libraries
+
+Kotlin, Kotlin Multiplatform, Compose Multiplatform, kotlinx.coroutines, kotlinx.serialization, Ktor,
+Multiplatform Settings, AndroidX – all under the **Apache License 2.0**
+([apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)).
