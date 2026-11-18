@@ -5,7 +5,9 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Plánovaná práce: **`TODO.md`** (hlavní vylepšení + nápady) – hotové body odškrtávej.
 
 ## Pravidla spolupráce
-- Uživatel komunikuje **česky**; **UI appky je anglicky** (žádné české řetězce v UI), komentáře v kódu můžou být česky.
+- Uživatel komunikuje **česky**; **UI je dvojjazyčné EN / CZ** (přepínač v hlavičce) – každý text UI patří do `Strings.kt`
+  (`EnStrings` + `CsStrings`), žádné řetězce natvrdo v obrazovkách. Data (spelly, itemy) zůstávají anglicky; classy a školy se překládají přes `Strings`.
+  Komentáře v kódu můžou být česky.
 - **Necommitovat ani nepushovat bez výslovného požádání.** Když požádá: commit do `main` (jeho workflow), tag `vX.Y.Z` jen na požádání.
 - Uživatel má **vlastní VPS** (Ubuntu 24.04, Docker, vlastní nginx jako reverzní proxy, Umami na jiné doméně).
   Na VPS se **nic nekompiluje** (build ji položil) – web jen z hotového image z GHCR.
@@ -18,6 +20,7 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - **Inventář:** itemy z databáze (taky aktualizovatelné), mince, nosnost, poznámky, custom itemy, export/import.
   **Ceny nad 200 gp jsou skryté („??? gp“), 10 rychlých ťuknutí kamkoli na obrazovku je odhalí/skryje** (jen do zavření appky).
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
+- Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (17. 11. 2026)
 - ✅ **Vydáno `v1.0.1`** (GitHub Release): APK, MSI, DMG, DEB, web zip – všechny joby workflowu Release zelené.
@@ -25,7 +28,9 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   Tag `1.0.0` (bez „v“) je starý ruční release s debug APK – workflow na něj nereaguje.
 - ✅ **Web běží na VPS uživatele** z image `ghcr.io/dejvhehe/pf-spellbook-web:edge` (`.env`: `TAG=edge` + `UMAMI_*`), za jeho nginx na `127.0.0.1:8888`.
   Image `:edge`, `:latest`, `:1.0.1` jsou veřejné.
-- ✅ Desktop: testy (`desktopTest`, 17 testů) zelené, appka běží. ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
+- ✅ Desktop: testy (`desktopTest`, 57 testů) zelené, appka běží.
+- ✅ 18. 11. 2026: deck → **postava** (multiclass, podtřídy, sloty/known, herní režim, featy z AoN, schopnosti s počtem použití,
+  propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy). ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
 - 🟡 iOS: Kotlin část ověřena cross-kompilací na Windows a v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru);
   Xcode build na skutečném Macu zatím nikdo nezkoušel (návod pro kamarády: `docs/ios-install.md`).
 - Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\ms-21.0.10` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
@@ -42,9 +47,19 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 ```
 composeApp/src/commonMain/kotlin/cz/pfspells/
   App.kt                  PfTheme, mobil (<1000 dp → Router) vs. široké okno (WideLayout), detektor 10 ťuknutí, toast
-  AppState.kt             jediný stav appky: back stack Screen, Section, decky, inventáře, filtry, DbState/ItemDbState, skryté ceny
-  data/Model.kt           Spell, Deck
-  data/CasterClasses.kt   26 sesílajících class, progrese spell levelů, canCast
+  AppState.kt             jediný stav appky: back stack Screen, Section, decky, inventáře, filtry, DbState/ItemDbState, skryté ceny, jazyk
+  Strings.kt              texty UI: interface Strings, EnStrings, CsStrings, Lang, LocalStrings / `str`
+  data/Model.kt           Spell, Deck (jen migrace a starý exportní formát)
+  data/Character.kt       Character, ClassEntry, Abilities, FeatPick, Spellbook (pohled postava + classa), CharacterStore + migrace
+  data/CasterClasses.kt   27 sesílajících class, progrese spell levelů, canCast, CastingKind (prepared/spontánní/arcanist), atribut sesílání, sloty (LevelSlots, bonusSpells)
+  data/CastingTable.kt    GENEROVANÉ `tools/build_casting.py` z tabulek class na AoN (spells per day, spells known / arcanist prepared)
+  data/ClassInfo.kt       ClassInfo (BAB, záchrany, HD), ClassCatalog, ClassGroup, Character.stats(), abilityMod
+  data/ClassTable.kt      GENEROVANÉ `tools/build_classes.py` z Foundry packs/classes (49 class vč. nesesílacích a NPC)
+  data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
+  data/CharacterTransfer.kt  export/import postav (`pf-spellbook-characters`) a featů (`pf-spellbook-feats`), import starých decků
+  data/ClassFeatures.kt  FeaturePresets (Smite Evil, Rage, Ki Pool… – vzorce max použití), Resource, Character.resources()
+  data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
+  data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
   data/Repositories.kt    SpellRepository (cache → přibalená verze, download), DeckStore, SpellDatabase
   data/DeckTransfer.kt    export/import decků
@@ -55,8 +70,11 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/Theme.kt             tokeny Nb.*, fonty, PfTheme, modifikátory (ruledPaper, dashedBorder…), NbIcons
   ui/Common.kt            NbScreen (kostra obrazovky) + společné komponenty
   ui/WideLayout.kt        třísloupcové rozložení (hlavička se záložkami | sidebar · hlavní · detail)
-  ui/DeckListScreen.kt    úvod se záložkami Spellbook/Inventory, seznam decků, AppMenu (⋮), NewDeckDialog
-  ui/DeckDetailScreen.kt, SpellBrowserScreen.kt (picker + kompendium), SpellDetailScreen.kt
+  ui/DeckListScreen.kt    úvod se záložkami Spellbook/Inventory, seznam postav, AppMenu (⋮), nová postava přes ClassPickerDialog
+  ui/DeckDetailScreen.kt (detail postavy: classy, atributy, kouzla po classách), ui/ClassPicker.kt (výběr classy), SpellBrowserScreen.kt (picker + kompendium), SpellDetailScreen.kt
+  ui/SubclassUi.kt       souhrn a dialog podtřídy, sekce bonusových kouzel (doménový slot, mystérium, bloodline)
+  ui/ResourcesUi.kt      sekce „Schopnosti s počtem použití“ (předvyplněné + vlastní počítadla `Tracker`)
+  ui/FeatScreens.kt      FeatsPanel (sekce v detailu postavy), FeatPickerScreen, FeatDetailScreen, CustomFeatDialog
   ui/InventoryCommon.kt   formát ceny/váhy, skryté ceny, mince, LoadBar, SectionTabs, dialogy čísla/textu
   ui/InventoryScreen.kt   seznam inventářů, InventorySidebar, detail inventáře
   ui/ItemScreens.kt       ItemPicker (mobil: bottom sheet), ItemDetail (item z DB / položka inventáře), CustomItemDialog
@@ -64,7 +82,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/DatabaseScreen.kt    stav a aktualizace databáze spellů i itemů
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
-  files/  SpellList.json, ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
+  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
   font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
@@ -73,31 +91,40 @@ composeApp/src/wasmJsMain    main.kt (ComposeViewport), Platform.wasmJs.kt (Inde
 composeApp/src/commonTest, desktopTest   testy + PreviewRender (náhledy do PNG)
 iosApp/                Xcode projekt (SwiftUI obal)
 tools/build_items.py   sestavení přibalených dat itemů (Python + pyyaml; jen pro vývojáře)
+tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/feat-cache – běh ~3 h, přerušitelný)
+tools/build_casting.py, tools/build_classes.py   CastingTable.kt (AoN) a ClassTable.kt (Foundry)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml
 ```
 
 ## Navigace a stav
 - Vlastní back stack `AppState.stack` (`sealed interface Screen`), žádná navigační knihovna:
-  `Decks` (kořen, obsah podle `section`), `Compendium`, `Database`, `About`, `DeckDetail`, `Picker`, `SpellDetail`,
-  `InventoryDetail`, `ItemPicker`, `ItemDetail`. `SpellDetail` a `ItemDetail` jsou „aside“ (pravý panel na širokém okně).
+  `Decks` (kořen, obsah podle `section`), `Compendium`, `Database`, `About`, `CharacterDetail`, `Picker(charId, classId)`, `SpellDetail(spellId, charId, classId)`,
+  `InventoryDetail`, `ItemPicker`, `ItemDetail`, `FeatPicker(charId)`, `FeatDetail(featId, charId, pick)`. `SpellDetail`, `ItemDetail` a `FeatDetail` jsou „aside“ (pravý panel na širokém okně).
 - `push`, `pop`, `openRoot` (stack `[Decks, x]` – boční panel), `showSpell`/`showItem` (nahradí otevřený detail), `popMain`.
 - Široké okno (≥ 1000 dp) odvozuje sloupce ze stejného stacku → změna velikosti okna za běhu funguje.
 - `section` (SPELLBOOK / INVENTORY) přepíná `SectionTabs`; `switchSection` vrací stack na kořen.
+- Jazyk: `AppState.lang` (`Settings` klíč `ui_lang`, výchozí `Lang.system()` – cs/sk → CZ), `changeLang`; `App` poskytuje
+  `LocalStrings`, v composable `str.xxx`, mimo composable funkce dostávají `Strings` parametrem. Hlášky v `AppState` jsou
+  `UiMessage` (lambda nad `Strings`), chyby importu typované `ImportError`, `Load` a `SaveAction` jako enumy – text dodá UI.
+- Postava ↔ inventář: `Character.inventoryId`; `linkInventory`, `createInventoryFor`, `setInventoryStrength` – STR se zrcadlí do `Inventory.strength` (nosnost), smazání inventáře postavu odpojí.
+- Počítadla: `Character.trackers` (vlastní) + `FeaturePresets` podle class (skryté v `hiddenPresets`); použití v `castToday` pod „res:<id>“ → Odpočinek je vynuluje.
+- Herní režim: `AppState.gameMode` (jen UI), seslané v `Character.castToday` – klíče `Character.castKey(classId, spellId)` (prepared kopie) a `slotKey(classId, level)` (spontánní/arcanist sloty), `rest()` vymaže.
 - Filtry a scroll prohlížečů žijí v `AppState`. Android: `configChanges` + `AppState` v `by lazy` (přežije rotaci, ne process death).
 
 ## Data
 - **Spelly:** `SpellList.json` z [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) (MIT, data z AoN), 3 030 spellů,
   parsování ~0,35 s při startu. `levels` = názvy spell listů ze zdroje (`sorcerer/wizard`, `cleric/oracle`…), výjimky sjednocuje
-  `SpellParser.normalizeListKey`. `id` = slug jména. Ve zdroji jsou i `access_ways.Domain/Subdomain/Mystery/Bloodline/Elemental School`
-  (zatím nevyužité – viz TODO archetypy).
+  `SpellParser.normalizeListKey`. `id` = slug jména. Ze zdroje se čtou i `access_ways.Domain/Subdomain/Mystery/Bloodline/Elemental School`
+  → `Spell.subLevels` („domain:fire“ → level, `SpellParser.subclassKey` opravuje chyby zdroje), `SpellDatabase.subclasses` (`SubclassIndex`).
 - **Itemy (~6 060):** `ItemsBase.json` (Foundry VTT PF1 – gear, zbroje, alchymie, zvířata; jen přibalené) +
   `Weapons.csv`, `Ammunition.csv`, `MagicItems.csv` (d20pfsrd přes Vireche/randomitemgenerator; **appka je umí stáhnout**).
   Načítají se líně (`ensureItems`). Přegenerování: `python tools/build_items.py`.
 - Stažené verze se ukládají jako originální soubory do `AppFiles` (validace před uložením, poškozená cache → přibalená verze).
-- **Decky** `decks_v1`, **inventáře** `inventories_v1` (JSON v `Settings`). Položka inventáře nese vlastní kopii jména/ceny/váhy,
+- **Postavy** `characters_v1` (při prvním spuštění migrace z `decks_v1`, starý klíč zůstává jako záloha), **inventáře** `inventories_v1` (JSON v `Settings`). Položka inventáře nese vlastní kopii jména/ceny/váhy,
   `itemId` jen odkazuje (custom item = `itemId null`, patří jen do svého inventáře). Změna schématu → nová verze klíče + migrace.
-- Export/import: `pf-spellbook-decks` v1, `pf-spellbook-inventories` v1 (párování podle id, pak jména; importované se přidají jako nové).
+- Export/import (`data/CharacterTransfer.kt`): `pf-spellbook-characters` v1 (classy, atributy, spelly, featy, volitelně `inventory`), `pf-spellbook-feats` v1 (jen featy),
+  starý `pf-spellbook-decks` v1 jde dál importovat (→ postava s jednou classou), `pf-spellbook-inventories` v1. Párování podle id, pak jména; importované se přidají jako nové.
 
 ## Pravidla PF1 v kódu
 | Progression | Classy | Max spell level na úrovni L |
@@ -106,10 +133,21 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 | SPONTANEOUS_9 | sorcerer, oracle, psychic, arcanist | `L<4 → 1`, jinak `min(9, L/2)` |
 | SIX | bard, skald, inquisitor, magus, alchemist, investigator, summoner (+unch.), warpriest, hunter, mesmerist, occultist, spiritualist | `min(6, (L+2)/3)` |
 | FOUR | paladin, antipaladin, ranger, bloodrager | `L<4 → žádné`, jinak `min(4, (L-1)/3)` |
+| FOUR_KNACKS | medium | `L<4 → 0` (jen knacky), jinak `min(4, (L-1)/3)` |
 
-- V nabídce class jsou **jen sesilatelé** (26); classy bez spellů (Swashbuckler, Fighter…) chybí záměrně – viz TODO multiclass.
-  Medium a Adept vynechány. Cantripy nemají FOUR, alchemist, investigator. Víc spell listů → nižší level.
-- Nosnost `CarryingCapacity`: tabulka PF1 pro Medium tvora, +10 STR = ×4, mince 50 ks = 1 lb.
+- Ve výběru je 49 class (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany).
+  Adept (NPC classa) nemá spell list. Cantripy nemají FOUR, alchemist, investigator. Víc spell listů → nižší level.
+- Nosnost `CarryingCapacity`: tabulka PF1, +10 STR = ×4, mince 50 ks = 1 lb; násobitel podle `CreatureSize`
+  (dvounohý / čtyřnohý, uložen v `Inventory.size` + `quadruped`). `Load` nese postihy (max Dex, ACP, běh).
+  `AppState.updateInventory` při zhoršení zatížení ukáže toast (`showToast`, `UiMessage`).
+- Vlastní katalog itemů: `AppState.customItems` (Settings `custom_items_v1`), v pickeru „My items“ a nahoře v „All“;
+  id itemu `my-<id>` (`Item.isCustom`, `AppState.findItem`). Do inventáře jde jako položka bez `itemId` (nezávislá na katalogu).
+- Lektvar / svitek / hůlka ze spellu: `SpellItemKind` (50 / 25 / 750 gp × SL × CL, 0. level ½, max 3 / 9 / 4), `ui/SpellItemDialog.kt`.
+- iOS: zpět tažením od levého okraje (`edgeSwipeBack` expect/actual, `Modifier.swipeFromEdgeBack` v `App.kt`).
+- Spelly: `pfsLegal` ze zdroje; prohlížeč umí filtr PFS, oblíbené a řazení `SpellSort` (název / úroveň / škola).
+  Oblíbené: `AppState.favorites` (Settings `favorite_spells_v1`, id oddělená čárkou), společné pro všechny decky.
+- Classy a školy: data anglicky, v UI přes `Strings.className` / `school` / `subschool` / `spellListName`
+  (CZ mapy v `Strings.kt`); `Strings.nameOf(cls)` v `ui/Common.kt`.
 
 ## Design „Linkovaný zápisník“
 - Zdroj: designové plátno uživatele v Claude Design (artboardy „4a · Linkovaný zápisník“ mobil + desktop, „Inventory“, „Add item“).
@@ -123,7 +161,9 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 - `AppFiles` → IndexedDB (localStorage má limit ~5 MB), `HttpClient(Js)`, export = stažení Blobu, import = `<input type=file>`, Esc = zpět.
 - Build `wasmJsBrowserDistribution` → `composeApp/build/dist/wasmJs/productionExecutable/` (~26 MB, relativní cesty – funguje i v podsložce).
 - **Bez fallback fontů** → v UI textech jen znaky z přibalených fontů (kontrola fontTools; „⋮“ v textu nepoužívat).
-- Tlačítko Zpět prohlížeče zatím navigaci neovládá.
+  Čeština (háčky, čárky, „ “, –, …) ve všech fontech je – ověřeno.
+- Tlačítko Zpět prohlížeče = `pop()`: `syncBrowserHistory` v `wasmJsMain/main.kt` drží v historii jeden záznam
+  na úroveň stacku (`pushState` s indexem, při zmenšení stacku `history.go(-n)`, Vpřed se vrací zpět).
 
 ## Vydání a nasazení
 - Remote `https://github.com/DejvHeHe/pathfinder-mobile-app` (veřejné).
@@ -142,7 +182,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 ## Licence
 - Kód **GPL-3.0** (`LICENSE`), Copyright (C) 2026 David Sobíšek (GPL kvůli datům z Foundry VTT PF1, které jsou GPL-3.0).
 - Herní obsah: **OGL 1.0a + Paizo Community Use Policy** → appka musí zůstat **zdarma** (žádné poplatky ani reklamy).
-- `NOTICE.md`, `licenses/OGL-1.0a.txt` (Section 15 zkrácená na hlavní knihy; kopie v `files/OGL.txt`), v appce About & licenses.
+- `NOTICE.md`, `licenses/OGL-1.0a.txt` (Section 15: 21 hlavních knih s autory – z Paizo PRD a d20pfsrd, ostatní souhrnně; kopie v `files/OGL.txt`), v appce About & licenses.
 - Nový zdroj dat → doplnit do `NOTICE.md`, OGL Section 15 i `AboutScreen.kt`.
 
 ## Příkazy

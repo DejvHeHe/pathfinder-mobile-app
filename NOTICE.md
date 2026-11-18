@@ -7,7 +7,7 @@ The source code of this project is free software: you can redistribute it and/or
 It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-The game content bundled with or downloaded by the app (spells, items) is **not** covered by the GPL – it remains
+The game content bundled with or downloaded by the app (spells, items, feats, class tables) is **not** covered by the GPL – it remains
 under its own licenses listed below.
 
 ## Paizo Community Use
@@ -19,7 +19,7 @@ For more information about Paizo Inc. and Paizo products, visit [paizo.com](http
 
 ## Open Game License
 
-Game mechanics and rules text of Pathfinder Roleplaying Game (1st edition) spells and items are Open Game Content under
+Game mechanics and rules text of Pathfinder Roleplaying Game (1st edition) spells, items, feats and classes are Open Game Content under
 the **Open Game License v1.0a** – full text including the Section 15 copyright notice:
 [`licenses/OGL-1.0a.txt`](licenses/OGL-1.0a.txt) (the same text is shown in the app under *About & licenses*).
 
@@ -35,6 +35,9 @@ under the OGL by their respective publishers.
 |---|---|---|
 | Spells (`SpellList.json`) | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) by Vladislav Sergeev – data from [Archives of Nethys](https://aonprd.com) | project MIT; content OGL 1.0a / Paizo CUP |
 | Weapons, ammunition, magic items (`Weapons.csv`, `Ammunition.csv`, `MagicItems.csv`) | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) – data from [d20pfsrd.com](https://www.d20pfsrd.com) | repository without a license; content OGL 1.0a / Paizo CUP |
+| Feats (`Feats.json`) | [Archives of Nethys](https://aonprd.com/Feats.aspx) – collected by `tools/build_feats.py` | content OGL 1.0a / Paizo CUP |
+| Spells per day / spells known (`CastingTable.kt`) | class tables on [Archives of Nethys](https://aonprd.com) – `tools/build_casting.py` | content OGL 1.0a / Paizo CUP |
+| Class BAB, saves, hit dice (`ClassTable.kt`) | `packs/classes` of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) – `tools/build_classes.py` | project GPL-3.0; content OGL 1.0a |
 | Mundane gear, armor & shields, alchemical items, mounts (`ItemsBase.json`) | converted from the compendium packs of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) | project GPL-3.0; content OGL 1.0a |
 
 ## Fonts

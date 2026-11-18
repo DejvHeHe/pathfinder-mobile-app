@@ -46,3 +46,5 @@ actual fun nowDisplayText(): String {
     f.dateFormat = "d. M. yyyy HH:mm"
     return f.stringFromDate(NSDate())
 }
+
+actual val edgeSwipeBack: Boolean = true

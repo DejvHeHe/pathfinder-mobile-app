@@ -26,6 +26,10 @@ data class Spell(
     val mythic: String?,
     val source: String?,
     val url: String?,
+    /** povolené v Pathfinder Society (pole „PFS legal“ ve zdroji; chybí-li, bere se jako povolené) */
+    val pfsLegal: Boolean = true,
+    /** Podtřídy, které spell dávají: „domain:fire“ → spell level (viz [SubclassKind]). */
+    val subLevels: Map<String, Int> = emptyMap(),
 ) {
     val levelText: String = levels.entries.joinToString(", ") { "${it.key} ${it.value}" }
 

@@ -19,6 +19,8 @@ class SpellDatabase(val spells: List<Spell>, val source: SpellSource, val update
     private val byName by lazy { spells.associateBy { it.searchName } }
     fun get(id: String): Spell? = byId[id]
     fun findByName(name: String): Spell? = byName[name.trim().lowercase()]
+    /** domény, mystéria, bloodline, elementární školy → spelly */
+    val subclasses: SubclassIndex by lazy { SubclassIndex(spells) }
 }
 
 /**

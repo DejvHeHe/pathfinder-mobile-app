@@ -26,7 +26,7 @@ object AndroidDeckFileIo : DeckFileIo {
         }
     }
 
-    override val saveLabel = "Share"
+    override val saveAction = SaveAction.SHARE
     override val canOpen = true
 
     override suspend fun saveText(fileName: String, text: String): Boolean {

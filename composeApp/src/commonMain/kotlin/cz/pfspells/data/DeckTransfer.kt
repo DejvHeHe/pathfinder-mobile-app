@@ -26,7 +26,19 @@ data class DeckSpellDto(val id: String, val name: String, val count: Int = 1)
 /** Deck připravený k importu (bez id) + spelly, které se nepodařilo najít. */
 data class ImportedDeck(val deck: Deck, val missingSpells: List<String>)
 
-class DeckImportException(message: String) : Exception(message)
+/** Důvod neúspěšného importu – text hlášky skládá UI v jazyce uživatele (`Strings.importError`). */
+sealed interface ImportError {
+    data object Empty : ImportError
+    data class Invalid(val inventory: Boolean, val detail: String?) : ImportError
+    data class UnknownFormat(val format: String) : ImportError
+    data class NewerVersion(val version: Int) : ImportError
+    data object NoDecks : ImportError
+    data object NoInventories : ImportError
+    data object NoFeats : ImportError
+    data class UnknownClass(val deck: String, val classId: String) : ImportError
+}
+
+class DeckImportException(val reason: ImportError) : Exception(reason.toString())
 
 object DeckTransfer {
     const val FORMAT = "pf-spellbook-decks"
@@ -51,24 +63,24 @@ object DeckTransfer {
         return json.encodeToString(DeckFile.serializer(), file)
     }
 
-    /** Vyhodí [DeckImportException] s českou hláškou, když text není platný export. */
+    /** Vyhodí [DeckImportException], když text není platný export. */
     fun parse(text: String, db: SpellDatabase): List<ImportedDeck> {
         val trimmed = text.trim()
-        if (trimmed.isEmpty()) throw DeckImportException("Paste an export or choose a file.")
+        if (trimmed.isEmpty()) throw DeckImportException(ImportError.Empty)
         val file = try {
             // přijmi i samotný deck (bez obálky)
             if (trimmed.contains("\"decks\"")) json.decodeFromString(DeckFile.serializer(), trimmed)
             else DeckFile(decks = listOf(json.decodeFromString(DeckDto.serializer(), trimmed)))
         } catch (e: Exception) {
-            throw DeckImportException("This is not a valid deck export (${e.message?.lineSequence()?.firstOrNull() ?: "invalid JSON"}).")
+            throw DeckImportException(ImportError.Invalid(inventory = false, e.message?.lineSequence()?.firstOrNull()))
         }
-        if (file.format != FORMAT) throw DeckImportException("Unknown format \"${file.format}\".")
-        if (file.version > 1) throw DeckImportException("The export comes from a newer app version (version ${file.version}).")
-        if (file.decks.isEmpty()) throw DeckImportException("The export contains no decks.")
+        if (file.format != FORMAT) throw DeckImportException(ImportError.UnknownFormat(file.format))
+        if (file.version > 1) throw DeckImportException(ImportError.NewerVersion(file.version))
+        if (file.decks.isEmpty()) throw DeckImportException(ImportError.NoDecks)
 
         return file.decks.map { dto ->
             CasterClasses.get(dto.classId)
-                ?: throw DeckImportException("Deck \"${dto.name}\" has an unknown class \"${dto.classId}\".")
+                ?: throw DeckImportException(ImportError.UnknownClass(dto.name, dto.classId))
             val spells = LinkedHashMap<String, Int>()
             val missing = ArrayList<String>()
             for (s in dto.spells) {

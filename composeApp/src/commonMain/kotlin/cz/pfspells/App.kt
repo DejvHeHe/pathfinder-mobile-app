@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cz.pfspells.data.SpellDatabase
+import cz.pfspells.data.edgeSwipeBack
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.draw.clip
@@ -42,40 +44,69 @@ private val WideBreakpoint = 1000.dp
 
 @Composable
 fun App(state: AppState) {
+    val s = state.strings
     PfTheme {
-        BoxWithConstraints(
-            Modifier.fillMaxSize().background(Nb.paper).ruledPaper()
-                // tajné odhalení cen: 10 rychlých ťuknutí kamkoli (dotyk se nespotřebuje, UI funguje normálně)
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                        state.registerTap(down.uptimeMillis)
-                    }
-                },
-        ) {
-            val wide = maxWidth >= WideBreakpoint
-            Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-                when (val db = state.db) {
-                    DbState.Loading -> Centered {
-                        CircularProgressIndicator(color = Nb.accent)
-                        Text("Loading spells…", Modifier.padding(top = 16.dp), color = Nb.inkMuted)
-                    }
-                    is DbState.Failed -> Centered {
-                        Text("Could not load spells:\n${db.message}", color = Nb.error)
-                        NbPrimaryButton("Use bundled data", { state.resetSpells() }, Modifier.padding(top = 16.dp), icon = null)
-                    }
-                    is DbState.Ready -> if (wide) WideLayout(state, db.db) else Router(state, db.db)
-                }
-                state.revealToast?.let { msg ->
-                    Text(
-                        msg,
-                        Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)
-                            .clip(Nb.shape).background(Nb.ink).padding(horizontal = 16.dp, vertical = 10.dp),
-                        color = Nb.panel, fontSize = 14.sp,
-                    )
+        CompositionLocalProvider(LocalStrings provides s) { AppContent(state, s) }
+    }
+}
+
+@Composable
+private fun AppContent(state: AppState, s: Strings) {
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(Nb.paper).ruledPaper()
+            // tajné odhalení cen: 10 rychlých ťuknutí kamkoli (dotyk se nespotřebuje, UI funguje normálně)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    state.registerTap(down.uptimeMillis)
                 }
             }
+            .then(if (edgeSwipeBack) Modifier.swipeFromEdgeBack { state.pop() } else Modifier),
+    ) {
+        val wide = maxWidth >= WideBreakpoint
+        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            when (val db = state.db) {
+                DbState.Loading -> Centered {
+                    CircularProgressIndicator(color = Nb.accent)
+                    Text(s.loadingSpells, Modifier.padding(top = 16.dp), color = Nb.inkMuted)
+                }
+                is DbState.Failed -> Centered {
+                    Text(s.couldNotLoadSpells(db.message), color = Nb.error)
+                    NbPrimaryButton(s.useBundledData, { state.resetSpells() }, Modifier.padding(top = 16.dp), icon = null)
+                }
+                is DbState.Ready -> if (wide) WideLayout(state, db.db) else Router(state, db.db)
+            }
+            state.toast?.let { msg ->
+                Text(
+                    msg.text(s),
+                    Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp, start = 16.dp, end = 16.dp)
+                        .clip(Nb.shape).background(if (msg.isError) Nb.rust else Nb.ink).padding(horizontal = 16.dp, vertical = 10.dp),
+                    color = Nb.panel, fontSize = 14.sp,
+                )
+            }
         }
+    }
+}
+
+/**
+ * Zpět tažením od levého okraje (jako na iOS): dotyk začne do 24 dp od okraje a táhne se doprava aspoň 80 dp,
+ * víc vodorovně než svisle. Dotyky se nespotřebují, takže seznamy a tlačítka fungují normálně.
+ */
+private fun Modifier.swipeFromEdgeBack(onBack: () -> Unit): Modifier = pointerInput(Unit) {
+    val edge = 24.dp.toPx()
+    val trigger = 80.dp.toPx()
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        if (down.position.x > edge) return@awaitEachGesture
+        var dx = 0f
+        var dy = 0f
+        while (true) {
+            val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+            dx = change.position.x - down.position.x
+            dy = change.position.y - down.position.y
+            if (!change.pressed) break
+        }
+        if (dx > trigger && kotlin.math.abs(dy) < dx) onBack()
     }
 }
 
@@ -83,12 +114,14 @@ fun App(state: AppState) {
 private fun Router(state: AppState, db: SpellDatabase) {
     when (val s = state.current) {
         Screen.Decks -> DeckListScreen(state, db)
-        Screen.Compendium -> SpellBrowserScreen(state, db, deckId = null)
+        Screen.Compendium -> SpellBrowserScreen(state, db, charId = null)
         Screen.Database -> DatabaseScreen(state, db)
         Screen.About -> cz.pfspells.ui.AboutScreen(state)
-        is Screen.DeckDetail -> DeckDetailScreen(state, db, s.deckId)
-        is Screen.Picker -> SpellBrowserScreen(state, db, deckId = s.deckId)
-        is Screen.SpellDetail -> SpellDetailScreen(state, db, s.spellId, s.deckId)
+        is Screen.CharacterDetail -> DeckDetailScreen(state, db, s.charId)
+        is Screen.Picker -> SpellBrowserScreen(state, db, charId = s.charId, classId = s.classId)
+        is Screen.SpellDetail -> SpellDetailScreen(state, db, s.spellId, s.charId, s.classId)
+        is Screen.FeatPicker -> cz.pfspells.ui.FeatPickerScreen(state, s.charId)
+        is Screen.FeatDetail -> cz.pfspells.ui.FeatDetailScreen(state, s.featId, s.charId, s.pick, aside = false)
         is Screen.InventoryDetail -> InventoryScreen(state, s.invId)
         is Screen.ItemPicker -> ItemPickerScreen(state, s.invId)
         is Screen.ItemDetail -> ItemDetailScreen(state, s.itemId, s.invId, s.entryId, aside = false)

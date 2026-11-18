@@ -7,7 +7,7 @@ import java.awt.Frame
 import java.io.File
 
 actual val deckFileIo: DeckFileIo = object : DeckFileIo {
-    override val saveLabel = "Save to file"
+    override val saveAction = SaveAction.SAVE_FILE
     override val canOpen = true
 
     override suspend fun saveText(fileName: String, text: String): Boolean {

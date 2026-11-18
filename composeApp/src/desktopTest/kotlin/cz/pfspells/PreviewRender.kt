@@ -4,7 +4,6 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.use
 import com.russhwolf.settings.PreferencesSettings
-import cz.pfspells.data.DeckStore
 import cz.pfspells.data.InvEntry
 import cz.pfspells.data.InventoryStore
 import cz.pfspells.data.ItemCategory
@@ -30,15 +29,47 @@ class PreviewRender {
         node.clear()
         val settings = PreferencesSettings(node)
         val state = withContext(Dispatchers.Main) {
-            AppState(deckStore = DeckStore(settings), inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings))
+            AppState(inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings), settings = settings)
+                .also { it.changeLang(Lang.EN) }
         }
         while (state.db !is DbState.Ready) delay(50)
         val elara = withContext(Dispatchers.Main) {
-            state.createDeck("Brother Thomas", "cleric", 7)
-            state.createDeck("Nyx", "sorcerer", 4)
-            val d = state.createDeck("Elara", "wizard", 5)
+            val thomas = state.createCharacter("Brother Thomas", "cleric", 7)
+            state.addClass(thomas.id, "fighter", 2)
+            state.setAbility(thomas.id, cz.pfspells.data.Ability.WIS, 17)
+            state.setAbility(thomas.id, cz.pfspells.data.Ability.STR, 14)
+            state.updateCharacter(thomas.id) {
+                it.copy(
+                    feats = listOf(
+                        cz.pfspells.data.FeatPick("power-attack", "Power Attack"),
+                        cz.pfspells.data.FeatPick("dodge", "Dodge"),
+                        cz.pfspells.data.FeatPick("weapon-focus", "Weapon Focus", note = "morningstar"),
+                        cz.pfspells.data.FeatPick(null, "Blessed by Iomedae", text = "Once per day re-roll a Will save."),
+                    ),
+                )
+            }
+            state.ensureFeats()
+            state.setSubclass(thomas.id, "cleric", cz.pfspells.data.SubclassSlot.DOMAIN1, "fire")
+            state.setSubclass(thomas.id, "cleric", cz.pfspells.data.SubclassSlot.DOMAIN2, "magic")
+            state.setSubclass(thomas.id, "cleric", cz.pfspells.data.SubclassSlot.SUBDOMAIN2, "arcane")
+            state.setBonusSpellCount(thomas.id, "cleric", "burning-hands", 1)
+            state.setAbility(thomas.id, cz.pfspells.data.Ability.CHA, 14)
+            state.addTracker(thomas.id, "Wand of Cure Light Wounds", 50, cz.pfspells.data.ResourceUnit.POINTS, "charges")
+            state.addTracker(thomas.id, "Pearl of Power (1st)", 1, cz.pfspells.data.ResourceUnit.PER_DAY, "")
+            state.setBonusSpellCount(thomas.id, "cleric", "fireball", 1)
+            val nyx = state.createCharacter("Nyx", "sorcerer", 4)
+            state.setAbility(nyx.id, cz.pfspells.data.Ability.CHA, 18)
+            state.setSubclass(nyx.id, "sorcerer", cz.pfspells.data.SubclassSlot.BLOODLINE, "arcane")
+            listOf("detect-magic", "light", "magic-missile", "shield", "mage-armor", "invisibility")
+                .forEach { state.addSpell(nyx.id, null, it) }
+            val d = state.createCharacter("Elara", "wizard", 5)
+            state.setAbility(d.id, cz.pfspells.data.Ability.INT, 17)
+            state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.SCHOOL, "evocation")
+            state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.OPPOSITION1, "enchantment")
+            state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.OPPOSITION2, "illusion")
             mapOf("detect-magic" to 1, "light" to 1, "magic-missile" to 2, "shield" to 1, "mage-armor" to 1,
-                "web" to 1, "invisibility" to 1, "fireball" to 1).forEach { (k, v) -> state.setSpellCount(d.id, k, v) }
+                "web" to 1, "invisibility" to 1, "fireball" to 1).forEach { (k, v) -> state.setSpellCount(d.id, null, k, v) }
+            state.toggleFavorite("fireball"); state.toggleFavorite("magic-missile"); state.toggleFavorite("ablative-barrier")
             d
         }
         withContext(Dispatchers.Main) { state.ensureItems() }
@@ -46,12 +77,14 @@ class PreviewRender {
         val inv = withContext(Dispatchers.Main) {
             state.createInventory("Party stash")
             val i = state.createInventory("Elara")
+            state.linkInventory(elara.id, i.id)
             val db = state.itemDb!!
             listOf("Longsword" to 1, "Shortbow" to 1, "Arrows (20)" to 1, "Leather armor" to 1, "Backpack, common" to 1,
                 "Bedroll" to 1, "Rope, hemp (50 ft.)" to 1, "Torch" to 3, "Trail rations (per day)" to 5, "Bag of Holding (Type I)" to 1)
                 .forEach { (n, q) -> (db.findByName(n) ?: db.items.firstOrNull { it.name.startsWith(n.substringBefore(" (").substringBefore(",")) })?.let { state.addItem(i.id, it, q) } }
             state.addCustomEntry(i.id, InvEntry("p", null, "Potion of Cure Light Wounds", ItemCategory.POTION.name, 2, 50.0, null, info = "1d8+1"))
             state.updateInventory(i.id) { it.copy(gp = 124, sp = 6, cp = 12, notes = "Chest at the Golden Stag inn – 2 scrolls, spare rope.") }
+            state.saveCustomItem(cz.pfspells.data.CustomItem("p1", "Elven rope", ItemCategory.GEAR.name, 25.0, 3.0, "50 ft., DC 15 to break"))
             state.inventory(i.id)!!
         }
         val out = File("build/previews").apply { mkdirs() }
@@ -67,10 +100,10 @@ class PreviewRender {
         }
 
         shot("phone-decks", 390, 844) { openRoot(Screen.Decks) }
-        shot("phone-deck", 390, 844) { openRoot(Screen.DeckDetail(elara.id)) }
-        shot("phone-spell", 390, 844) { openRoot(Screen.DeckDetail(elara.id)); showSpell("fireball", elara.id) }
-        shot("phone-picker", 390, 844) { openRoot(Screen.DeckDetail(elara.id)); push(Screen.Picker(elara.id)) }
-        shot("desktop", 1440, 1000) { openRoot(Screen.DeckDetail(elara.id)); showSpell("fireball", elara.id) }
+        shot("phone-deck", 390, 844) { openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("phone-spell", 390, 844) { openRoot(Screen.CharacterDetail(elara.id)); showSpell("fireball", elara.id) }
+        shot("phone-picker", 390, 844) { openRoot(Screen.CharacterDetail(elara.id)); push(Screen.Picker(elara.id)) }
+        shot("desktop", 1440, 1000) { openRoot(Screen.CharacterDetail(elara.id)); showSpell("fireball", elara.id) }
         shot("desktop-compendium", 1440, 1000) { openRoot(Screen.Compendium) }
         shot("phone-inventory", 390, 844) { switchSection(Section.INVENTORY); push(Screen.InventoryDetail(inv.id)) }
         shot("phone-itempicker", 390, 844) { itemFilter = ItemFilter(category = ItemCategory.WEAPON); push(Screen.ItemPicker(inv.id)) }
@@ -86,6 +119,52 @@ class PreviewRender {
         shot("phone-decks-inventory-tab", 390, 844) { switchSection(Section.INVENTORY) }
         shot("phone-about", 390, 844) { openRoot(Screen.Decks); push(Screen.About) }
         shot("desktop-about", 1440, 1000) { openRoot(Screen.About) }
+
+        // čeština
+        withContext(Dispatchers.Main) { state.changeLang(Lang.CS) }
+        shot("cs-phone-decks", 390, 844) { switchSection(Section.SPELLBOOK) }
+        shot("cs-phone-spell", 390, 844) { openRoot(Screen.CharacterDetail(elara.id)); showSpell("fireball", elara.id) }
+        shot("cs-phone-inventory", 390, 844) { switchSection(Section.INVENTORY); push(Screen.InventoryDetail(inv.id)) }
+        shot("cs-desktop", 1440, 1000) { openRoot(Screen.CharacterDetail(elara.id)); showSpell("fireball", elara.id) }
+        shot("cs-desktop-inventory", 1440, 1000) {
+            openRoot(Screen.InventoryDetail(inv.id)); showItem(itemDb!!.findByName("Longsword")!!.id, inv.id)
+        }
+        shot("cs-desktop-itempicker", 1440, 1000) {
+            openRoot(Screen.ItemPicker(inv.id)); itemFilter = ItemFilter(category = ItemCategory.WEAPON, proficiency = setOf("Simple", "Martial"), maxPrice = 50.0)
+        }
+        shot("cs-phone-multiclass", 390, 844) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Brother Thomas" }.id)) }
+        shot("cs-desktop-multiclass", 1440, 1000) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Brother Thomas" }.id)) }
+        shot("phone-spontaneous", 390, 844) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
+        shot("cs-phone-game-spontaneous", 390, 844) {
+            val n = characters.first { it.name == "Nyx" }
+            gameMode = true
+            setCast(n.id, cz.pfspells.data.Character.slotKey("sorcerer", 1), 4)
+            openRoot(Screen.CharacterDetail(n.id))
+        }
+        shot("cs-phone-game-prepared", 390, 844) {
+            gameMode = true
+            setCast(elara.id, cz.pfspells.data.Character.castKey("wizard", "magic-missile"), 1)
+            setCast(elara.id, cz.pfspells.data.Character.castKey("wizard", "shield"), 1)
+            openRoot(Screen.CharacterDetail(elara.id))
+        }
+        shot("cs-desktop-game", 1440, 1000) { gameMode = true; openRoot(Screen.CharacterDetail(elara.id)) }
+        val thomasId = state.characters.first { it.name == "Brother Thomas" }.id
+        shot("cs-phone-feats", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(thomasId)) }
+        shot("cs-phone-featpicker", 390, 844) { openRoot(Screen.CharacterDetail(thomasId)); push(Screen.FeatPicker(thomasId)) }
+        shot("cs-desktop-feat", 1440, 1000) { featFilter = FeatFilter(query = "power att"); openRoot(Screen.FeatPicker(thomasId)); showFeat("power-attack", thomasId) }
+        shot("cs-phone-domains", 390, 2000) { gameMode = false; openRoot(Screen.CharacterDetail(thomasId)) }
+        shot("cs-phone-bloodline", 390, 1300) { gameMode = false; openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
+        shot("cs-phone-wizard", 390, 1700) { gameMode = false; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-phone-resources-game", 390, 1500) {
+            gameMode = true
+            setCast(thomasId, "res:cleric-channel", 2)
+            openRoot(Screen.CharacterDetail(thomasId))
+        }
+        shot("cs-phone-myitems", 390, 844) { itemFilter = ItemFilter(mine = true); openRoot(Screen.Decks); push(Screen.InventoryDetail(inv.id)); push(Screen.ItemPicker(inv.id)) }
+        shot("cs-desktop-myitem", 1440, 1000) {
+            openRoot(Screen.ItemPicker(inv.id)); itemFilter = ItemFilter(mine = true); showItem("my-p1", inv.id)
+        }
+        shot("cs-phone-database", 390, 844) { openRoot(Screen.Decks); push(Screen.Database) }
         node.removeNode()
     }
 }

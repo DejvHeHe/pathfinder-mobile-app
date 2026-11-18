@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,13 +59,13 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                     NbSearchField(
                         value = state.inventoryQuery,
                         onValueChange = { state.inventoryQuery = it },
-                        placeholder = "Search item…",
+                        placeholder = str.searchItem,
                         modifier = Modifier.width(340.dp),
                         background = Nb.paper,
                     )
-                    NbPrimaryButton("Add item", { state.openRoot(Screen.ItemPicker(inv.id)) })
+                    NbPrimaryButton(str.addItem, { state.openRoot(Screen.ItemPicker(inv.id)) })
                 } else if (main is Screen.ItemPicker) {
-                    NbDashedButton("Back to inventory", { state.openRoot(Screen.InventoryDetail(main.invId)) })
+                    NbDashedButton(str.backToInventory, { state.openRoot(Screen.InventoryDetail(main.invId)) })
                 }
             } else {
                 NbSearchField(
@@ -73,12 +74,13 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                         state.compendiumFilter = state.compendiumFilter.copy(query = it)
                         if (main != Screen.Compendium) state.openRoot(Screen.Compendium)
                     },
-                    placeholder = "Search spells…",
+                    placeholder = str.searchSpells,
                     modifier = Modifier.width(340.dp),
                     background = Nb.paper,
                 )
-                NbDashedButton("Compendium", { state.openRoot(Screen.Compendium) }, icon = NbIcons.Book)
+                NbDashedButton(str.compendium, { state.openRoot(Screen.Compendium) }, icon = NbIcons.Book)
             }
+            LangToggle(state)
             AppMenu(state, db, onDatabase = { state.openRoot(Screen.Database) }, onAbout = { state.openRoot(Screen.About) })
         }
 
@@ -93,18 +95,21 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                 InventorySidebar(state, invId?.let { state.inventory(it) }, sidebarMod)
             } else {
                 val selectedDeckId = when (main) {
-                    is Screen.DeckDetail -> main.deckId
-                    is Screen.Picker -> main.deckId
+                    is Screen.CharacterDetail -> main.charId
+                    is Screen.Picker -> main.charId
+                    is Screen.FeatPicker -> main.charId
                     else -> null
                 }
                 DeckSidebar(state, selectedDeckId, sidebarMod)
             }
             val selectedSpell = (aside as? Screen.SpellDetail)?.spellId
             val selectedItem = aside as? Screen.ItemDetail
+            val selectedFeat = aside as? Screen.FeatDetail
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 when (main) {
-                    is Screen.DeckDetail -> DeckDetailScreen(state, db, main.deckId, wide = true, selectedSpellId = selectedSpell)
-                    is Screen.Picker -> SpellBrowserScreen(state, db, main.deckId, wide = true, selectedSpellId = selectedSpell)
+                    is Screen.CharacterDetail -> DeckDetailScreen(state, db, main.charId, wide = true, selectedSpellId = selectedSpell, selectedFeatPick = selectedFeat?.pick)
+                    is Screen.FeatPicker -> FeatPickerScreen(state, main.charId, wide = true, selectedFeatId = selectedFeat?.featId)
+                    is Screen.Picker -> SpellBrowserScreen(state, db, main.charId, main.classId, wide = true, selectedSpellId = selectedSpell)
                     Screen.Compendium -> SpellBrowserScreen(state, db, null, wide = true, selectedSpellId = selectedSpell, showSearch = false)
                     Screen.Database -> DatabaseScreen(state, db, wide = true)
                     Screen.About -> AboutScreen(state, wide = true)
@@ -119,8 +124,9 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                         .background(Nb.panel).dashedEdge(Side.Start),
                 ) {
                     when (aside) {
-                        is Screen.SpellDetail -> SpellDetailScreen(state, db, aside.spellId, aside.deckId, aside = true)
+                        is Screen.SpellDetail -> SpellDetailScreen(state, db, aside.spellId, aside.charId, aside.classId, aside = true)
                         is Screen.ItemDetail -> ItemDetailScreen(state, aside.itemId, aside.invId, aside.entryId, aside = true)
+                        is Screen.FeatDetail -> FeatDetailScreen(state, aside.featId, aside.charId, aside.pick, aside = true)
                         else -> {}
                     }
                 }
@@ -134,9 +140,9 @@ private fun Placeholder(db: SpellDatabase, inventory: Boolean, noInventories: Bo
     Box(Modifier.fillMaxSize().padding(48.dp), contentAlignment = Alignment.Center) {
         Text(
             when {
-                inventory && noInventories -> "Create an inventory on the left – one per character, or a shared party stash."
-                inventory -> "Pick an inventory on the left, or create a new one."
-                else -> "Pick a deck on the left or create a new one.\nThe compendium has all ${db.spells.size} spells."
+                inventory && noInventories -> str.placeholderNoInventories
+                inventory -> str.placeholderPickInventory
+                else -> str.placeholderPickCharacter(db.spells.size)
             },
             textAlign = TextAlign.Center, color = Nb.inkMuted, fontSize = 16.sp, lineHeight = 24.sp,
         )

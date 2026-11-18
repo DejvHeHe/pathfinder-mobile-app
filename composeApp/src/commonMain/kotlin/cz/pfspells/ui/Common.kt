@@ -1,5 +1,12 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.ClassCatalog
+import cz.pfspells.data.CasterClasses
+import cz.pfspells.data.Character
+import cz.pfspells.str
+import cz.pfspells.Strings
+import cz.pfspells.Lang
+import cz.pfspells.AppState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,7 +73,13 @@ fun MonoLabel(text: String, modifier: Modifier = Modifier, color: Color = Nb.ink
 
 /** „Level 1 ───────“ – kurzívní rezavý nadpis s čárkovanou linkou. */
 @Composable
-fun SectionHeader(text: String, modifier: Modifier = Modifier, size: TextUnit = 18.sp) {
+fun SectionHeader(
+    text: String,
+    modifier: Modifier = Modifier,
+    size: TextUnit = 18.sp,
+    /** text za linkou vpravo (např. limity spell levelu) */
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Row(modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text,
@@ -78,6 +91,10 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier, size: TextUnit = 
         )
         Spacer(Modifier.size(10.dp))
         Box(Modifier.weight(1f).height(2.dp).dashedEdge(Side.Top, Nb.rule))
+        if (trailing != null) {
+            Spacer(Modifier.size(10.dp))
+            trailing()
+        }
     }
 }
 
@@ -91,7 +108,7 @@ fun NbIconButton(icon: ImageVector, label: String, onClick: () -> Unit, tint: Co
 }
 
 @Composable
-fun BackButton(onBack: () -> Unit) = NbIconButton(NbIcons.Back, "Back", onBack, size = 22.dp)
+fun BackButton(onBack: () -> Unit) = NbIconButton(NbIcons.Back, str.back, onBack, size = 22.dp)
 
 /** Plné olivové tlačítko (hlavní akce). */
 @Composable
@@ -192,7 +209,7 @@ fun CountStepper(
     numberSize: TextUnit = 15.sp,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        NbSquareButton("−", { onChange(value - 1) }, "Decrease", enabled = value > min, size = size)
+        NbSquareButton("−", { onChange(value - 1) }, str.decrease, enabled = value > min, size = size)
         Text(
             "$value",
             Modifier.widthIn(min = 20.dp),
@@ -202,7 +219,7 @@ fun CountStepper(
             fontSize = numberSize,
             color = Nb.ink,
         )
-        NbSquareButton("+", { onChange(value + 1) }, "Increase", enabled = value < max, size = size)
+        NbSquareButton("+", { onChange(value + 1) }, str.increase, enabled = value < max, size = size)
     }
 }
 
@@ -279,7 +296,7 @@ fun NbSearchField(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (value.isNotEmpty()) NbIconButton(NbIcons.Close, "Clear search", { onValueChange("") }, Nb.inkMuted, 16.dp)
+        if (value.isNotEmpty()) NbIconButton(NbIcons.Close, str.clearSearch, { onValueChange("") }, Nb.inkMuted, 16.dp)
     }
 }
 
@@ -366,23 +383,55 @@ fun NbScreen(
 
 // ---------- pomocné ----------
 
-fun classLevelSummary(cls: CasterClass?, level: Int): String {
-    if (cls == null) return "Unknown class · level $level"
-    return "${cls.name} $level · ${spellRangeText(cls, level)}"
+fun classLevelSummary(s: Strings, cls: CasterClass?, level: Int): String {
+    if (cls == null) return s.unknownClassLevel(level)
+    return "${s.nameOf(cls)} $level · ${spellRangeText(s, cls, level)}"
 }
 
-fun spellRangeText(cls: CasterClass, level: Int): String {
+/** „Wizard 5 / Fighter 2“ */
+fun classesSummary(s: Strings, c: Character): String =
+    c.classes.joinToString(" / ") { e -> "${s.classNameOf(e.classId)} ${e.level}" }
+
+/** Název classy podle id (sesílací i nesesílací) v jazyce rozhraní. */
+fun Strings.classNameOf(classId: String): String =
+    className(classId, ClassCatalog.get(classId)?.name ?: CasterClasses.get(classId)?.name ?: classId)
+
+/** Název classy v jazyce rozhraní. */
+fun Strings.nameOf(cls: CasterClass): String = className(cls.id, cls.name)
+
+fun spellRangeText(s: Strings, cls: CasterClass, level: Int): String {
     val max = cls.maxSpellLevel(level)
     val min = if (cls.hasCantrips) 0 else 1
     return when {
-        max < 0 -> "no spells yet"
-        max == min -> "spell level $max"
-        else -> "spell levels $min–$max"
+        max < 0 -> s.noSpellsYet
+        max == min -> s.spellLevelSingle(max)
+        else -> s.spellLevelRange(min, max)
     }
 }
 
-fun spellLevelLabel(level: Int): String = if (level == 0) "Cantrips (0)" else "Level $level"
-
-fun copiesCount(n: Int): String = if (n == 1) "1 copy" else "$n copies"
-
-fun spellsCount(n: Int): String = if (n == 1) "1 spell" else "$n spells"
+/** Přepínač jazyka rozhraní „EN | CZ“ do hlavičky. */
+@Composable
+fun LangToggle(state: AppState, modifier: Modifier = Modifier) {
+    val fonts = LocalNbFonts.current
+    Row(
+        modifier.clip(Nb.shape).dashedBorder().padding(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Lang.entries.forEach { l ->
+            val selected = state.lang == l
+            Box(
+                Modifier.height(30.dp).clip(Nb.shape)
+                    .background(if (selected) Nb.accent else Color.Transparent)
+                    .clickable(enabled = !selected, onClickLabel = str.language) { state.changeLang(l) }
+                    .padding(horizontal = 9.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    l.label,
+                    fontFamily = fonts.mono, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp,
+                    color = if (selected) Color.White else Nb.inkMuted,
+                )
+            }
+        }
+    }
+}

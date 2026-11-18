@@ -30,6 +30,15 @@ class CasterClassTest {
         assertEquals(listOf(-1, -1, -1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4), (1..20).map { max("paladin", it) })
     }
 
+    @Test
+    fun medium() {
+        // Occult Adventures, Table 1-2: knacky od 1, 1st na 4, 2nd na 7, 3rd na 10, 4th na 13
+        assertEquals(listOf(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4), (1..20).map { max("medium", it) })
+        val knack = spell("medium" to 0)
+        assertTrue(CasterClasses.get("medium")!!.canCast(knack, 1))
+        assertFalse(CasterClasses.get("medium")!!.canCast(spell("medium" to 1), 3))
+    }
+
     private fun spell(vararg levels: Pair<String, Int>) = Spell(
         "x", "X", "evocation", null, null, mapOf(*levels), null, null, null, null, null, null, null, null, null, "", null, null, null,
     )

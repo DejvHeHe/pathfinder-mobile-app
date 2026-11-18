@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.str
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,16 +39,19 @@ private const val REPO_URL = "https://github.com/DejvHeHe/pathfinder-mobile-app"
 @Composable
 fun AboutScreen(state: AppState, wide: Boolean = false) {
     val fonts = LocalNbFonts.current
+    val s = str
     var showOgl by remember { mutableStateOf(false) }
     var oglText by remember { mutableStateOf<String?>(null) }
+    var oglLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(showOgl) {
-        if (showOgl && oglText == null) {
-            oglText = try { decodeText(Res.readBytes("files/OGL.txt")) } catch (e: Exception) { "Could not load the license text." }
+        if (showOgl && !oglLoaded) {
+            oglText = try { decodeText(Res.readBytes("files/OGL.txt")) } catch (e: Exception) { null }
+            oglLoaded = true
         }
     }
 
     NbScreen(
-        title = "About & licenses",
+        title = s.aboutTitle,
         subtitle = null,
         onBack = { if (wide) state.popMain() else state.pop() },
         wide = wide,
@@ -64,12 +68,8 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                     Text("Copyright (C) 2026 David Sobíšek", fontSize = 14.sp, color = Nb.inkMuted)
                     Link(REPO_URL)
                 }
-                Body(
-                    "This program is free software: you can redistribute it and/or modify it under the terms of the " +
-                        "GNU General Public License version 3. It is distributed WITHOUT ANY WARRANTY. " +
-                        "The full license text is in the LICENSE file of the source code repository.",
-                )
-                Body("The game content (spells, items) is not covered by the GPL – it remains under its own licenses below.")
+                Body(s.gplText)
+                Body(s.gameContentNotGpl)
 
                 SectionHeader("Paizo Community Use")
                 Body(
@@ -80,32 +80,27 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                 )
 
                 SectionHeader("Open Game License")
-                Body(
-                    "Game rules text of Pathfinder Roleplaying Game (1st edition) spells and items is Open Game Content under the " +
-                        "Open Game License v1.0a. Proper names of the Pathfinder campaign setting, the \"Pathfinder\" name and trademarks " +
-                        "are Product Identity of Paizo Inc., used under the Community Use Policy above.",
-                )
-                NbDashedButton(if (showOgl) "Hide license text" else "Show Open Game License v1.0a", { showOgl = !showOgl })
+                Body(s.oglText)
+                NbDashedButton(if (showOgl) s.hideOgl else s.showOgl, { showOgl = !showOgl })
                 if (showOgl) {
                     Text(
-                        oglText ?: "Loading…",
+                        oglText ?: if (oglLoaded) s.couldNotLoadLicense else s.loading,
                         fontFamily = fonts.mono, fontSize = 11.5.sp, lineHeight = 16.sp, color = Nb.ink,
                     )
                 }
 
-                SectionHeader("Data sources")
-                Source("Spells", "SpellTable-pf1e (MIT) by Vladislav Sergeev – data from Archives of Nethys (aonprd.com)")
-                Source("Weapons, ammunition, magic items", "Vireche/randomitemgenerator – data from d20pfsrd.com (OGL)")
-                Source("Gear, armor, alchemical items, mounts", "Pathfinder 1e system for Foundry VTT (GPL-3.0, content OGL)")
+                SectionHeader(s.dataSources)
+                Source(s.sourceSpells, "SpellTable-pf1e (MIT) by Vladislav Sergeev – data from Archives of Nethys (aonprd.com)")
+                Source(s.sourceWeapons, "Vireche/randomitemgenerator – data from d20pfsrd.com (OGL)")
+                Source(s.sourceGear, "Pathfinder 1e system for Foundry VTT (GPL-3.0, content OGL)")
+                Source(s.sourceFeats, "Archives of Nethys (aonprd.com) – OGL / Paizo Community Use Policy")
+                Source(s.sourceClasses, "Archives of Nethys class tables; Foundry VTT PF1 packs/classes (GPL-3.0, content OGL)")
 
-                SectionHeader("Fonts")
-                Body("Alegreya, Alegreya Sans and IBM Plex Mono – SIL Open Font License 1.1.")
+                SectionHeader(s.fonts)
+                Body(s.fontsText)
 
-                SectionHeader("Libraries")
-                Body(
-                    "Kotlin, Compose Multiplatform, kotlinx.coroutines, kotlinx.serialization, Ktor, Multiplatform Settings, " +
-                        "AndroidX – Apache License 2.0.",
-                )
+                SectionHeader(s.libraries)
+                Body(s.librariesText)
             }
         }
     }

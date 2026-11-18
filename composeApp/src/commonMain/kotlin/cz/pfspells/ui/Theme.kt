@@ -51,6 +51,8 @@ object Nb {
     val placeholder = Color(0xFF6E5B45)
     val accent = Color(0xFF4E5D2B)
     val rust = Color(0xFF8A4B2A)
+    /** střední zatížení */
+    val ochre = Color(0xFF9A6B14)
     val dash = Color(0xFF9C8662)
     val rule = Color(0xFFA8916A)
     val ruleSoft = Color(0x73A8916A)
@@ -199,7 +201,20 @@ object NbIcons {
     val Share = stroke("share", 1.8f, "M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6")
     val Pencil = stroke("pencil", 1.8f, "M4 20h4L19 9l-4-4L4 16v4z", "M13 7l4 4")
     val Menu = stroke("menu", 2.2f, "M12 5.5v.01M12 12v.01M12 18.5v.01")
+    val Check = stroke("check", 2.4f, "M5 12.5l4.5 4.5L19 7.5")
     val Warn = stroke("warn", 2f, "M12 4l9 16H3L12 4z", "M12 10v4", "M12 17v.01")
     val Refresh = stroke("refresh", 2f, "M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7")
     val ChevronDown = stroke("chevron-down", 2f, "M6 9l6 6 6-6")
+
+    private const val STAR = "M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"
+    val Star = stroke("star", 1.8f, STAR)
+    val StarFilled: ImageVector = ImageVector.Builder("star-filled", 24.dp, 24.dp, 24f, 24f).apply {
+        addPath(
+            pathData = PathParser().parsePathString(STAR).toNodes(),
+            fill = SolidColor(Color.Black),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineJoin = StrokeJoin.Round,
+        )
+    }.build()
 }

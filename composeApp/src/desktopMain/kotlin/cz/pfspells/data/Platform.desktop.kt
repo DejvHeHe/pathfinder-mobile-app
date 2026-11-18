@@ -32,3 +32,6 @@ actual object AppFiles {
 actual fun createHttpClient(): HttpClient = HttpClient(OkHttp)
 
 actual fun nowDisplayText(): String = SimpleDateFormat("d. M. yyyy HH:mm", Locale.getDefault()).format(Date())
+
+/** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
+actual val edgeSwipeBack: Boolean = false

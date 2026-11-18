@@ -1,5 +1,6 @@
 package cz.pfspells.data
 
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -36,6 +37,7 @@ object SpellParser {
     private fun parseOne(o: JsonObject, usedIds: MutableSet<String>): Spell? {
         val name = o.str("Name") ?: return null
         val levels = parseLevels(o)
+        val subLevels = parseSubLevels(o)
         if (levels.isEmpty()) return null // spell bez class listu (jen SLA/doména) přeskočit
 
         var id = slug(name)
@@ -64,6 +66,8 @@ object SpellParser {
             mythic = o.str("Mythic"),
             source = o.str("Source"),
             url = o.str("Url aon"),
+            pfsLegal = (o["PFS legal"] as? JsonPrimitive)?.let { it.booleanOrNull ?: it.contentOrNull?.equals("true", true) } ?: true,
+            subLevels = subLevels,
         )
     }
 
@@ -80,6 +84,45 @@ object SpellParser {
         }
         return out
     }
+
+    /** access_ways Domain / Subdomain / Mystery / Bloodline / Elemental School → „kind:name“ → spell level. */
+    private fun parseSubLevels(o: JsonObject): Map<String, Int> {
+        val aw = o["access_ways"] as? JsonObject ?: return emptyMap()
+        val out = LinkedHashMap<String, Int>()
+        for (kind in SubclassKind.entries) {
+            val list = aw[kind.sourceKey] as? JsonArray ?: continue
+            for (pair in list) {
+                val arr = pair as? JsonArray ?: continue
+                if (arr.size < 2) continue
+                val raw = (arr[0] as? JsonPrimitive)?.contentOrNull ?: continue
+                val lvl = (arr[1] as? JsonPrimitive)?.intOrNull ?: continue
+                val key = subclassKey(kind, raw) ?: continue
+                out[key] = minOf(out[key] ?: lvl, lvl)
+            }
+        }
+        return out
+    }
+
+    /**
+     * Klíč podtřídy („domain:fire“), opravy chyb ve zdroji: mezery, velká písmena, překlepy, „(u)“,
+     * slepené záznamy („Elemental School air“ v bloodline) se zahodí.
+     */
+    internal fun subclassKey(kind: SubclassKind, raw: String): String? {
+        var n = raw.trim().lowercase()
+        if (n.isEmpty() || "elemental school" in n || n.startsWith("bloodline ")) return null
+        n = n.removeSuffix(" (u)").replace(Regex("""\((pap|pzo)[^)]*\)"""), "").trim()
+        n = SUBCLASS_FIXES[n] ?: n
+        var k = kind
+        // subdoména, která je ve skutečnosti doména (a naopak)
+        if (k == SubclassKind.SUBDOMAIN && n == "scalykind") k = SubclassKind.DOMAIN
+        if (k == SubclassKind.SUBDOMAIN && n == "law slavery") n = "slavery"
+        return "${k.prefix}:$n"
+    }
+
+    private val SUBCLASS_FIXES = mapOf(
+        "aristocra" to "aristocracy",
+        "kyton (evil, kaw)" to "kyton (evil, law)",
+    )
 
     /** Sjednotí pár výjimek ve zdroji („wizard“ místo „sorcerer/wizard“ apod.). */
     internal fun normalizeListKey(raw: String): String = when (val k = raw.trim().lowercase()) {

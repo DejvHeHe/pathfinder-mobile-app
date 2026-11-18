@@ -3,6 +3,7 @@ package cz.pfspells.data
 import kotlinx.serialization.Serializable
 
 /** Kategorie itemu – pořadí = pořadí skupin v inventáři. */
+/** [label] = anglický název (porovnávání s daty); v UI se zobrazuje `Strings.category`. */
 enum class ItemCategory(val label: String) {
     WEAPON("Weapons"),
     AMMO("Ammunition"),
@@ -110,7 +111,18 @@ data class Inventory(
     val cp: Int = 0,
     val notes: String = "",
     val entries: List<InvEntry> = emptyList(),
+    /** velikost tvora ([CreatureSize] jako text – neznámá hodnota nerozbije načtení) */
+    val size: String = CreatureSize.MEDIUM.name,
+    /** čtyřnohý tvor (kůň, pes…) unese víc */
+    val quadruped: Boolean = false,
 ) {
+    val creatureSize: CreatureSize get() = CreatureSize.of(size)
+    val capacityMultiplier: Double get() = creatureSize.multiplier(quadruped)
+    val heavyLoad: Double get() = CarryingCapacity.heavyLoad(strength, capacityMultiplier)
+    val lightLoad: Double get() = CarryingCapacity.lightLoad(strength, capacityMultiplier)
+    val mediumLoad: Double get() = CarryingCapacity.mediumLoad(strength, capacityMultiplier)
+    val load: Load get() = CarryingCapacity.load(strength, totalWeight, capacityMultiplier)
+
     val coinsGp: Double get() = pp * 10.0 + gp + sp / 10.0 + cp / 100.0
     /** 50 mincí = 1 lb (Core Rulebook) */
     val coinWeight: Double get() = (pp + gp + sp + cp) / 50.0
@@ -125,19 +137,52 @@ object CarryingCapacity {
         400, 460, 520, 600, 700, 800, 920, 1040, 1200, 1400,
     )
 
-    fun heavyLoad(str: Int): Double = when {
+    /** [mult] = násobitel podle velikosti tvora ([CreatureSize.multiplier]). */
+    fun heavyLoad(str: Int, mult: Double = 1.0): Double = baseHeavy(str) * mult
+
+    private fun baseHeavy(str: Int): Double = when {
         str <= 0 -> 0.0
         str < 30 -> heavy[str].toDouble()
-        else -> heavyLoad(str - 10) * 4 // každých +10 STR = ×4
+        else -> baseHeavy(str - 10) * 4 // každých +10 STR = ×4
     }
 
-    fun lightLoad(str: Int): Double = kotlin.math.floor(heavyLoad(str) / 3)
-    fun mediumLoad(str: Int): Double = kotlin.math.floor(heavyLoad(str) * 2 / 3)
+    fun lightLoad(str: Int, mult: Double = 1.0): Double = kotlin.math.floor(heavyLoad(str, mult) / 3)
+    fun mediumLoad(str: Int, mult: Double = 1.0): Double = kotlin.math.floor(heavyLoad(str, mult) * 2 / 3)
 
-    fun loadName(str: Int, weight: Double): String = when {
-        weight <= lightLoad(str) -> "Light load"
-        weight <= mediumLoad(str) -> "Medium load"
-        weight <= heavyLoad(str) -> "Heavy load"
-        else -> "Overloaded"
+    fun load(str: Int, weight: Double, mult: Double = 1.0): Load = when {
+        weight <= lightLoad(str, mult) -> Load.LIGHT
+        weight <= mediumLoad(str, mult) -> Load.MEDIUM
+        weight <= heavyLoad(str, mult) -> Load.HEAVY
+        else -> Load.OVERLOADED
+    }
+}
+
+/**
+ * Stupeň zatížení a jeho postihy (Core Rulebook, tabulka Encumbrance). Texty v `Strings.loadName` / `loadPenalties`.
+ * [maxDex] null = bez omezení, [runMultiplier] 0 = nemůže běžet.
+ */
+enum class Load(val maxDex: Int?, val checkPenalty: Int, val runMultiplier: Int) {
+    LIGHT(null, 0, 4),
+    MEDIUM(3, -3, 4),
+    HEAVY(1, -6, 3),
+    OVERLOADED(0, -6, 0),
+}
+
+/** Velikost tvora a násobitel nosnosti (Core Rulebook: dvounohý / čtyřnohý). */
+enum class CreatureSize(private val biped: Double, private val quad: Double) {
+    FINE(0.125, 0.25),
+    DIMINUTIVE(0.25, 0.5),
+    TINY(0.5, 0.75),
+    SMALL(0.75, 1.0),
+    MEDIUM(1.0, 1.5),
+    LARGE(2.0, 3.0),
+    HUGE(4.0, 6.0),
+    GARGANTUAN(8.0, 12.0),
+    COLOSSAL(16.0, 24.0);
+
+    fun multiplier(quadruped: Boolean): Double = if (quadruped) quad else biped
+
+    companion object {
+        fun of(name: String?): CreatureSize = entries.firstOrNull { it.name == name } ?: MEDIUM
     }
 }

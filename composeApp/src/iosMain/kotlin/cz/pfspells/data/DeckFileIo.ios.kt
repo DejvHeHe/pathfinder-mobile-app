@@ -5,7 +5,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.popoverPresentationController
 
 actual val deckFileIo: DeckFileIo = object : DeckFileIo {
-    override val saveLabel = "Share"
+    override val saveAction = SaveAction.SHARE
     override val canOpen = false // import přes schránku
 
     override suspend fun saveText(fileName: String, text: String): Boolean {

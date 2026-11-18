@@ -3,6 +3,8 @@ package cz.pfspells
 import cz.pfspells.data.CarryingCapacity
 import cz.pfspells.data.Csv
 import cz.pfspells.data.InvEntry
+import cz.pfspells.data.Load
+import cz.pfspells.data.CreatureSize
 import cz.pfspells.data.Inventory
 import cz.pfspells.data.InventoryTransfer
 import cz.pfspells.data.ItemCategory
@@ -81,7 +83,15 @@ class ItemDataTest {
         assertEquals(66.0, CarryingCapacity.mediumLoad(10))
         assertEquals(300.0, CarryingCapacity.heavyLoad(18))
         assertEquals(1600.0, CarryingCapacity.heavyLoad(30)) // 400 × 4
-        assertEquals("Medium load", CarryingCapacity.loadName(10, 49.0))
+        assertEquals(Load.MEDIUM, CarryingCapacity.load(10, 49.0))
+        // velikost tvora: Small ×3/4, čtyřnohý Large ×3 (kůň se STR 18: heavy 900 lb)
+        val small = Inventory("s", "Halfling", strength = 10, size = CreatureSize.SMALL.name)
+        assertEquals(75.0, small.heavyLoad)
+        assertEquals(25.0, small.lightLoad)
+        val horse = Inventory("h", "Horse", strength = 18, size = CreatureSize.LARGE.name, quadruped = true)
+        assertEquals(900.0, horse.heavyLoad)
+        assertEquals(Load.LIGHT, horse.load)
+        assertEquals(CreatureSize.MEDIUM, Inventory("x", "X", size = "nonsense").creatureSize)
     }
 
     @Test
@@ -92,8 +102,9 @@ class ItemDataTest {
         assertEquals("1,000 gp", priceLabel(1000.0, revealed = true))
         assertEquals("1 sp", priceLabel(0.1, revealed = false))
         val inv = Inventory("i", "X", entries = listOf(InvEntry("e", null, "Ring", qty = 1, priceGp = 2000.0)))
-        assertEquals("worth ≈ ???", worthText(inv, revealed = false))
-        assertEquals("worth ≈ 2,000 gp", worthText(inv, revealed = true))
+        assertEquals("worth ≈ ???", worthText(EnStrings, inv, revealed = false))
+        assertEquals("hodnota ≈ ???", worthText(CsStrings, inv, revealed = false))
+        assertEquals("worth ≈ 2,000 gp", worthText(EnStrings, inv, revealed = true))
     }
 
     @Test

@@ -1,6 +1,6 @@
 # PF1 Spellbook
 
-Offline aplikace pro hráče **Pathfinder 1e**: skládání spellbooků („decků“) podle classy a úrovně postavy
+Offline aplikace pro hráče **Pathfinder 1e**: **postavy** (multiclass, podtřídy, spellbook, denní sloty, featy, schopnosti)
 a vedení **inventáře** s itemy z databáze. Bez účtu a bez serveru, všechno se ukládá lokálně v zařízení.
 
 Běží na **Androidu, iOS, desktopu** (Windows, macOS, Linux) **a v prohlížeči** (Kotlin/Wasm). Je to jedna sdílená aplikace
@@ -9,10 +9,14 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | | |
 |---|---|
 | Spelly | 3 030 spellů (Archives of Nethys), filtr podle classy/úrovně, detail se všemi údaji |
-| Decky | 26 sesílacích class, automatický strop spell levelu, export/import |
-| Inventář | ~6 060 itemů (d20pfsrd + Foundry VTT PF1), měšec, nosnost podle STR, poznámky, export/import |
+| Postavy | 49 class (multiclass, BAB, záchrany), atributy, podtřídy (domény, mystéria, bloodline, škola), export/import |
+| Kouzla | sloty za den a známá kouzla podle tabulek AoN, bonus z atributu, herní režim s odškrtáváním a odpočinkem |
+| Featy | 3 442 featů (Archives of Nethys), prerekvizity ✓ / ✗ / ?, počet featů podle úrovně, vlastní featy |
+| Schopnosti | Smite Evil, Rage, Ki Pool… s počtem použití podle úrovně, vlastní počítadla |
+| Inventář | ~6 060 itemů (d20pfsrd + Foundry VTT PF1), vlastní katalog, lektvary/svitky/hůlky ze spellů, měšec, nosnost, poznámky, export/import |
 | Aktualizace | spelly i itemy jdou tlačítkem stáhnout znovu ze zdroje |
 | Vzhled | design „Linkovaný zápisník“, mobil i třísloupcové široké okno |
+| Jazyk | rozhraní anglicky i česky (přepínač EN / CZ v hlavičce) |
 
 ## Stažení
 
@@ -39,7 +43,7 @@ iOS: na Macu si appku sestaví každý sám přes Xcode s bezplatným Apple ID �
 
 | Soubor | Pro koho | O čem |
 |---|---|---|
-| [docs/user-guide.md](docs/user-guide.md) | hráč | jak appku používat: decky, inventář, export, aktualizace, skryté ceny |
+| [docs/user-guide.md](docs/user-guide.md) | hráč | jak appku používat: postavy, kouzla, featy, inventář, export, aktualizace, skryté ceny |
 | [docs/architecture.md](docs/architecture.md) | vývojář | jak to funguje uvnitř: vrstvy, stav, navigace, UI, platformy |
 | [docs/data.md](docs/data.md) | vývojář | odkud jsou spelly a itemy, formáty, aktualizace, pravidla PF1 v kódu |
 | [docs/build.md](docs/build.md) | vývojář | build pro jednotlivé platformy, testy, náhledy designu, regenerace dat |

@@ -51,7 +51,9 @@ rozložení; zúžením okna se přepne na mobilní.
 ```
 
 `minSdk` 24 (Android 7), `targetSdk` 35. Oprávnění: jen `INTERNET` (stahování aktualizací).
-Release build zatím nemá podepisování ani minifikaci.
+Release build (`assembleRelease`) se podepíše klíčem z proměnných `ANDROID_KEYSTORE_FILE/_PASSWORD`,
+`ANDROID_KEY_ALIAS/_PASSWORD` (postup v [deploy.md](deploy.md#podepsání-android-apk-doporučeno)); bez nich debug klíčem.
+Minifikace je vypnutá.
 
 ## iOS
 

@@ -1,5 +1,7 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.Character
+import cz.pfspells.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,10 +40,9 @@ import cz.pfspells.AppState
 import cz.pfspells.Screen
 import cz.pfspells.Section
 import cz.pfspells.data.CasterClasses
-import cz.pfspells.data.Deck
 import cz.pfspells.data.SpellDatabase
 
-/** Mobilní úvodní obrazovka se seznamem decků. */
+/** Mobilní úvodní obrazovka se seznamem postav (záložka Spellbook) nebo inventářů. */
 @Composable
 fun DeckListScreen(state: AppState, db: SpellDatabase) {
     var showNew by remember { mutableStateOf(false) }
@@ -59,8 +60,9 @@ fun DeckListScreen(state: AppState, db: SpellDatabase) {
                     fontFamily = fonts.serif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold,
                     fontSize = 28.sp, color = Nb.accent,
                 )
+                LangToggle(state, Modifier.padding(end = 4.dp))
                 if (state.section == Section.SPELLBOOK) {
-                    NbIconButton(NbIcons.Book, "Spell compendium", { state.push(Screen.Compendium) })
+                    NbIconButton(NbIcons.Book, str.spellCompendium, { state.push(Screen.Compendium) })
                 }
                 AppMenu(state, db)
             }
@@ -73,7 +75,7 @@ fun DeckListScreen(state: AppState, db: SpellDatabase) {
                 ) {
                     inventoryListItems(state) { inv -> state.push(Screen.InventoryDetail(inv.id)) }
                 }
-            } else if (state.decks.isEmpty()) {
+            } else if (state.characters.isEmpty()) {
                 EmptyDecks(db, Modifier.weight(1f))
             } else {
                 LazyColumn(
@@ -81,35 +83,32 @@ fun DeckListScreen(state: AppState, db: SpellDatabase) {
                     contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    item { SectionHeader("My decks", size = 20.sp) }
-                    items(state.decks, key = { it.id }) { deck ->
-                        DeckItem(deck, selected = false, onClick = { state.push(Screen.DeckDetail(deck.id)) }, card = true)
+                    item { SectionHeader(str.myCharacters, size = 20.sp) }
+                    items(state.characters, key = { it.id }) { c ->
+                        CharacterItem(c, selected = false, onClick = { state.push(Screen.CharacterDetail(c.id)) }, card = true)
                     }
                 }
             }
         }
         NbFab(
-            if (state.section == Section.INVENTORY) "New inventory" else "New deck",
+            if (state.section == Section.INVENTORY) str.newInventory else str.newCharacter,
             { showNew = true },
             Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 18.dp),
         )
     }
 
     if (showNew && state.section == Section.INVENTORY) {
-        TextFieldDialog("New inventory", "", "Name (character / stash)", onDismiss = { showNew = false }) { name ->
+        TextFieldDialog(str.newInventory, "", str.inventoryNameLabel, onDismiss = { showNew = false }) { name ->
             showNew = false
             val inv = state.createInventory(name)
             state.push(Screen.InventoryDetail(inv.id))
         }
     } else if (showNew) {
-        NewDeckDialog(
-            onDismiss = { showNew = false },
-            onCreate = { name, classId, level ->
-                showNew = false
-                val deck = state.createDeck(name, classId, level)
-                state.push(Screen.DeckDetail(deck.id))
-            },
-        )
+        ClassPickerDialog(str.newCharacter, str.create, withName = true, onDismiss = { showNew = false }) { name, classId, level ->
+            showNew = false
+            val c = state.createCharacter(name, classId, level)
+            state.push(Screen.CharacterDetail(c.id))
+        }
     }
 }
 
@@ -122,32 +121,31 @@ fun DeckSidebar(state: AppState, selectedDeckId: String?, modifier: Modifier = M
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item { SectionHeader("My decks", size = 20.sp) }
-        if (state.decks.isEmpty()) {
-            item { Text("No decks yet.", color = Nb.inkMuted, fontSize = 14.sp) }
+        item { SectionHeader(str.myCharacters, size = 20.sp) }
+        if (state.characters.isEmpty()) {
+            item { Text(str.noCharactersYet, color = Nb.inkMuted, fontSize = 14.sp) }
         }
-        items(state.decks, key = { it.id }) { deck ->
-            DeckItem(deck, selected = deck.id == selectedDeckId, onClick = { state.openRoot(Screen.DeckDetail(deck.id)) })
+        items(state.characters, key = { it.id }) { c ->
+            CharacterItem(c, selected = c.id == selectedDeckId, onClick = { state.openRoot(Screen.CharacterDetail(c.id)) })
         }
         item {
-            NbDashedButton("New deck", { showNew = true }, Modifier.padding(top = 8.dp), icon = NbIcons.Plus)
+            NbDashedButton(str.newCharacter, { showNew = true }, Modifier.padding(top = 8.dp), icon = NbIcons.Plus)
         }
     }
     if (showNew) {
-        NewDeckDialog(
-            onDismiss = { showNew = false },
-            onCreate = { name, classId, level ->
-                showNew = false
-                val deck = state.createDeck(name, classId, level)
-                state.openRoot(Screen.DeckDetail(deck.id))
-            },
-        )
+        ClassPickerDialog(str.newCharacter, str.create, withName = true, onDismiss = { showNew = false }) { name, classId, level ->
+            showNew = false
+            val c = state.createCharacter(name, classId, level)
+            state.openRoot(Screen.CharacterDetail(c.id))
+        }
     }
 }
 
 @Composable
-private fun DeckItem(deck: Deck, selected: Boolean, onClick: () -> Unit, card: Boolean = false) {
-    val cls = CasterClasses.get(deck.classId)
+private fun CharacterItem(character: Character, selected: Boolean, onClick: () -> Unit, card: Boolean = false) {
+    // spell levely ukazuje první sesílací classa
+    val casterEntry = character.classes.firstOrNull { CasterClasses.get(it.classId) != null }
+    val cls = casterEntry?.let { CasterClasses.get(it.classId) }
     val fonts = LocalNbFonts.current
     val base = Modifier.fillMaxWidth().clip(Nb.shape)
     Column(
@@ -157,18 +155,18 @@ private fun DeckItem(deck: Deck, selected: Boolean, onClick: () -> Unit, card: B
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                deck.name, Modifier.weight(1f),
+                character.name, Modifier.weight(1f),
                 fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = if (card) 22.sp else 18.sp,
                 color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            if (selected) MonoLabel("Open", color = Nb.rust, size = 11.sp)
+            if (selected) MonoLabel(str.open, color = Nb.rust, size = 11.sp)
         }
         Text(
-            "${cls?.name ?: deck.classId} ${deck.classLevel} · ${spellsCount(deck.spells.size)}",
+            "${classesSummary(str, character)} · ${str.spells(character.classes.sumOf { it.spells.size })}",
             fontSize = 13.5.sp, color = Nb.inkMuted,
         )
         if (card && cls != null) {
-            Text(spellRangeText(cls, deck.classLevel), fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
+            Text("${str.nameOf(cls)}: ${spellRangeText(str, cls, casterEntry.level)}", fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -177,7 +175,7 @@ private fun DeckItem(deck: Deck, selected: Boolean, onClick: () -> Unit, card: B
 private fun EmptyDecks(db: SpellDatabase, modifier: Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(
-            "You have no decks yet.\nCreate one for your character's class and level – only spells they can cast will be offered.\nLoad an exported deck via the menu (top right) → Import deck.\n\n${db.spells.size} spells in the database.",
+            str.emptyCharacters(db.spells.size),
             textAlign = TextAlign.Center,
             color = Nb.inkMuted,
             fontSize = 15.sp,
@@ -199,62 +197,22 @@ fun AppMenu(
     var showInvImport by remember { mutableStateOf(false) }
     var showInvExport by remember { mutableStateOf(false) }
     Box {
-        NbIconButton(NbIcons.Menu, "Menu", { open = true })
+        NbIconButton(NbIcons.Menu, str.menu, { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = Nb.panel) {
-            DropdownMenuItem(text = { Text("Import deck", color = Nb.ink) }, onClick = { open = false; showImport = true })
-            if (state.decks.isNotEmpty()) {
-                DropdownMenuItem(text = { Text("Export all decks", color = Nb.ink) }, onClick = { open = false; showExport = true })
+            DropdownMenuItem(text = { Text(str.importCharacter, color = Nb.ink) }, onClick = { open = false; showImport = true })
+            if (state.characters.isNotEmpty()) {
+                DropdownMenuItem(text = { Text(str.exportAllCharacters, color = Nb.ink) }, onClick = { open = false; showExport = true })
             }
-            DropdownMenuItem(text = { Text("Import inventory", color = Nb.ink) }, onClick = { open = false; state.ensureItems(); showInvImport = true })
+            DropdownMenuItem(text = { Text(str.importInventory, color = Nb.ink) }, onClick = { open = false; state.ensureItems(); showInvImport = true })
             if (state.inventories.isNotEmpty()) {
-                DropdownMenuItem(text = { Text("Export all inventories", color = Nb.ink) }, onClick = { open = false; showInvExport = true })
+                DropdownMenuItem(text = { Text(str.exportAllInventories, color = Nb.ink) }, onClick = { open = false; showInvExport = true })
             }
-            DropdownMenuItem(text = { Text("Spell & item database / update", color = Nb.ink) }, onClick = { open = false; onDatabase() })
-            DropdownMenuItem(text = { Text("About & licenses", color = Nb.ink) }, onClick = { open = false; onAbout() })
+            DropdownMenuItem(text = { Text(str.menuDatabase, color = Nb.ink) }, onClick = { open = false; onDatabase() })
+            DropdownMenuItem(text = { Text(str.menuAbout, color = Nb.ink) }, onClick = { open = false; onAbout() })
         }
     }
     if (showImport) ImportDialog(state, db) { showImport = false }
-    if (showExport) ExportDialog(state.decks.toList(), db) { showExport = false }
+    if (showExport) ExportDialog(state, state.characters.toList(), db) { showExport = false }
     if (showInvImport) InventoryImportDialog(state) { showInvImport = false }
     if (showInvExport) InventoryExportDialog(state.inventories.toList()) { showInvExport = false }
-}
-
-@Composable
-fun NewDeckDialog(onDismiss: () -> Unit, onCreate: (String, String, Int) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var cls by remember { mutableStateOf(CasterClasses.all.first()) }
-    var level by remember { mutableIntStateOf(1) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Nb.panel,
-        title = { Text("New deck", color = Nb.ink) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name (character / build)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                SimpleDropdown(
-                    label = "Class",
-                    options = CasterClasses.all,
-                    selected = cls,
-                    optionLabel = { it.name },
-                    onSelect = { cls = it },
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MonoLabel("Character level", Modifier.weight(1f))
-                    CountStepper(level, { level = it }, min = 1, max = 20, numberSize = 18.sp)
-                }
-                Text(classLevelSummary(cls, level), fontSize = 13.sp, color = Nb.rust)
-            }
-        },
-        confirmButton = {
-            NbPrimaryButton("Create", { onCreate(name.trim().ifEmpty { "${cls.name} $level" }, cls.id, level) }, icon = null)
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.ink) } },
-    )
 }

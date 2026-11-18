@@ -14,8 +14,8 @@ expect fun createHttpClient(): HttpClient
 
 /** Uložení / sdílení a otevření textového souboru (export a import decků). */
 interface DeckFileIo {
-    /** Popisek tlačítka pro export: „Uložit do souboru“ / „Sdílet“. */
-    val saveLabel: String
+    /** Druh tlačítka pro export (popisek v `Strings.saveAction`). */
+    val saveAction: SaveAction
     /** Jestli platforma umí otevřít soubor (jinak jen vložení ze schránky). */
     val canOpen: Boolean
     /** @return true, když se uložení/sdílení spustilo. */
@@ -24,7 +24,12 @@ interface DeckFileIo {
     suspend fun openText(): String?
 }
 
+enum class SaveAction { SAVE_FILE, SHARE, DOWNLOAD }
+
 expect val deckFileIo: DeckFileIo
 
 /** Aktuální datum a čas jako text pro zobrazení (např. „16. 11. 2026 19:30“). */
 expect fun nowDisplayText(): String
+
+/** Zpět tažením od levého okraje obrazovky (iOS – nemá systémové tlačítko Zpět). */
+expect val edgeSwipeBack: Boolean

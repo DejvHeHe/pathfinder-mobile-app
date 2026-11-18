@@ -1,5 +1,11 @@
 package cz.pfspells.ui
 
+import androidx.compose.runtime.LaunchedEffect
+import cz.pfspells.data.CharacterTransfer
+import cz.pfspells.data.toDeck
+import cz.pfspells.data.toCharacter
+import cz.pfspells.data.Character
+import cz.pfspells.str
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,7 +32,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import cz.pfspells.AppState
 import cz.pfspells.data.CasterClasses
-import cz.pfspells.data.Deck
 import cz.pfspells.data.DeckImportException
 import cz.pfspells.data.DeckTransfer
 import cz.pfspells.data.Inventory
@@ -37,33 +42,84 @@ import kotlinx.coroutines.launch
 
 // ---------- konkrétní použití ----------
 
+/** Export postav (`pf-spellbook-characters` v1), volitelně i s propojenými inventáři. */
 @Composable
-fun ExportDialog(decks: List<Deck>, db: SpellDatabase, onDismiss: () -> Unit) {
-    val text = remember(decks, db) { DeckTransfer.export(decks, db) }
+fun ExportDialog(state: AppState, characters: List<Character>, db: SpellDatabase, onDismiss: () -> Unit) {
+    val s = str
+    val linked = characters.any { c -> c.inventoryId?.let { state.inventory(it) } != null }
+    var withInventory by remember { mutableStateOf(true) }
+    val text = remember(characters, db, withInventory) {
+        CharacterTransfer.export(characters, db) { c -> if (withInventory) c.inventoryId?.let { state.inventory(it) } else null }
+    }
     TextExportDialog(
-        title = if (decks.size == 1) "Export deck" else "Export ${decks.size} decks",
-        hint = "The text below contains the deck(s) with all spells. Save or send it – load it on another device via \"Import deck\".",
+        title = s.exportCharactersTitle(characters.size),
+        hint = s.exportCharactersHint,
         text = text,
-        fileName = DeckTransfer.fileName(decks.singleOrNull()?.name ?: "pf-decks"),
+        fileName = CharacterTransfer.fileName(characters.singleOrNull()?.name ?: "pf-characters"),
+        onDismiss = onDismiss,
+        options = if (linked) ({ NbCheck(withInventory, s.includeInventory) { withInventory = it } }) else null,
+    )
+}
+
+/** Import postav – nový formát i staré exporty decků. */
+@Composable
+fun ImportDialog(state: AppState, db: SpellDatabase, onDismiss: () -> Unit) {
+    val s = str
+    LaunchedEffect(Unit) { state.ensureFeats(); state.ensureItems() }
+    TextImportDialog(
+        title = s.importCharacter,
+        parse = { t ->
+            val list = CharacterTransfer.parse(t, db, state.featDb, state.itemDb)
+            ImportPreview(
+                rows = list.map { ic ->
+                    val c = ic.character
+                    ImportRow(
+                        c.name,
+                        buildString {
+                            append(classesSummary(s, c)).append(" · ").append(s.spells(c.classes.sumOf { it.spells.size }))
+                            if (c.feats.isNotEmpty()) append(" · ").append(s.featsHeader.lowercase()).append(" ").append(c.feats.size)
+                            ic.inventory?.let { append(" · ").append(s.withInventory(it.name)) }
+                        },
+                        ic.missingSpells.takeIf { it.isNotEmpty() }?.let { s.notFoundSkipped(it.joinToString()) },
+                    )
+                },
+                apply = { state.importCharacters(list) },
+            )
+        },
         onDismiss = onDismiss,
     )
 }
 
 @Composable
-fun ImportDialog(state: AppState, db: SpellDatabase, onDismiss: () -> Unit) {
+fun FeatExportDialog(c: Character, onDismiss: () -> Unit) {
+    val s = str
+    val text = remember(c.feats) { CharacterTransfer.exportFeats(c.feats) }
+    TextExportDialog(
+        title = s.exportFeatsTitle(c.feats.size),
+        hint = s.exportFeatsHint,
+        text = text,
+        fileName = CharacterTransfer.featsFileName(c.name + "-feats"),
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+fun FeatImportDialog(state: AppState, c: Character, onDismiss: () -> Unit) {
+    val s = str
     TextImportDialog(
-        title = "Import deck",
+        title = s.importFeatsTitle(c.name),
         parse = { t ->
-            val decks = DeckTransfer.parse(t, db)
+            val picks = CharacterTransfer.parseFeats(t, state.featDb)
+            val add = state.featsToImport(c.id, picks)
             ImportPreview(
-                rows = decks.map { (deck, missing) ->
+                rows = listOf(
                     ImportRow(
-                        deck.name,
-                        "${classLevelSummary(CasterClasses.get(deck.classId), deck.classLevel)} · ${spellsCount(deck.spells.size)}",
-                        missing.takeIf { it.isNotEmpty() }?.let { "Not found in the database (will be skipped): ${it.joinToString()}" },
-                    )
-                },
-                apply = { state.importDecks(decks.map { it.deck }) },
+                        s.featsImportSummary(add.size, picks.size - add.size),
+                        add.joinToString { it.name + if (it.note.isNotBlank()) " (${it.note})" else "" },
+                        null,
+                    ),
+                ),
+                apply = { state.importFeats(c.id, picks) },
             )
         },
         onDismiss = onDismiss,
@@ -74,8 +130,8 @@ fun ImportDialog(state: AppState, db: SpellDatabase, onDismiss: () -> Unit) {
 fun InventoryExportDialog(list: List<Inventory>, onDismiss: () -> Unit) {
     val text = remember(list) { InventoryTransfer.export(list) }
     TextExportDialog(
-        title = if (list.size == 1) "Export inventory" else "Export ${list.size} inventories",
-        hint = "The text below contains the inventory with coins, items and notes. Load it on another device via \"Import inventory\".",
+        title = str.exportInventoriesTitle(list.size),
+        hint = str.exportInventoriesHint,
         text = text,
         fileName = InventoryTransfer.fileName(list.singleOrNull()?.name ?: "pf-inventories"),
         onDismiss = onDismiss,
@@ -84,13 +140,14 @@ fun InventoryExportDialog(list: List<Inventory>, onDismiss: () -> Unit) {
 
 @Composable
 fun InventoryImportDialog(state: AppState, onDismiss: () -> Unit) {
+    val s = str
     TextImportDialog(
-        title = "Import inventory",
+        title = s.importInventory,
         parse = { t ->
             val list = InventoryTransfer.parse(t, state.itemDb)
             ImportPreview(
                 rows = list.map { inv ->
-                    ImportRow(inv.name, "${itemTypesCount(inv.entries.size)} · ${formatWeight(inv.totalWeight)} · ${inv.gp} gp", null)
+                    ImportRow(inv.name, "${s.itemTypes(inv.entries.size)} · ${formatWeight(inv.totalWeight)} · ${inv.gp} gp", null)
                 },
                 apply = { state.importInventories(list) },
             )
@@ -106,9 +163,18 @@ class ImportPreview(val rows: List<ImportRow>, val apply: () -> Unit)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TextExportDialog(title: String, hint: String, text: String, fileName: String, onDismiss: () -> Unit) {
+fun TextExportDialog(
+    title: String,
+    hint: String,
+    text: String,
+    fileName: String,
+    onDismiss: () -> Unit,
+    /** volby exportu pod nápovědou (např. „včetně inventáře“) */
+    options: (@Composable () -> Unit)? = null,
+) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    val s = str
     var message by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
@@ -118,6 +184,7 @@ fun TextExportDialog(title: String, hint: String, text: String, fileName: String
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(hint, style = MaterialTheme.typography.bodySmall)
+                options?.invoke()
                 Text(
                     text,
                     Modifier.fillMaxWidth().heightIn(max = 220.dp).verticalScroll(rememberScrollState()),
@@ -126,16 +193,16 @@ fun TextExportDialog(title: String, hint: String, text: String, fileName: String
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NbDashedButton("Copy", {
+                    NbDashedButton(s.copy, {
                         clipboard.setText(AnnotatedString(text))
-                        message = "Copied to clipboard."
+                        message = s.copiedToClipboard
                     })
-                    NbDashedButton(deckFileIo.saveLabel, {
+                    NbDashedButton(s.saveAction(deckFileIo.saveAction), {
                         scope.launch {
                             message = try {
-                                if (deckFileIo.saveText(fileName, text)) "Done." else null
+                                if (deckFileIo.saveText(fileName, text)) s.done else null
                             } catch (e: Exception) {
-                                "Failed: ${e.message}"
+                                s.failed(e.message)
                             }
                         }
                     }, icon = NbIcons.Share)
@@ -143,7 +210,7 @@ fun TextExportDialog(title: String, hint: String, text: String, fileName: String
                 message?.let { Text(it, color = Nb.accent) }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = Nb.ink) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(s.close, color = Nb.ink) } },
     )
 }
 
@@ -153,6 +220,7 @@ fun TextExportDialog(title: String, hint: String, text: String, fileName: String
 fun TextImportDialog(title: String, parse: (String) -> ImportPreview, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    val s = str
     var text by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf<ImportPreview?>(null) }
@@ -165,7 +233,7 @@ fun TextImportDialog(title: String, parse: (String) -> ImportPreview, onDismiss:
         try {
             preview = parse(t)
         } catch (e: DeckImportException) {
-            error = e.message
+            error = s.importError(e.reason)
         }
     }
 
@@ -176,14 +244,14 @@ fun TextImportDialog(title: String, parse: (String) -> ImportPreview, onDismiss:
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NbDashedButton("Paste from clipboard", { check(clipboard.getText()?.text ?: "") })
+                    NbDashedButton(s.pasteFromClipboard, { check(clipboard.getText()?.text ?: "") })
                     if (deckFileIo.canOpen) {
-                        NbDashedButton("Open file", {
+                        NbDashedButton(s.openFile, {
                             scope.launch {
                                 try {
                                     deckFileIo.openText()?.let(::check)
                                 } catch (e: Exception) {
-                                    error = "Cannot read the file: ${e.message}"
+                                    error = s.cannotReadFile(e.message)
                                 }
                             }
                         })
@@ -192,7 +260,7 @@ fun TextImportDialog(title: String, parse: (String) -> ImportPreview, onDismiss:
                 OutlinedTextField(
                     value = text,
                     onValueChange = ::check,
-                    label = { Text("Export text") },
+                    label = { Text(s.exportText) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp, max = 200.dp),
                     textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 )
@@ -213,8 +281,8 @@ fun TextImportDialog(title: String, parse: (String) -> ImportPreview, onDismiss:
                     preview?.apply?.invoke()
                     onDismiss()
                 },
-            ) { Text(preview?.rows?.takeIf { it.size > 1 }?.let { "Import (${it.size})" } ?: "Import") }
+            ) { Text(s.importButton(preview?.rows?.size ?: 0)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.ink) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(s.cancel, color = Nb.ink) } },
     )
 }

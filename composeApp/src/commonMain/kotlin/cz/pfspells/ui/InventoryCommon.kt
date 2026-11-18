@@ -1,5 +1,16 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.CreatureSize
+import cz.pfspells.data.Load
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
+import cz.pfspells.Strings
+import cz.pfspells.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -77,14 +88,12 @@ fun priceLabel(gp: Double?, revealed: Boolean): String = when {
 
 fun formatWeight(lb: Double?): String = if (lb == null || lb == 0.0) "—" else "${trimNumber(lb)} lb"
 
-fun itemTypesCount(n: Int) = if (n == 1) "1 item type" else "$n item types"
-
 /** „worth ≈ 187 gp“ – když je v inventáři skrytá cena, celková hodnota se taky skryje. */
-fun worthText(inv: Inventory, revealed: Boolean): String {
+fun worthText(s: Strings, inv: Inventory, revealed: Boolean): String {
     val hidden = !revealed && inv.entries.any { (it.priceGp ?: 0.0) > HIDDEN_PRICE_LIMIT }
-    if (hidden) return "worth ≈ ???"
+    if (hidden) return s.worth("???")
     val total = inv.entries.sumOf { (it.priceGp ?: 0.0) * it.qty }
-    return "worth ≈ ${formatGp(kotlin.math.round(total))}"
+    return s.worth(formatGp(kotlin.math.round(total)))
 }
 
 // ---------- komponenty ----------
@@ -94,7 +103,7 @@ fun worthText(inv: Inventory, revealed: Boolean): String {
 fun SectionTabs(state: AppState, modifier: Modifier = Modifier, size: TextUnit = 18.sp) {
     val fonts = LocalNbFonts.current
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-        listOf(Section.SPELLBOOK to "Spellbook", Section.INVENTORY to "Inventory").forEach { (s, label) ->
+        listOf(Section.SPELLBOOK to str.tabSpellbook, Section.INVENTORY to str.tabInventory).forEach { (s, label) ->
             val selected = state.section == s
             Column(
                 Modifier.width(IntrinsicSize.Max).clip(Nb.shape).clickable { if (!selected) state.switchSection(s) }
@@ -113,7 +122,7 @@ fun SectionTabs(state: AppState, modifier: Modifier = Modifier, size: TextUnit =
 fun CoinTile(label: String, value: Int, onEdit: () -> Unit, modifier: Modifier = Modifier, big: Boolean = false) {
     val fonts = LocalNbFonts.current
     Column(
-        modifier.clip(Nb.shape).background(Nb.panel).dashedBorder().clickable(onClickLabel = "Edit $label", onClick = onEdit)
+        modifier.clip(Nb.shape).background(Nb.panel).dashedBorder().clickable(onClickLabel = str.editCoin(label), onClick = onEdit)
             .padding(vertical = if (big) 10.dp else 8.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -137,7 +146,7 @@ fun CoinRow(state: AppState, inv: Inventory, big: Boolean = false) {
     }
     editing?.let { coin ->
         val current = when (coin) { "PP" -> inv.pp; "GP" -> inv.gp; "SP" -> inv.sp; else -> inv.cp }
-        NumberDialog("$coin – coins", current, onDismiss = { editing = null }) { v ->
+        NumberDialog(str.coinsTitle(coin), current, onDismiss = { editing = null }) { v ->
             state.updateInventory(inv.id) {
                 when (coin) { "PP" -> it.copy(pp = v); "GP" -> it.copy(gp = v); "SP" -> it.copy(sp = v); else -> it.copy(cp = v) }
             }
@@ -146,33 +155,102 @@ fun CoinRow(state: AppState, inv: Inventory, big: Boolean = false) {
     }
 }
 
-/** Celková váha + ukazatel zatížení podle STR. */
+/** Barva stupně zatížení: olivová → okrová → rezavá → červená. */
+fun loadColor(l: Load): Color = when (l) {
+    Load.LIGHT -> Nb.accent
+    Load.MEDIUM -> Nb.ochre
+    Load.HEAVY -> Nb.rust
+    Load.OVERLOADED -> Nb.error
+}
+
+/** Celková váha, pruh zatížení s úseky light / medium / heavy, štítek stavu, postihy, STR a velikost tvora. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
-    val heavy = CarryingCapacity.heavyLoad(inv.strength)
+    val s = str
     val w = inv.totalWeight
-    val fraction = if (heavy > 0) (w / heavy).toFloat().coerceIn(0f, 1f) else 1f
-    val over = w > heavy
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth()) {
-            Text("Total weight", Modifier.weight(1f), fontSize = 14.sp, color = Nb.ink)
-            Text(formatWeight(w).replace("—", "0 lb"), fontFamily = LocalNbFonts.current.mono, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (over) Nb.error else Nb.ink)
+    val load = inv.load
+    val color = loadColor(load)
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(s.totalWeight, Modifier.weight(1f), fontSize = 14.sp, color = Nb.ink)
+            Text(
+                formatWeight(w).replace("—", "0 lb"),
+                fontFamily = LocalNbFonts.current.mono, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                color = if (load == Load.OVERLOADED) Nb.error else Nb.ink,
+            )
         }
-        Box(Modifier.fillMaxWidth().height(12.dp).dashedBorder(radius = 3.dp).padding(2.dp)) {
-            Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(Nb.shape).background(if (over) Nb.error else Nb.accent))
+        LoadMeter(w, inv.lightLoad, inv.mediumLoad, inv.heavyLoad, color)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                s.loadName(load),
+                Modifier.clip(Nb.shape).background(color).padding(horizontal = 10.dp, vertical = 4.dp),
+                color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+            )
+            if (inv.coinWeight > 0) {
+                Text(s.coinsWeight(formatWeight(inv.coinWeight)), Modifier.padding(top = 4.dp), fontSize = 12.5.sp, color = Nb.inkMuted)
+            }
+        }
+        s.loadPenalties(load)?.let {
+            Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = color, fontWeight = FontWeight.SemiBold)
         }
         Text(
-            "${CarryingCapacity.loadName(inv.strength, w)} · light ≤ ${formatWeight(CarryingCapacity.lightLoad(inv.strength))}, " +
-                "medium ≤ ${formatWeight(CarryingCapacity.mediumLoad(inv.strength))}, heavy ≤ ${formatWeight(heavy)}" +
-                if (inv.coinWeight > 0) " · coins ${formatWeight(inv.coinWeight)}" else "",
-            fontSize = 12.5.sp, color = Nb.inkMuted, lineHeight = 17.sp,
+            s.loadLimits(formatWeight(inv.lightLoad), formatWeight(inv.mediumLoad), formatWeight(inv.heavyLoad)),
+            fontSize = 12.sp, color = Nb.inkMuted, lineHeight = 16.sp,
         )
         if (showStrength) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MonoLabel("Strength", Modifier.weight(1f))
-                CountStepper(inv.strength, { s -> state.updateInventory(inv.id) { it.copy(strength = s) } }, min = 1, max = 60, size = 32.dp, numberSize = 16.sp)
+                val owner = state.characterOfInventory(inv.id)
+                Column(Modifier.weight(1f)) {
+                    MonoLabel(s.strength)
+                    if (owner != null) Text(s.strengthFromCharacter(owner.name), fontSize = 12.sp, color = Nb.inkMuted)
+                }
+                CountStepper(inv.strength, { v -> state.setInventoryStrength(inv.id, v) }, min = 1, max = 60, size = 32.dp, numberSize = 16.sp)
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SimpleDropdown(
+                    s.sizeLabel, CreatureSize.entries, inv.creatureSize, { s.creatureSize(it) },
+                    { c -> state.updateInventory(inv.id) { it.copy(size = c.name) } },
+                )
+                Box(Modifier.padding(top = 5.dp)) {
+                    NbFilterChip(s.quadruped, inv.quadruped) { state.updateInventory(inv.id) { it.copy(quadruped = !it.quadruped) } }
+                }
             }
         }
+    }
+}
+
+/** Pruh: podbarvené úseky light / medium / heavy, značky hranic, výplň a ukazatel aktuální váhy. */
+@Composable
+private fun LoadMeter(w: Double, light: Double, medium: Double, heavy: Double, color: Color) {
+    val scaleMax = maxOf(heavy, w).takeIf { it > 0 } ?: 1.0
+    val ink = Nb.ink
+    val zones = listOf(Nb.accent, Nb.ochre, Nb.rust, Nb.error)
+    Canvas(
+        Modifier.fillMaxWidth().height(18.dp).clip(Nb.shape).background(Nb.inset).border(1.dp, Nb.rule, Nb.shape),
+    ) {
+        val width = size.width
+        val h = size.height
+        fun x(v: Double) = (v / scaleMax).toFloat().coerceIn(0f, 1f) * width
+        val bounds = listOf(0.0, light, medium, heavy, scaleMax)
+        for (i in 0 until 4) {
+            val x0 = x(bounds[i])
+            val x1 = x(bounds[i + 1])
+            if (x1 > x0) drawRect(zones[i].copy(alpha = 0.16f), Offset(x0, 0f), Size(x1 - x0, h))
+        }
+        drawRect(color, Offset(0f, h * 0.28f), Size(x(w), h * 0.44f))
+        listOf(light, medium, heavy).forEach { b ->
+            val bx = x(b).coerceIn(1f, width - 1f)
+            drawLine(ink.copy(alpha = 0.45f), Offset(bx, 0f), Offset(bx, h), strokeWidth = 1.dp.toPx())
+        }
+        val px = x(w).coerceIn(1.5.dp.toPx(), width - 1.5.dp.toPx())
+        drawLine(ink, Offset(px, 0f), Offset(px, h), strokeWidth = 3.dp.toPx())
     }
 }
 
@@ -191,8 +269,8 @@ fun NumberDialog(title: String, initial: Int, onDismiss: () -> Unit, onSave: (In
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
         },
-        confirmButton = { NbPrimaryButton("Save", { value?.let(onSave) }, icon = null, enabled = value != null) },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.ink) } },
+        confirmButton = { NbPrimaryButton(str.save, { value?.let(onSave) }, icon = null, enabled = value != null) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(str.cancel, color = Nb.ink) } },
     )
 }
 
@@ -204,7 +282,7 @@ fun TextFieldDialog(title: String, initial: String, label: String, onDismiss: ()
         containerColor = Nb.panel,
         title = { Text(title, color = Nb.ink) },
         text = { OutlinedTextField(text, { text = it }, label = { Text(label) }, singleLine = true) },
-        confirmButton = { NbPrimaryButton("Save", { onSave(text.trim()) }, icon = null, enabled = text.isNotBlank()) },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.ink) } },
+        confirmButton = { NbPrimaryButton(str.save, { onSave(text.trim()) }, icon = null, enabled = text.isNotBlank()) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(str.cancel, color = Nb.ink) } },
     )
 }

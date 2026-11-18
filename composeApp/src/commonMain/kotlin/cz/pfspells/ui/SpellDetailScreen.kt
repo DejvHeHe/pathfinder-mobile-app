@@ -1,5 +1,7 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.bonusSpellsByLevel
+import cz.pfspells.str
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,18 +38,20 @@ import cz.pfspells.data.SpellDatabase
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckId: String?, aside: Boolean = false) {
+fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charId: String?, classId: String? = null, aside: Boolean = false) {
     val spell = db.get(spellId)
     if (spell == null) {
         LaunchedEffect(spellId) { state.pop() }
         return
     }
     val fonts = LocalNbFonts.current
-    val deck = deckId?.let { state.deck(it) }
+    val s = str
+    val deck = charId?.let { state.spellbook(it, classId) }
     val cls = deck?.let { CasterClasses.get(it.classId) }
-    val canAdd = deck != null && cls != null && cls.canCast(spell, deck.classLevel)
     val inDeck = deck?.spells?.get(spell.id) ?: 0
-    val add = { state.addSpell(deck!!.id, spell.id) }
+    // spontánní classa: známé kouzlo podruhé nepřidává
+    val canAdd = deck != null && cls != null && cls.canCast(spell, deck.classLevel) && !(cls.distinctSpells && inDeck > 0)
+    val add = { state.addSpell(deck!!.id, deck.classId, spell.id) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -62,7 +66,14 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckI
                     fontSize = if (aside) 36.sp else 24.sp, lineHeight = if (aside) 38.sp else 26.sp,
                     color = Nb.ink, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                if (aside) NbIconButton(NbIcons.Close, "Close details", { state.pop() }, Nb.inkMuted)
+                val fav = state.isFavorite(spell.id)
+                NbIconButton(
+                    if (fav) NbIcons.StarFilled else NbIcons.Star,
+                    if (fav) s.removeFavorite else s.addFavorite,
+                    { state.toggleFavorite(spell.id) },
+                    if (fav) Nb.rust else Nb.inkMuted,
+                )
+                if (aside) NbIconButton(NbIcons.Close, s.closeDetails, { state.pop() }, Nb.inkMuted)
             }
             SelectionContainer(Modifier.weight(1f)) {
                 Column(
@@ -71,31 +82,34 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckI
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        NbTag(spell.school.replaceFirstChar { it.uppercase() } + (spell.subschool?.let { " ($it)" } ?: ""))
+                        NbTag(s.school(spell.school) + (spell.subschool?.let { " (${s.subschool(it)})" } ?: ""))
                         spell.descriptor?.let { NbTag("[$it]", Nb.rust) }
                         spell.levels.forEach { (list, lvl) ->
-                            NbTag("${list.replaceFirstChar { it.uppercase() }} $lvl")
+                            NbTag("${s.spellListName(list)} $lvl")
                         }
+                        if (!spell.pfsLegal) NbTag(s.notPfsLegal, Nb.error)
                     }
 
                     NbPanel(Modifier.fillMaxWidth(), color = if (aside) Nb.paper else Nb.panel) {
                         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            StatLine("Casting Time", spell.castingTime)
-                            StatLine("Components", spell.components)
-                            StatLine("Range", spell.range)
-                            StatLine("Effect", spell.effect)
-                            StatLine("Target", spell.targets)
-                            StatLine("Duration", spell.duration)
-                            StatLine("Saving Throw", spell.savingThrow)
-                            StatLine("Spell Resistance", spell.spellResistance)
+                            StatLine(s.castingTime, spell.castingTime)
+                            StatLine(s.components, spell.components)
+                            StatLine(s.range, spell.range)
+                            StatLine(s.effect, spell.effect)
+                            StatLine(s.target, spell.targets)
+                            StatLine(s.duration, spell.duration)
+                            StatLine(s.savingThrow, spell.savingThrow)
+                            StatLine(s.spellResistance, spell.spellResistance)
                         }
                     }
 
-                    if (deck != null && cls != null && !canAdd) {
-                        Text("${cls.name} ${deck.classLevel} cannot cast this spell.", color = Nb.error, fontSize = 13.sp)
+                    // kouzlo podtřídy (doména, mystérium…) – mimo class list, ale postava ho má
+                    val subclassSpell = deck != null && deck.entry.bonusSpellsByLevel(db.subclasses).values.any { l -> l.any { it.id == spell.id } }
+                    if (deck != null && cls != null && !canAdd && !subclassSpell && inDeck == 0) {
+                        Text(s.cannotCastThis(s.nameOf(cls), deck.classLevel), color = Nb.error, fontSize = 13.sp)
                     }
 
-                    SectionHeader("Description", Modifier.padding(top = 0.dp))
+                    SectionHeader(s.description, Modifier.padding(top = 0.dp))
                     spell.shortDescription?.let {
                         Text(it, fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = if (aside) 20.sp else 19.sp, lineHeight = 25.sp, color = Nb.ink)
                     }
@@ -104,17 +118,17 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckI
                     }
 
                     spell.mythic?.let { mythic ->
-                        SectionHeader("Mythic")
+                        SectionHeader(s.mythic)
                         mythic.split('\n').filter { it.isNotBlank() }.forEach {
                             Text(it.trim(), fontSize = 14.5.sp, lineHeight = 22.5.sp, color = Nb.ink)
                         }
                     }
 
-                    spell.source?.let { Text("Source: $it", fontSize = 12.5.sp, color = Nb.inkMuted) }
+                    spell.source?.let { Text(s.sourceLine(it), fontSize = 12.5.sp, color = Nb.inkMuted) }
                     spell.url?.let { url ->
                         val uri = LocalUriHandler.current
                         Text(
-                            "Open on Archives of Nethys",
+                            s.openOnAon,
                             Modifier.clickable { runCatching { uri.openUri(url) } }.padding(vertical = 4.dp),
                             color = Nb.accent, fontSize = 14.sp, textDecoration = TextDecoration.Underline,
                         )
@@ -123,7 +137,7 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckI
                     if (aside && canAdd) {
                         Spacer(Modifier.height(4.dp))
                         NbPrimaryButton(
-                            if (inDeck > 0) "Add a copy ($inDeck in deck)" else "Add to deck",
+                            if (inDeck > 0) s.addCopy(inDeck) else s.addToCharacter,
                             add,
                         )
                     }
@@ -132,7 +146,7 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, deckI
         }
         if (!aside && canAdd) {
             NbFab(
-                if (inDeck > 0) "Add to deck (×$inDeck)" else "Add to deck",
+                if (inDeck > 0) s.addToCharacterCount(inDeck) else s.addToCharacter,
                 add,
                 Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 18.dp),
             )

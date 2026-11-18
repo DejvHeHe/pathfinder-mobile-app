@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,11 +45,11 @@ import cz.pfspells.data.ItemCategory
 
 /** Obsah záložky Inventory na mobilní úvodní obrazovce. */
 fun LazyListScope.inventoryListItems(state: AppState, onOpen: (Inventory) -> Unit) {
-    item { SectionHeader("My inventories", size = 20.sp) }
+    item { SectionHeader(str.myInventories, size = 20.sp) }
     if (state.inventories.isEmpty()) {
         item {
             Text(
-                "No inventories yet.\nCreate one for each character (or a shared party stash) and add items from the PF1 item database.",
+                str.noInventoriesYet,
                 Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center, color = Nb.inkMuted, fontSize = 15.sp,
             )
         }
@@ -73,10 +74,10 @@ fun InventoryItemCard(state: AppState, inv: Inventory, selected: Boolean, card: 
                 fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = if (card) 22.sp else 18.sp,
                 color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            if (selected) MonoLabel("Open", color = Nb.rust, size = 11.sp)
+            if (selected) MonoLabel(str.open, color = Nb.rust, size = 11.sp)
         }
-        Text("${itemTypesCount(inv.entries.size)} · ${formatWeight(inv.totalWeight).replace("—", "0 lb")}", fontSize = 13.5.sp, color = Nb.inkMuted)
-        if (card) Text("${inv.gp} gp · ${worthText(inv, state.pricesRevealed)}", fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
+        Text("${str.itemTypes(inv.entries.size)} · ${formatWeight(inv.totalWeight).replace("—", "0 lb")}", fontSize = 13.5.sp, color = Nb.inkMuted)
+        if (card) Text("${inv.gp} gp · ${worthText(str, inv, state.pricesRevealed)}", fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
@@ -89,24 +90,24 @@ fun InventorySidebar(state: AppState, selected: Inventory?, modifier: Modifier =
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item { SectionHeader("My inventories", size = 20.sp) }
+        item { SectionHeader(str.myInventories, size = 20.sp) }
         items(state.inventories, key = { it.id }) { inv ->
             InventoryItemCard(state, inv, selected = inv.id == selected?.id, card = false) {
                 state.openRoot(Screen.InventoryDetail(inv.id))
             }
         }
-        item { NbDashedButton("New inventory", { showNew = true }, Modifier.padding(top = 4.dp), icon = NbIcons.Plus) }
+        item { NbDashedButton(str.newInventory, { showNew = true }, Modifier.padding(top = 4.dp), icon = NbIcons.Plus) }
         if (selected != null) {
-            item { SectionHeader("Purse", size = 20.sp) }
+            item { SectionHeader(str.purse, size = 20.sp) }
             item { CoinRow(state, selected, big = true) }
-            item { SectionHeader("Load", size = 20.sp) }
+            item { SectionHeader(str.load, size = 20.sp) }
             item { LoadBar(state, selected) }
-            item { SectionHeader("Categories", size = 20.sp) }
+            item { SectionHeader(str.categories, size = 20.sp) }
             item { CategoryFilterList(state, selected) }
         }
     }
     if (showNew) {
-        TextFieldDialog("New inventory", "", "Name (character / stash)", onDismiss = { showNew = false }) { name ->
+        TextFieldDialog(str.newInventory, "", str.inventoryNameLabel, onDismiss = { showNew = false }) { name ->
             showNew = false
             val inv = state.createInventory(name)
             state.openRoot(Screen.InventoryDetail(inv.id))
@@ -118,9 +119,9 @@ fun InventorySidebar(state: AppState, selected: Inventory?, modifier: Modifier =
 private fun CategoryFilterList(state: AppState, inv: Inventory) {
     val counts = inv.entries.groupingBy { it.cat }.eachCount()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        CategoryRow("All", inv.entries.size, state.inventoryCategory == null) { state.inventoryCategory = null }
+        CategoryRow(str.all, inv.entries.size, state.inventoryCategory == null) { state.inventoryCategory = null }
         ItemCategory.entries.filter { (counts[it] ?: 0) > 0 }.forEach { c ->
-            CategoryRow(c.label, counts[c] ?: 0, state.inventoryCategory == c) {
+            CategoryRow(str.category(c), counts[c] ?: 0, state.inventoryCategory == c) {
                 state.inventoryCategory = if (state.inventoryCategory == c) null else c
             }
         }
@@ -151,6 +152,7 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
     var rename by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var export by remember { mutableStateOf(false) }
+    val s = str
     val revealed = state.pricesRevealed
     val q = state.inventoryQuery.trim().lowercase()
     val catFilter = if (wide) state.inventoryCategory else null
@@ -159,9 +161,9 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
     }
     val grouped = visible.groupBy { it.cat }.entries.sortedBy { it.key.ordinal } // toSortedMap není v common
     val subtitle = buildString {
-        append(itemTypesCount(inv.entries.size))
+        append(s.itemTypes(inv.entries.size))
         if (wide) append(" · ").append(formatWeight(inv.totalWeight).replace("—", "0 lb"))
-        append(" · ").append(worthText(inv, revealed))
+        append(" · ").append(worthText(s, inv, revealed))
     }
     val openPicker: () -> Unit = { if (wide) state.openRoot(Screen.ItemPicker(invId)) else state.push(Screen.ItemPicker(invId)) }
 
@@ -170,11 +172,11 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
         subtitle = subtitle,
         onBack = if (wide) null else ({ state.pop() }),
         wide = wide,
-        primary = if (wide) null else "Add item" to openPicker, // na širokém okně je v hlavičce
+        primary = if (wide) null else s.addItem to openPicker, // na širokém okně je v hlavičce
         actions = {
-            NbIconButton(NbIcons.Share, "Export inventory", { export = true }, Nb.inkMuted, 19.dp)
-            NbIconButton(NbIcons.Pencil, "Rename", { rename = true }, Nb.inkMuted, 19.dp)
-            NbIconButton(NbIcons.Trash, "Delete inventory", { confirmDelete = true }, Nb.inkMuted, 19.dp)
+            NbIconButton(NbIcons.Share, s.exportInventory, { export = true }, Nb.inkMuted, 19.dp)
+            NbIconButton(NbIcons.Pencil, s.rename, { rename = true }, Nb.inkMuted, 19.dp)
+            NbIconButton(NbIcons.Trash, s.deleteInventory, { confirmDelete = true }, Nb.inkMuted, 19.dp)
         },
     ) {
         LazyColumn(
@@ -191,13 +193,13 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
             if (inv.entries.isEmpty()) {
                 item {
                     Text(
-                        "This inventory is empty. Add items from the database with \"Add item\".",
+                        s.inventoryEmpty,
                         Modifier.fillMaxWidth().padding(32.dp), textAlign = TextAlign.Center, color = Nb.inkMuted,
                     )
                 }
             }
             grouped.forEach { (cat, list) ->
-                item(key = "h-${cat.name}") { SectionHeader(cat.label) }
+                item(key = "h-${cat.name}") { SectionHeader(s.category(cat)) }
                 items(list, key = { it.id }) { e ->
                     EntryRow(
                         entry = e, wide = wide, revealed = revealed, selected = e.id == selectedEntryId,
@@ -208,8 +210,8 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
             }
             item(key = "notes") {
                 Column(Modifier.padding(top = 6.dp)) {
-                    SectionHeader("Notes")
-                    Text("Free notes (keys, debts, stash locations…)", fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(bottom = 6.dp))
+                    SectionHeader(s.notes)
+                    Text(s.notesHint, fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(bottom = 6.dp))
                     OutlinedTextField(
                         value = inv.notes,
                         onValueChange = { t -> state.updateInventory(invId) { it.copy(notes = t) } },
@@ -224,7 +226,7 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
 
     if (export) InventoryExportDialog(listOf(inv)) { export = false }
     if (rename) {
-        TextFieldDialog("Rename inventory", inv.name, "Name", onDismiss = { rename = false }) { n ->
+        TextFieldDialog(s.renameInventory, inv.name, s.name, onDismiss = { rename = false }) { n ->
             rename = false
             state.updateInventory(invId) { it.copy(name = n) }
         }
@@ -233,16 +235,16 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             containerColor = Nb.panel,
-            title = { Text("Delete inventory?", color = Nb.ink) },
-            text = { Text("Inventory \"${inv.name}\" will be permanently deleted.", color = Nb.ink) },
+            title = { Text(s.deleteInventoryTitle, color = Nb.ink) },
+            text = { Text(s.deleteInventoryText(inv.name), color = Nb.ink) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     if (wide) state.openRoot(Screen.Decks) else state.pop()
                     state.deleteInventory(invId)
-                }) { Text("Delete", color = Nb.error) }
+                }) { Text(s.delete, color = Nb.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel", color = Nb.ink) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(s.cancel, color = Nb.ink) } },
         )
     }
 }
@@ -253,11 +255,11 @@ private fun InventoryTableHeader() {
         Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        MonoLabel("Item", Modifier.weight(3f))
-        MonoLabel("Qty", Modifier.width(108.dp))
-        MonoLabel("Weight", Modifier.weight(1f))
-        MonoLabel("Price", Modifier.weight(1f))
-        MonoLabel("Notes", Modifier.weight(2f))
+        MonoLabel(str.colItem, Modifier.weight(3f))
+        MonoLabel(str.colQty, Modifier.width(108.dp))
+        MonoLabel(str.colWeight, Modifier.weight(1f))
+        MonoLabel(str.colPrice, Modifier.weight(1f))
+        MonoLabel(str.colNotes, Modifier.weight(2f))
     }
 }
 

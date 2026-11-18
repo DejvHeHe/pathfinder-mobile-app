@@ -26,8 +26,23 @@ Pole JSON objektů, mimo jiné:
 - Spelly bez class listu (jen SLA, domény) se přeskočí.
 - `id` = slug jména (`Abadar's Truthtelling` → `abadar-s-truthtelling`), kolize dostanou `-2`, `-3`.
 - Parser odmítne soubor s ≤ 100 spelly (ochrana proti stažení nesmyslu).
+- `pfsLegal` z pole `PFS legal` (~340 spellů není povolených v Pathfinder Society; chybí-li, bere se jako povolené).
 
-Ve zdroji jsou i domény, subdomény, mystéria, bloodline a elemental school (`access_ways.*`) – appka je zatím nepoužívá.
+Ze zdroje se čtou i domény, subdomény, mystéria, bloodline a elementární školy (`access_ways.*` → `Spell.subLevels`,
+klíč „domain:fire“ → spell level). Zdroj má chyby, které parser opravuje: mezery a velká písmena („ war“, „Plant“),
+překlepy („aristocra“, „kyton (evil, kaw)“), varianty „(u)“ a „juju(PZO…)“, slepené záznamy („Elemental School air“
+v bloodline) se zahodí. Výsledek: 37 domén, 113 subdomén, 34 mystérií, 25 bloodlin, 7 elementárních škol.
+
+| Classa | Podtřída | Bonusová kouzla |
+|---|---|---|
+| cleric | 2 domény (+ subdoména ke každé) | doménový slot: 1 kouzlo domény na spell level (`ClassEntry.bonusSpells`) |
+| druid | doména (+ subdoména) | doménový slot jako cleric |
+| oracle | mystérium | známé kouzlo levelu N od úrovně 2N |
+| sorcerer | bloodline | známé kouzlo levelu N od úrovně 2N + 1 |
+| wizard | škola / elementární škola + opoziční školy | +1 slot na spell level pro kouzla školy; opoziční kouzla s upozorněním (2 sloty) |
+
+Subdoména nahrazuje kouzla své domény na levelech, které uvádí. Vazbu subdoména → doména zdroj neobsahuje, takže ji
+vybírá uživatel. Patron (witch), spirit (shaman), bloodline bloodragera a psychic discipline ve zdroji nejsou.
 
 ## Itemy
 
@@ -90,12 +105,61 @@ Stáhne tři CSV z GitHubu (`raw.githubusercontent.com/Vireche/randomitemgenerat
 | SPONTANEOUS_9 | sorcerer, oracle, psychic, arcanist | `L<4 → 1`, jinak `min(9, L/2)` |
 | SIX | bard, skald, inquisitor, magus, alchemist, investigator, summoner (+unchained), warpriest, hunter, mesmerist, occultist, spiritualist | `min(6, (L+2)/3)` |
 | FOUR | paladin, antipaladin, ranger, bloodrager | `L<4 → žádné`, jinak `min(4, (L-1)/3)` |
+| FOUR_KNACKS | medium | `L<4 → 0` (jen knacky), jinak `min(4, (L-1)/3)` |
 
 - Level 0 (cantripy/orisony/knacks) mají všichni kromě FOUR, alchemista a investigatora.
 - Classy s více listy berou nižší level: hunter = hunter/druid/ranger, warpriest = warpriest/cleric,
   skald = skald/bard, investigator = investigator/alchemist, arcanist = sorcerer/wizard, oracle = cleric/oracle.
-- Vynechané: medium, adept. Domény, mystéria, patroni, bloodline zatím ne.
+- Medium (Occult Adventures, Table 1-2): knacky od 1. úrovně, 1st na 4, 2nd na 7, 3rd na 10, 4th na 13.
+- Vynechané: adept (NPC classa). Podtřídy viz výše (patroni, spirity zatím ne).
+
+### Lektvary, svitky a hůlky ze spellu (`SpellItemKind`)
+Cena podle Core Rulebooku: lektvar 50 gp × SL × CL (max 3. level), svitek 25 gp × SL × CL, hůlka 750 gp × SL × CL
+(max 4. level, 50 nábojů); spell 0. levelu se počítá jako ½. Výchozí CL = minimum pro daný level (1, 1, 3, 5, 7 …),
+level podle zvoleného spell listu. Drahé materiální složky appka jen připomene, k ceně je nepřičítá.
+
+### Classy pro multiclass (`ClassTable.kt`)
+`python tools/build_classes.py` (pyyaml) vygeneruje `data/ClassTable.kt` z Foundry VTT PF1 `packs/classes`:
+49 class (základní, hybridní, occult, unchained a NPC) s progresí BAB (high = L, med = ¾ L, low = ½ L), dobrými
+záchranami (2 + L/2, jinak L/3), HD a skill body. Multiclass = součet za každou classu. Prestižní classy zatím ne.
+
+### Featy (`Feats.json`)
+`python tools/build_feats.py` stáhne přehled [aonprd.com/Feats.aspx](https://aonprd.com/Feats.aspx) (jméno, prerekvizity,
+shrnutí, PFS) a detail každého featu (typy, zdroj, flavor, sekce Benefit / Normal / Special…). ~3 400 požadavků po 1 s
+(AoN odpovídá pomalu → ~3 h), stránky se cachují v `build/feat-cache`, takže přerušený běh pokračuje. Značky AoN ve jménech
+(`*` mythic verze, `⊤`, `†`) se odstraní. Featy appka **neaktualizuje** (tolik požadavků z aplikace není rozumné).
+
+Prerekvizity (`FeatPrereqs`): text se rozdělí podle čárek a středníků mimo závorky; ověřují se atributy („Str 13“),
+BAB, úroveň postavy, úroveň classy („fighter level 4th“), caster level (nejvyšší úroveň sesílací classy), „ability to cast
+Nth-level spells“ a featy postavy (u „Weapon Focus (longsword)“ stačí mít Weapon Focus). „A or B“ = stačí jedna.
+Ostatní (skill ranky, rasa, class features) = „ověř ručně“ (?). Nic se nevynucuje.
+
+Počet featů (`featSlots`): 1. a každá lichá úroveň postavy + bonusové featy class (fighter 1 + sudé úrovně, wizard 5/10/15/20,
+monk 1/2/6/10/14/18, magus 5/11/17, warpriest a inquisitor/hunter (teamwork) každá 3., brawler 2/5/8…, swashbuckler
+a gunslinger každá 4., cavalier/samurai 6/12/18, ranger 2/6/10/14/18, sorcerer 7/13/19, bloodrager 6/9/12/15/18)
++ ruční „Navíc“ (human, traity…).
+
+### Sloty a spells known (`CastingTable.kt`)
+`python tools/build_casting.py` (jen standardní knihovna, ~27 požadavků po 1 s) stáhne stránky class z Archives of Nethys
+a z jejich tabulek vygeneruje `data/CastingTable.kt`: pro každou z 27 sesílajících class spells per day a spells known
+(arcanist: spells prepared). Řádek = úroveň classy 1–20, hodnota pro spell level 0–9, `-` = classa level nemá
+(u spontánních tříd triky „libovolně“). Testy (`SlotTableTest`) hlídají shodu s progresí spell levelů a vzorky z CRB.
+
+- `CastingKind`: PREPARED (limit = kopie podle slotů), SPONTANEOUS (limit = známá kouzla, sesílá ze slotů),
+  HYBRID (arcanist – limit připravených, sesílá ze slotů). Spontánní/arcanist mají každé kouzlo jen jednou.
+- Bonusová kouzla z atributu sesílání (CRB tab. 1–3): od modifikátoru ≥ spell level `(mod − level) / 4 + 1`, triky nemají.
+  Kouzlo levelu N vyžaduje atribut ≥ 10 + N (UI jen upozorní). Occultist nemá tabulku known (kouzla dávají implementy).
 
 ### Nosnost (`CarryingCapacity`)
 Heavy load podle STR 1–29 z Core Rulebooku (10 → 100 lb, 18 → 300 lb, 29 → 1 400 lb), nad 29 každých +10 STR ×4.
-Light = ⌊heavy/3⌋, medium = ⌊heavy·2/3⌋. Počítá se pro tvora velikosti Medium. Mince: 50 ks = 1 lb.
+Light = ⌊heavy/3⌋, medium = ⌊heavy·2/3⌋. Mince: 50 ks = 1 lb.
+
+Násobitel podle velikosti tvora (`CreatureSize`, uložený v inventáři jako `size` + `quadruped`):
+
+| Velikost | Fine | Diminutive | Tiny | Small | Medium | Large | Huge | Gargantuan | Colossal |
+|---|---|---|---|---|---|---|---|---|---|
+| dvounohý | ×1/8 | ×1/4 | ×1/2 | ×3/4 | ×1 | ×2 | ×4 | ×8 | ×16 |
+| čtyřnohý | ×1/4 | ×1/2 | ×3/4 | ×1 | ×1½ | ×3 | ×6 | ×12 | ×24 |
+
+Postihy zatížení (`Load`): medium – max Dex +3, check penalty −3, běh ×4; heavy – max Dex +1, check −6, běh ×3;
+obojí rychlost 30 → 20 ft (20 → 15 ft). Přetížení – jen 5 ft za kolo, bez Dex bonusu k AC.

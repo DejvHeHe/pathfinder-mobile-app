@@ -118,6 +118,8 @@ data class InventoryDto(
     val coins: Coins = Coins(),
     val notes: String = "",
     val items: List<InvEntryDto> = emptyList(),
+    val size: String = CreatureSize.MEDIUM.name,
+    val quadruped: Boolean = false,
 )
 
 @Serializable
@@ -142,44 +144,48 @@ object InventoryTransfer {
 
     fun export(list: List<Inventory>): String = json.encodeToString(
         InventoryFile.serializer(),
-        InventoryFile(inventories = list.map { inv ->
-            InventoryDto(
-                name = inv.name, strength = inv.strength, coins = Coins(inv.pp, inv.gp, inv.sp, inv.cp), notes = inv.notes,
-                items = inv.entries.map { InvEntryDto(it.name, it.itemId, it.category, it.qty, it.priceGp, it.weightLb, it.note, it.info) },
-            )
-        }),
+        InventoryFile(inventories = list.map(::toDto)),
     )
 
-    /** @throws DeckImportException s anglickou hláškou */
+    fun toDto(inv: Inventory) = InventoryDto(
+        name = inv.name, strength = inv.strength, coins = Coins(inv.pp, inv.gp, inv.sp, inv.cp), notes = inv.notes,
+        size = inv.size, quadruped = inv.quadruped,
+        items = inv.entries.map { InvEntryDto(it.name, it.itemId, it.category, it.qty, it.priceGp, it.weightLb, it.note, it.info) },
+    )
+
+    /** Inventář z exportu (bez id); itemy se párují s databází podle id, pak jména. */
+    fun fromDto(dto: InventoryDto, db: ItemDatabase?) = Inventory(
+        id = "",
+        name = dto.name.trim().ifEmpty { "Imported inventory" },
+        strength = dto.strength.coerceIn(1, 60),
+        pp = dto.coins.pp.coerceAtLeast(0), gp = dto.coins.gp.coerceAtLeast(0),
+        sp = dto.coins.sp.coerceAtLeast(0), cp = dto.coins.cp.coerceAtLeast(0),
+        notes = dto.notes,
+        size = CreatureSize.of(dto.size).name,
+        quadruped = dto.quadruped,
+        entries = dto.items.filter { it.qty > 0 && it.name.isNotBlank() }.map { e ->
+            val linked = e.itemId?.let { db?.get(it) } ?: db?.findByName(e.name)
+            InvEntry(
+                id = newEntryId(), itemId = linked?.id ?: e.itemId, name = e.name, category = e.category,
+                qty = e.qty.coerceAtMost(9999), priceGp = e.price, weightLb = e.weight, note = e.note, info = e.info,
+            )
+        },
+    )
+
+    /** @throws DeckImportException */
     fun parse(text: String, db: ItemDatabase?): List<Inventory> {
         val t = text.trim()
-        if (t.isEmpty()) throw DeckImportException("Paste an export or choose a file.")
+        if (t.isEmpty()) throw DeckImportException(ImportError.Empty)
         val file = try {
             if (t.contains("\"inventories\"")) json.decodeFromString(InventoryFile.serializer(), t)
             else InventoryFile(inventories = listOf(json.decodeFromString(InventoryDto.serializer(), t)))
         } catch (e: Exception) {
-            throw DeckImportException("This is not a valid inventory export (${e.message?.lineSequence()?.firstOrNull() ?: "invalid JSON"}).")
+            throw DeckImportException(ImportError.Invalid(inventory = true, e.message?.lineSequence()?.firstOrNull()))
         }
-        if (file.format != FORMAT) throw DeckImportException("Unknown format \"${file.format}\".")
-        if (file.version > 1) throw DeckImportException("The export comes from a newer app version (version ${file.version}).")
-        if (file.inventories.isEmpty()) throw DeckImportException("The export contains no inventories.")
-        return file.inventories.map { dto ->
-            Inventory(
-                id = "",
-                name = dto.name.trim().ifEmpty { "Imported inventory" },
-                strength = dto.strength.coerceIn(1, 60),
-                pp = dto.coins.pp.coerceAtLeast(0), gp = dto.coins.gp.coerceAtLeast(0),
-                sp = dto.coins.sp.coerceAtLeast(0), cp = dto.coins.cp.coerceAtLeast(0),
-                notes = dto.notes,
-                entries = dto.items.filter { it.qty > 0 && it.name.isNotBlank() }.map { e ->
-                    val linked = e.itemId?.let { db?.get(it) } ?: db?.findByName(e.name)
-                    InvEntry(
-                        id = newEntryId(), itemId = linked?.id ?: e.itemId, name = e.name, category = e.category,
-                        qty = e.qty.coerceAtMost(9999), priceGp = e.price, weightLb = e.weight, note = e.note, info = e.info,
-                    )
-                },
-            )
-        }
+        if (file.format != FORMAT) throw DeckImportException(ImportError.UnknownFormat(file.format))
+        if (file.version > 1) throw DeckImportException(ImportError.NewerVersion(file.version))
+        if (file.inventories.isEmpty()) throw DeckImportException(ImportError.NoInventories)
+        return file.inventories.map { fromDto(it, db) }
     }
 
     fun fileName(base: String): String = (SpellParser.slug(base).ifEmpty { "inventories" }) + ".pfinv.json"

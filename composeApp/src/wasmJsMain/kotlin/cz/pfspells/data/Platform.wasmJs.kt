@@ -91,7 +91,7 @@ private fun pickTextFile(): Promise<JsString?> = js(
 )
 
 actual val deckFileIo: DeckFileIo = object : DeckFileIo {
-    override val saveLabel = "Download file"
+    override val saveAction = SaveAction.DOWNLOAD
     override val canOpen = true
 
     override suspend fun saveText(fileName: String, text: String): Boolean {
@@ -101,3 +101,6 @@ actual val deckFileIo: DeckFileIo = object : DeckFileIo {
 
     override suspend fun openText(): String? = pickTextFile().await<JsString?>()?.toString()
 }
+
+/** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
+actual val edgeSwipeBack: Boolean = false
