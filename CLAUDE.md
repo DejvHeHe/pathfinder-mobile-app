@@ -22,7 +22,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (17. 11. 2026)
+## Stav (18. 11. 2026)
+- 🟡 **Tag `v1.1.0`** pushnutý (postavy, featy, podtřídy…) – výsledek workflowů Release a Docker zatím neověřen.
 - ✅ **Vydáno `v1.0.1`** (GitHub Release): APK, MSI, DMG, DEB, web zip – všechny joby workflowu Release zelené.
   APK je podepsané **dočasným debug klíčem CI** (secrets s keystorem zatím nenastavené → aktualizace APK vyžaduje přeinstalaci).
   Tag `1.0.0` (bez „v“) je starý ruční release s debug APK – workflow na něj nereaguje.
@@ -30,7 +31,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   Image `:edge`, `:latest`, `:1.0.1` jsou veřejné.
 - ✅ Desktop: testy (`desktopTest`, 57 testů) zelené, appka běží.
 - ✅ 18. 11. 2026: deck → **postava** (multiclass, podtřídy, sloty/known, herní režim, featy z AoN, schopnosti s počtem použití,
-  propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy). ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
+  propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy).
+- ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
 - 🟡 iOS: Kotlin část ověřena cross-kompilací na Windows a v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru);
   Xcode build na skutečném Macu zatím nikdo nezkoušel (návod pro kamarády: `docs/ios-install.md`).
 - Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\ms-21.0.10` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
