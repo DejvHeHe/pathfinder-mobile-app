@@ -206,6 +206,8 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 ## Licence
 - Kód **GPL-3.0** (`LICENSE`), Copyright (C) 2026 David Sobíšek (GPL kvůli datům z Foundry VTT PF1, které jsou GPL-3.0).
 - Herní obsah: **OGL 1.0a + Paizo Community Use Policy** → appka musí zůstat **zdarma** (žádné poplatky ani reklamy).
+- About & licenses začíná sekcí **Soukromí** (žádné osobní údaje, vše lokálně, síť jen při stažení databází, web může mít Umami) – při přidání čehokoli síťového ji aktualizovat.
+- `licenses/MIT-SpellTable-pf1e.txt` (MIT zdroje kouzel – text je i v About). README má poznámku „AI-first / vibe-coded“.
 - `NOTICE.md`, `licenses/OGL-1.0a.txt` (Section 15: 21 hlavních knih s autory – z Paizo PRD a d20pfsrd, ostatní souhrnně; kopie v `files/OGL.txt`), v appce About & licenses.
 - Nový zdroj dat → doplnit do `NOTICE.md`, OGL Section 15 i `AboutScreen.kt`.
 

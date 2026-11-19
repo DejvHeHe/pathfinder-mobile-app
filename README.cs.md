@@ -21,6 +21,17 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Vzhled | design „Linkovaný zápisník“, mobil i třísloupcové široké okno |
 | Jazyk | rozhraní anglicky i česky (přepínač EN / CZ v hlavičce) |
 
+> **AI-first / „vibe-coded“ projekt.** Téměř všechen kód, nástroje pro data i dokumentaci napsala AI
+> ([Claude Code](https://claude.com/claude-code) od Anthropicu) – autor navrhl appku, řídil každou funkci,
+> kontroloval a testoval výsledky na skutečných zařízeních. Commity psané s AI mají řádek `Co-Authored-By: Claude`.
+> Hlášení chyb jsou vítaná – některé okrajové případy pravidel PF1 můžou být ještě špatně.
+
+## Soukromí
+
+Appka **nesbírá žádné osobní údaje** – žádný účet, sledování ani reklamy. Postavy a inventáře zůstávají ve vašem
+zařízení (nebo prohlížeči) a opustí ho jen při exportu. Funguje úplně offline, na internet jde jen při stažení
+aktualizované databáze kouzel nebo předmětů. Podrobnosti v appce v menu → **About & licenses**.
+
 ## Stažení
 
 Hotové buildy (Android `.apk`, Windows `.msi`, macOS `.dmg`, Linux `.deb`, web `.zip`) jsou na stránce

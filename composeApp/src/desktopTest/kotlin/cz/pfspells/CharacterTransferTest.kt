@@ -34,7 +34,14 @@ class CharacterTransferTest {
 
     private val thomas = Character(
         "x", "Brother Thomas",
-        listOf(ClassEntry("cleric", 7, spells = mapOf("cure-light-wounds" to 3, "bless" to 1)), ClassEntry("fighter", 2)),
+        listOf(
+            ClassEntry(
+                "cleric", 7, spells = mapOf("cure-light-wounds" to 3, "bless" to 1),
+                subclass = mapOf("domain1" to "earth", "subdomain1" to "caves", "domain2" to "good"),
+                bonusSpells = mapOf("magic-stone" to 1),
+            ),
+            ClassEntry("fighter", 2),
+        ),
         abilities = Abilities(str = 14, wis = 17),
         feats = listOf(FeatPick("power-attack", "Power Attack"), FeatPick(null, "Blessed", text = "Re-roll once per day")),
         extraFeats = 1,
@@ -44,6 +51,11 @@ class CharacterTransferTest {
         raceBonus = Ability.WIS,
         skills = mapOf("heal" to 3, "craft:armor" to 1),
         extraSkillPoints = 2,
+        alignment = cz.pfspells.data.Alignment.LG,
+        deity = "Torag",
+        confirmedPrereqs = setOf("stonecunning racial trait"),
+        trackers = listOf(cz.pfspells.data.Tracker("t1", "Wand of CLW", 50, note = "charges")),
+        hiddenPresets = setOf("fighter-bravery"),
     )
     private val inv = Inventory("inv", "Thomas", strength = 14, gp = 50,
         entries = listOf(InvEntry("e", null, "Holy symbol", "GEAR", 1, 1.0, 0.0)))
@@ -63,6 +75,14 @@ class CharacterTransferTest {
         assertEquals(Ability.WIS, c.raceBonus)
         assertEquals(mapOf("heal" to 3, "craft:armor" to 1), c.skills)
         assertEquals(2, c.extraSkillPoints)
+        // podtřída, doménový slot, přesvědčení, božstvo, potvrzené prerekvizity, počítadla
+        assertEquals(thomas.classes[0].subclass, c.classes[0].subclass)
+        assertEquals(thomas.classes[0].bonusSpells, c.classes[0].bonusSpells)
+        assertEquals(cz.pfspells.data.Alignment.LG, c.alignment)
+        assertEquals("Torag", c.deity)
+        assertEquals(setOf("stonecunning racial trait"), c.confirmedPrereqs)
+        assertEquals(thomas.trackers.map { it.copy(id = "") }, c.trackers.map { it.copy(id = "") }) // počítadla dostanou nová id
+        assertEquals(thomas.hiddenPresets, c.hiddenPresets)
         assertEquals(emptyMap(), c.castToday) // herní režim se neexportuje
         assertEquals("Thomas", ic.inventory!!.name)
         assertEquals(50, ic.inventory!!.gp)

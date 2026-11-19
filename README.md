@@ -7,6 +7,7 @@
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Desktop%20%7C%20Web-4E5D2B)
 ![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin%20Multiplatform-2.1-7F52FF?logo=kotlin&logoColor=white)
+![AI-first](https://img.shields.io/badge/built%20with-Claude%20Code-D97757)
 
 A free, open-source, **offline companion app for Pathfinder 1e players**. Build characters with a spellbook, skills and
 feats – the app checks feat prerequisites for you – and keep track of your inventory, coins and carrying capacity.
@@ -40,6 +41,17 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
 - **Export / import** of characters, feats and inventories as readable JSON – share them with your party.
 - **Up-to-date data** – spell and item databases can be re-downloaded from their sources with one tap.
 - **English and Czech** UI, a hand-drawn "ruled notebook" design, phone and three-column desktop layouts.
+
+> **AI-first / vibe-coded project.** Nearly all of the code, data tooling and documentation was written by an AI
+> ([Claude Code](https://claude.com/claude-code) by Anthropic) – the author designed the app, steered every feature,
+> reviewed and tested the results on real devices. Commits written with the AI carry a `Co-Authored-By: Claude` trailer.
+> Bug reports are very welcome – some PF1 rule edge cases may still be off.
+
+## Privacy
+
+The app collects **no personal data** – no account, no tracking, no ads. Your characters and inventories stay on your
+device (or in your browser) and leave it only when you export them. It works fully offline and goes online only when you
+tap to download an updated spell or item database. Details in the app under menu → **About & licenses**.
 
 ## Download
 

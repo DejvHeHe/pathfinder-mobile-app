@@ -68,6 +68,10 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                     Text("Copyright (C) 2026 David Sobíšek", fontSize = 14.sp, color = Nb.inkMuted)
                     Link(REPO_URL)
                 }
+                SectionHeader(s.privacyHeader)
+                Body(s.privacyText)
+
+                SectionHeader(s.licenseHeader)
                 Body(s.gplText)
                 Body(s.gameContentNotGpl)
 
@@ -96,7 +100,9 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                 Source(s.sourceFeats, "Archives of Nethys (aonprd.com) – OGL / Paizo Community Use Policy")
                 Source(s.sourceClasses, "Archives of Nethys class tables; Foundry VTT PF1 packs/classes (GPL-3.0, content OGL)")
                 Source(s.sourceRaces, "Foundry VTT PF1 packs/races (GPL-3.0, content OGL)")
-                Source(s.sourceDeities, "Archives of Nethys (aonprd.com) – OGL / Paizo Community Use Policy")
+                Source(s.sourceDeities, "Archives of Nethys (aonprd.com) – Paizo Community Use Policy (deity names are Paizo Product Identity)")
+                // MIT vyžaduje přiložit copyright a text licence (SpellList.json)
+                Text(MIT_SPELLTABLE, fontFamily = fonts.mono, fontSize = 11.sp, lineHeight = 15.sp, color = Nb.inkMuted)
 
                 SectionHeader(s.fonts)
                 Body(s.fontsText)
@@ -130,3 +136,13 @@ private fun Link(url: String) {
         color = Nb.accent, fontSize = 14.sp, textDecoration = TextDecoration.Underline,
     )
 }
+
+/** Licence projektu SpellTable-pf1e (zdroj SpellList.json) – MIT vyžaduje přiložit tento text. */
+private const val MIT_SPELLTABLE = """SpellTable-pf1e – MIT License
+Copyright (c) 2025 Vladislav Sergeev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."""
