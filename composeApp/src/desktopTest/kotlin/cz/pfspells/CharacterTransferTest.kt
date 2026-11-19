@@ -1,6 +1,7 @@
 package cz.pfspells
 
 import cz.pfspells.data.Abilities
+import cz.pfspells.data.Ability
 import cz.pfspells.data.Character
 import cz.pfspells.data.CharacterTransfer
 import cz.pfspells.data.ClassEntry
@@ -39,6 +40,10 @@ class CharacterTransferTest {
         extraFeats = 1,
         inventoryId = "inv",
         castToday = mapOf("cleric:bless" to 1),
+        race = "human",
+        raceBonus = Ability.WIS,
+        skills = mapOf("heal" to 3, "craft:armor" to 1),
+        extraSkillPoints = 2,
     )
     private val inv = Inventory("inv", "Thomas", strength = 14, gp = 50,
         entries = listOf(InvEntry("e", null, "Holy symbol", "GEAR", 1, 1.0, 0.0)))
@@ -54,6 +59,10 @@ class CharacterTransferTest {
         assertEquals(Abilities(str = 14, wis = 17), c.abilities)
         assertEquals(thomas.feats, c.feats)
         assertEquals(1, c.extraFeats)
+        assertEquals("human", c.race)
+        assertEquals(Ability.WIS, c.raceBonus)
+        assertEquals(mapOf("heal" to 3, "craft:armor" to 1), c.skills)
+        assertEquals(2, c.extraSkillPoints)
         assertEquals(emptyMap(), c.castToday) // herní režim se neexportuje
         assertEquals("Thomas", ic.inventory!!.name)
         assertEquals(50, ic.inventory!!.gp)

@@ -27,6 +27,14 @@ data class CharacterDto(
     val inventory: InventoryDto? = null,
     val trackers: List<Tracker> = emptyList(),
     val hiddenPresets: Set<String> = emptySet(),
+    /** rasa ([RaceCatalog] id); neznámá rasa se při importu zahodí */
+    val race: String? = null,
+    val raceBonus: Ability? = null,
+    val skills: Map<String, Int> = emptyMap(),
+    val extraSkillPoints: Int = 0,
+    val alignment: Alignment? = null,
+    val deity: String = "",
+    val confirmedPrereqs: Set<String> = emptySet(),
 )
 
 @Serializable
@@ -83,6 +91,13 @@ object CharacterTransfer {
                 inventory = inventoryOf(c)?.let(InventoryTransfer::toDto),
                 trackers = c.trackers,
                 hiddenPresets = c.hiddenPresets,
+                race = c.race,
+                raceBonus = c.raceBonus,
+                skills = c.skills,
+                extraSkillPoints = c.extraSkillPoints,
+                alignment = c.alignment,
+                deity = c.deity,
+                confirmedPrereqs = c.confirmedPrereqs,
             )
         }))
 
@@ -150,6 +165,13 @@ object CharacterTransfer {
                     extraFeats = dto.extraFeats.coerceIn(-20, 40),
                     trackers = dto.trackers.filter { it.name.isNotBlank() }.map { it.copy(id = newTrackerId(), max = it.max.coerceIn(1, 999)) },
                     hiddenPresets = dto.hiddenPresets,
+                    race = dto.race?.takeIf { RaceCatalog.get(it) != null },
+                    raceBonus = dto.raceBonus,
+                    skills = dto.skills.filter { (k, v) -> Skills.get(Skills.idOf(k)) != null && v > 0 },
+                    extraSkillPoints = dto.extraSkillPoints,
+                    alignment = dto.alignment,
+                    deity = dto.deity,
+                    confirmedPrereqs = dto.confirmedPrereqs,
                 ),
                 dto.inventory?.let { InventoryTransfer.fromDto(it, itemDb) },
                 missing,

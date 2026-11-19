@@ -13,7 +13,7 @@ class FeaturePreset(
     val max: (level: Int, c: Character) -> Int?,
 )
 
-private fun Character.mod(a: Ability) = abilityMod(abilities[a])
+private fun Character.mod(a: Ability) = abilityMod(scores[a])
 
 object FeaturePresets {
     val all: List<FeaturePreset> = listOf(

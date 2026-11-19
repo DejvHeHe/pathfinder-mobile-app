@@ -12,7 +12,7 @@
 Na vývojovém PC (Windows) je systémová Java 8, proto před Gradlem:
 
 ```powershell
-$env:JAVA_HOME = "$env:USERPROFILE\.jdks\ms-21.0.10"
+$env:JAVA_HOME = "$env:USERPROFILE\.jdks\temurin-21.0.11"
 ```
 
 ## Desktop (Windows / macOS / Linux)
@@ -85,7 +85,7 @@ Výsledky: `composeApp/build/test-results/desktopTest/*.xml`. Přehled testů je
 
 ## Náhledy designu
 
-Vykreslí hlavní obrazovky (mobil 390×844 i desktop 1440×1000) do PNG – s ukázkovými decky a inventářem
+Vykreslí hlavní obrazovky (mobil 390×844 i desktop 1440×1000) do PNG – s ukázkovými postavami a inventářem (a dialogem výběru classy s podtřídou)
 v dočasném úložišti, skutečná data se nezmění:
 
 ```bash

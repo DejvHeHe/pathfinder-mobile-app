@@ -37,6 +37,8 @@ under the OGL by their respective publishers.
 | Weapons, ammunition, magic items (`Weapons.csv`, `Ammunition.csv`, `MagicItems.csv`) | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) – data from [d20pfsrd.com](https://www.d20pfsrd.com) | repository without a license; content OGL 1.0a / Paizo CUP |
 | Feats (`Feats.json`) | [Archives of Nethys](https://aonprd.com/Feats.aspx) – collected by `tools/build_feats.py` | content OGL 1.0a / Paizo CUP |
 | Spells per day / spells known (`CastingTable.kt`) | class tables on [Archives of Nethys](https://aonprd.com) – `tools/build_casting.py` | content OGL 1.0a / Paizo CUP |
+| Deities – pantheon, alignment, areas, domains, favored weapon (`DeityTable.kt`) | [Archives of Nethys](https://aonprd.com/DeitiesByGroup.aspx) – `tools/build_deities.py` | OGL 1.0a / Paizo Community Use Policy |
+| Races – size, speed, ability modifiers (`RaceTable.kt`) | `packs/races` of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) – `tools/build_races.py` | project GPL-3.0; content OGL 1.0a |
 | Class BAB, saves, hit dice (`ClassTable.kt`) | `packs/classes` of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) – `tools/build_classes.py` | project GPL-3.0; content OGL 1.0a |
 | Mundane gear, armor & shields, alchemical items, mounts (`ItemsBase.json`) | converted from the compendium packs of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) | project GPL-3.0; content OGL 1.0a |
 

@@ -36,13 +36,15 @@ v bloodline) se zahodí. Výsledek: 37 domén, 113 subdomén, 34 mystérií, 25 
 | Classa | Podtřída | Bonusová kouzla |
 |---|---|---|
 | cleric | 2 domény (+ subdoména ke každé) | doménový slot: 1 kouzlo domény na spell level (`ClassEntry.bonusSpells`) |
-| druid | doména (+ subdoména) | doménový slot jako cleric |
+| druid | doména Nature Bond – Air, Animal, Earth, Fire, Plant, Water, Weather (+ subdoména, ne Metal) | doménový slot jako cleric |
 | oracle | mystérium | známé kouzlo levelu N od úrovně 2N |
 | sorcerer | bloodline | známé kouzlo levelu N od úrovně 2N + 1 |
 | wizard | škola / elementární škola + opoziční školy | +1 slot na spell level pro kouzla školy; opoziční kouzla s upozorněním (2 sloty) |
 
-Subdoména nahrazuje kouzla své domény na levelech, které uvádí. Vazbu subdoména → doména zdroj neobsahuje, takže ji
-vybírá uživatel. Patron (witch), spirit (shaman), bloodline bloodragera a psychic discipline ve zdroji nejsou.
+Subdoména nahrazuje kouzla své domény na levelech, které uvádí. Vazbu subdoména → doména zdroj neobsahuje – je ručně
+v `Subclasses.kt` (`SUBDOMAIN_DOMAINS`, podle tabulky [aonprd.com/ClericDomains.aspx](https://aonprd.com/ClericDomains.aspx)).
+Nabízí se jen subdomény zvolené domény (archon, azata, devil… patří ke dvěma doménám); změna domény zruší subdoménu,
+která k nové doméně nepatří. Boreal a sleep v tabulce AoN nejsou, takže se nenabízí. Patron (witch), spirit (shaman), bloodline bloodragera a psychic discipline ve zdroji nejsou.
 
 ## Itemy
 
@@ -123,6 +125,45 @@ level podle zvoleného spell listu. Drahé materiální složky appka jen připo
 49 class (základní, hybridní, occult, unchained a NPC) s progresí BAB (high = L, med = ¾ L, low = ½ L), dobrými
 záchranami (2 + L/2, jinak L/3), HD a skill body. Multiclass = součet za každou classu. Prestižní classy zatím ne.
 
+### Rasy (`RaceTable.kt`)
+`python tools/build_races.py` (pyyaml) vygeneruje `data/RaceTable.kt` z Foundry VTT PF1 `packs/races`: 80 ras s velikostí,
+základní rychlostí, rasovými úpravami atributů, typem a podtypy tvora. Human, half-elf a half-orc nemají ve Foundry pevné
+úpravy – mají „+2 k jednomu atributu“ (`anyBonus`). Skupiny podle Advanced Race Guide: základní (7), významné (featured, 16),
+neobvyklé (14), ostatní (zbytek – Bestiary, Alien…), seznamy jsou ve skriptu.
+
+- `Character.abilities` jsou **základní** hodnoty, výsledné `Character.scores` = základ + `RaceInfo.mod` (u `anyBonus`
+  podle `Character.raceBonus`). Výsledné hodnoty používají prerekvizity, sloty, schopnosti i nosnost; STR zadaná
+  v inventáři se přepočte zpět na základ.
+- Rasový bonusový feat (`RaceInfo.bonusFeats`): human 1, half-elf 1 (Adaptability – Skill Focus) → `FeatSlots.race`.
+- Velikost rasy se propíše do propojeného inventáře (`Inventory.size`, nosnost) – při výběru rasy i při propojení.
+- Rasa jako prerekvizita featu: text, který je jménem / id rasy nebo podtypem (elf, human, orc, dwarf, gnome, halfling),
+  případně s „subtype“ nebo upřesněním v závorce. Rasa splňuje, když se jménem shoduje nebo má daný podtyp
+  (`RaceInfo.countsAs`): half-elf platí jako elf i člověk, half-orc jako orc, drow jako elf, svirfneblin jako gnóm.
+  „Human (Varisian)“ s rasou human = ověř ručně, s jinou rasou = nesplněno. Rasové traity („halfling jinx trait“) se neověřují.
+
+### Skilly (`Skills.kt`)
+26 skillů Core Rulebooku (Knowledge rozdělená na 10 specializací), id jako ve Foundry VTT PF1 (`disableDevice`,
+`knowledge.arcana`); Craft / Perform / Profession mají druhy – klíč ranků `craft:alchemy`. Class skills jsou v `ClassTable.kt`
+(`ClassInfo.classSkills` z Foundry `packs/classes`, „knowledge“ = všechny specializace; Background skills artistry / lore
+se vynechávají), rasové bonusy a class skills v `RaceTable.kt` (`skillMods`, `classSkills`).
+
+- Celkem (`skillTotal`) = ranky + mod. atributu (`scores`) + 3 za class skill s ≥ 1 rankem + rasový bonus;
+  „trained only“ bez ranků = nelze použít. ACP zbroje se nepočítá.
+- Skill body (`skillPoints`) = Σ úroveň classy × max(1, body classy + mod. INT) + člověk 1 / úroveň + `extraSkillPoints`
+  (oblíbená classa, traity – ručně). Používá se aktuální INT (zvýšení INT během úrovní se nerozlišuje).
+- Prerekvizity: „Acrobatics 5 ranks“, „5 ranks in Sense Motive“, „Knowledge (arcana, …, or religion) 5 ranks“,
+  „Craft (any) 1 rank“, „1 rank in at least one Knowledge skill“, „Knowledge (nature) or Survival 5 ranks“ (číslo
+  z poslední části platí pro všechny). Postava bez zadaných ranků → „ověř ručně“.
+
+### Božstva (`DeityTable.kt`)
+`python tools/build_deities.py [stránka.html]` vygeneruje `data/DeityTable.kt` z tabulky
+[aonprd.com/DeitiesByGroup.aspx](https://aonprd.com/DeitiesByGroup.aspx): 463 božstev (jméno, panteon, přesvědčení,
+oblasti, domény, oblíbená zbraň). Postava ukládá jméno (`Character.deity`), `DeityCatalog.get` ho najde bez ohledu na
+velikost písmen; jiný text = vlastní božstvo (jméno se porovnává volně, přesvědčení je neznámé). Klerik s božstvem
+ze seznamu volí domény jen z `DeityInfo.domains` a subdomény jen z `DeityInfo.subdomains` (ze stránek jednotlivých božstev
+`DeityDisplay.aspx`, ~460 požadavků po 1 s, cache `build/deity-cache`; subdomény podmíněné traitem, „*“, se počítají).
+`subdomains = null` = stránka chybí → nabídnou se všechny subdomény domény.
+
 ### Featy (`Feats.json`)
 `python tools/build_feats.py` stáhne přehled [aonprd.com/Feats.aspx](https://aonprd.com/Feats.aspx) (jméno, prerekvizity,
 shrnutí, PFS) a detail každého featu (typy, zdroj, flavor, sekce Benefit / Normal / Special…). ~3 400 požadavků po 1 s
@@ -131,8 +172,33 @@ shrnutí, PFS) a detail každého featu (typy, zdroj, flavor, sekce Benefit / No
 
 Prerekvizity (`FeatPrereqs`): text se rozdělí podle čárek a středníků mimo závorky; ověřují se atributy („Str 13“),
 BAB, úroveň postavy, úroveň classy („fighter level 4th“), caster level (nejvyšší úroveň sesílací classy), „ability to cast
-Nth-level spells“ a featy postavy (u „Weapon Focus (longsword)“ stačí mít Weapon Focus). „A or B“ = stačí jedna.
-Ostatní (skill ranky, rasa, class features) = „ověř ručně“ (?). Nic se nevynucuje.
+Nth-level spells“, rasu (viz výše, když je u postavy vybraná) a featy postavy (u „Weapon Focus (longsword)“ stačí mít
+Weapon Focus; „Weapon Focus with the chosen weapon“ a jména s přilepenou zkratkou knihy – „Improved Dirty TrickAPG“ –
+se taky najdou). „—“ ve zdroji = feat bez prerekvizit (248 featů). „A or B“ = stačí jedna; společná přípona / předpona
+platí pro všechny části („good or lawful alignment“, „Animal or Plant domain“, „Knowledge (nature) or Survival 5 ranks“).
+Nic se nevynucuje.
+
+Odvozená pravidla (`PrereqRules.kt`):
+- **class features** – tabulka schopnost → classa a úroveň (channel energy, rage, ki pool, wild shape, sneak attack…,
+  ~100 položek), u „channel energy 3d6“ / „sneak attack +2d6“ počet kostek; volitelné schopnosti (zvířecí společník
+  druida, pozitivní / negativní energie klerika) = „?“. Schopnost z archetypu appka nezná → potvrdit ručně.
+- **přesvědčení** (`Character.alignment`) – „good alignment“, „nonlawful“, „chaotic neutral“…; **božstvo** (`deity` = jméno
+  ze seznamu nebo vlastní text) – „worshiper of Iomedae“, „must worship a deity“, „worshiper of a good deity“,
+  „alignment must match / be within one step of your deity's“ (přesvědčení božstva ze seznamu),
+- **velikost, typ a podtyp** podle rasy – „Small size or smaller“, „humanoid“, „giant subtype“; **Hit Dice** = úroveň,
+  **základní záchrany** („base Fortitude save bonus +3“),
+- **proficience** se zbrojí / štíty / martial zbraněmi z class (`ClassInfo.armorProf/weaponProf` z Foundry) a featů
+  (Armor Proficiency…),
+- **kouzla** – arcane / divine / psychic sesilatel, „ability to cast 3rd-level divine spells“, „ability to cast cleric spells“,
+  konkrétní kouzlo („ability to cast dispel magic“ – je na spell listu sesílající classy a úroveň stačí),
+- **domény** klerika / druida (i přes subdoménu), **typ featu** („any teamwork feat“),
+- **rasové traity** – výchozí traity ras (stonecunning, keen senses…), darkvision / low-light vision z Foundry;
+  když je rasa nemá, zůstane „?“ (mohla je získat alternativním traitem).
+
+**Ruční potvrzení** (`Character.confirmedPrereqs`): co appka neověří nebo považuje za nesplněné, potvrdí uživatel
+v detailu featu tlačítkem „Mám“ – platí pro všechny featy se stejným textem prerekvizity (export ho přenáší).
+
+Podíl featů s „?“ (postava člověk se zadanými skilly, přesvědčením a božstvem): původně 2 475 → 974.
 
 Počet featů (`featSlots`): 1. a každá lichá úroveň postavy + bonusové featy class (fighter 1 + sudé úrovně, wizard 5/10/15/20,
 monk 1/2/6/10/14/18, magus 5/11/17, warpriest a inquisitor/hunter (teamwork) každá 3., brawler 2/5/8…, swashbuckler

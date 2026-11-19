@@ -67,6 +67,74 @@ fun subclassType(classId: String): SubclassType? = when (classId) {
     else -> null
 }
 
+/**
+ * Subdoména → domény, ke kterým patří (zdroj spellů vazbu neobsahuje). Podle tabulky na
+ * [aonprd.com/ClericDomains.aspx](https://aonprd.com/ClericDomains.aspx); klíč = jméno bez závorky
+ * („archon (good, law)“ → „archon“). Subdoména bez záznamu (boreal, sleep) se nenabízí.
+ */
+private val SUBDOMAIN_DOMAINS: Map<String, List<String>> = mapOf(
+        "aeon" to listOf("knowledge"), "agathion" to listOf("good"), "alchemy" to listOf("artifice", "magic"),
+        "ambush" to listOf("trickery"), "ancestors" to listOf("repose"), "arcane" to listOf("magic"),
+        "archon" to listOf("good", "law"), "aristocracy" to listOf("nobility"), "arson" to listOf("fire"),
+        "ash" to listOf("fire"), "azata" to listOf("chaos", "good"), "blood" to listOf("war"), "cannibalism" to listOf("evil"),
+        "captivation" to listOf("charm"), "catastrophe" to listOf("destruction"), "caves" to listOf("earth"),
+        "chivalry" to listOf("glory"), "cloud" to listOf("air"), "competition" to listOf("strength"),
+        "construct" to listOf("artifice"), "cooperation" to listOf("community"), "corruption" to listOf("evil"),
+        "curse" to listOf("luck"), "daemon" to listOf("evil"), "dark tapestry" to listOf("void"), "day" to listOf("sun"),
+        "decay" to listOf("plant"), "deception" to listOf("trickery"), "defense" to listOf("protection"),
+        "demodand" to listOf("chaos", "evil"), "demon" to listOf("chaos", "evil"), "devil" to listOf("evil", "law"),
+        "divine" to listOf("magic"), "dragon" to listOf("scalykind"), "duels" to listOf("war"),
+        "education" to listOf("community", "knowledge"), "entropy" to listOf("chaos"),
+        "espionage" to listOf("knowledge", "trickery"), "exploration" to listOf("travel"), "family" to listOf("community"),
+        "fate" to listOf("luck"), "fear" to listOf("evil"), "feather" to listOf("animal"), "ferocity" to listOf("strength"),
+        "fist" to listOf("strength"), "flotsam" to listOf("water"), "flowing" to listOf("water"),
+        "fortifications" to listOf("protection"), "freedom" to listOf("liberation"), "friendship" to listOf("good"),
+        "fur" to listOf("animal"), "greed" to listOf("trickery"), "growth" to listOf("plant"), "hatred" to listOf("destruction"),
+        "heroism" to listOf("glory"), "home" to listOf("community"), "honor" to listOf("glory"),
+        "hubris" to listOf("glory", "nobility"), "ice" to listOf("water"), "imagination" to listOf("luck"),
+        "industry" to listOf("artifice"), "inevitable" to listOf("law"), "innuendo" to listOf("trickery"),
+        "insanity" to listOf("madness"), "insect" to listOf("animal"), "isolation" to listOf("void"), "judgment" to listOf("law"),
+        "kyton" to listOf("evil", "law"), "language" to listOf("rune"), "leadership" to listOf("nobility"),
+        "legend" to listOf("glory"), "legislation" to listOf("law", "rune"), "leshy" to listOf("plant"), "light" to listOf("sun"),
+        "lightning" to listOf("air"), "loss" to listOf("darkness"), "love" to listOf("charm"), "loyalty" to listOf("law"),
+        "lust" to listOf("charm"), "martyr" to listOf("nobility"), "medicine" to listOf("healing"),
+        "memory" to listOf("knowledge"), "metal" to listOf("earth"), "monsoon" to listOf("weather"), "moon" to listOf("darkness"),
+        "murder" to listOf("death"), "night" to listOf("darkness"), "nightmare" to listOf("madness"), "oceans" to listOf("water"),
+        "petrification" to listOf("earth"), "plague" to listOf("death", "evil"), "portal" to listOf("travel"),
+        "protean" to listOf("chaos"), "psychopomp" to listOf("death", "repose"), "purity" to listOf("protection"),
+        "radiation" to listOf("earth"), "rage" to listOf("destruction"), "redemption" to listOf("good"),
+        "resolve" to listOf("strength"), "restoration" to listOf("healing"), "resurrection" to listOf("healing"),
+        "revelation" to listOf("sun"), "revelry" to listOf("chaos"), "revolution" to listOf("liberation"),
+        "riot" to listOf("chaos"), "rites" to listOf("magic"), "rivers" to listOf("water"), "sahkil" to listOf("evil"),
+        "saurian" to listOf("scalykind"), "seasons" to listOf("weather"), "self-realization" to listOf("liberation", "strength"),
+        "shadow" to listOf("darkness", "death"), "slavery" to listOf("law"), "smoke" to listOf("fire"),
+        "solitude" to listOf("protection"), "souls" to listOf("repose"), "sovereignty" to listOf("law"),
+        "stars" to listOf("void"), "storms" to listOf("weather"), "tactics" to listOf("war"), "thievery" to listOf("trickery"),
+        "thirst" to listOf("sun"), "thorns" to listOf("plant"), "thought" to listOf("knowledge"), "toil" to listOf("artifice"),
+        "torture" to listOf("destruction"), "trade" to listOf("travel"), "trap" to listOf("artifice"),
+        "truth" to listOf("madness"), "tyranny" to listOf("law"), "undead" to listOf("death"), "venom" to listOf("scalykind"),
+        "wards" to listOf("rune"), "whimsy" to listOf("chaos"), "wind" to listOf("air")
+)
+
+/** Domény, ke kterým subdoména patří (prázdné = neznámá). */
+fun subdomainParents(subdomain: String): List<String> = SUBDOMAIN_DOMAINS[subdomain.substringBefore(" (").trim()].orEmpty()
+
+/** Domény druida (Nature Bond): jen přírodní domény a jejich subdomény (kromě Metal). */
+val DRUID_DOMAINS = listOf("air", "animal", "earth", "fire", "plant", "water", "weather")
+private val DRUID_FORBIDDEN_SUBDOMAINS = setOf("metal")
+
+/** Domény, které classa smí vybrat (druid jen [DRUID_DOMAINS]). */
+fun SubclassIndex.domainsFor(classId: String): List<String> {
+    val all = names(SubclassKind.DOMAIN)
+    return if (classId == "druid") all.filter { it in DRUID_DOMAINS } else all
+}
+
+/** Subdomény dané domény (pro druida bez Metal). */
+fun SubclassIndex.subdomainsOf(domain: String, classId: String): List<String> =
+    names(SubclassKind.SUBDOMAIN).filter { sd ->
+        domain in subdomainParents(sd) && !(classId == "druid" && sd.substringBefore(" (") in DRUID_FORBIDDEN_SUBDOMAINS)
+    }
+
 /** Spelly domény s náhradami ze subdomény (subdoména nahrazuje spelly domény na svých levelech). */
 fun domainSpells(index: SubclassIndex, domain: String?, subdomain: String?): Map<Int, List<Spell>> {
     if (domain == null) return emptyMap()
@@ -130,3 +198,21 @@ fun ClassEntry.isOppositionSpell(spell: Spell): Boolean =
     listOfNotNull(subclass[SubclassSlot.OPPOSITION1], subclass[SubclassSlot.OPPOSITION2]).any { opp ->
         if (opp.startsWith("element:")) spell.subLevels.containsKey(opp) else spell.school.equals(opp, ignoreCase = true)
     }
+
+/**
+ * Nová mapa podtřídy po změně jednoho klíče ([key] = `SubclassSlot`, null = zrušit):
+ * zrušená doména ruší i svou subdoménu, jiná specializace kouzelníka ruší opoziční školy.
+ */
+fun Map<String, String>.withSubclass(key: String, value: String?): Map<String, String> {
+    var sub = if (value == null) this - key else this + (key to value)
+    if (value == null && key == SubclassSlot.DOMAIN1) sub = sub - SubclassSlot.SUBDOMAIN1
+    if (value == null && key == SubclassSlot.DOMAIN2) sub = sub - SubclassSlot.SUBDOMAIN2
+    if (key == SubclassSlot.SCHOOL) sub = sub - SubclassSlot.OPPOSITION1 - SubclassSlot.OPPOSITION2
+    // jiná doména → subdoména, která k ní nepatří, odpadne
+    for ((d, sd) in listOf(SubclassSlot.DOMAIN1 to SubclassSlot.SUBDOMAIN1, SubclassSlot.DOMAIN2 to SubclassSlot.SUBDOMAIN2)) {
+        val domain = sub[d]
+        val subdomain = sub[sd]
+        if (key == d && domain != null && subdomain != null && domain !in subdomainParents(subdomain)) sub = sub - sd
+    }
+    return sub
+}

@@ -1,7 +1,7 @@
 # CLAUDE.md – PF1 Spellbook (Kotlin Multiplatform)
 
 Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolupráce.
-- Podrobná dokumentace: `README.md` a `docs/` (user-guide, architecture, data, build, deploy, ios-install) – při změnách ji udržuj aktuální.
+- Podrobná dokumentace: `README.md` (česky) + `README.en.md` (anglicky – při změně funkcí upravit obě) a `docs/` (user-guide, architecture, data, build, deploy, ios-install) – při změnách ji udržuj aktuální.
 - Plánovaná práce: **`TODO.md`** (hlavní vylepšení + nápady) – hotové body odškrtávej.
 
 ## Pravidla spolupráce
@@ -22,22 +22,36 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (18. 11. 2026)
-- 🟡 **Tag `v1.1.0`** pushnutý (postavy, featy, podtřídy…) – výsledek workflowů Release a Docker zatím neověřen.
+## Stav (19. 11. 2026)
+- 🟡 **Tag `v1.2.0`** pushnutý (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release a Docker zatím neověřeny.
+- ✅ **Vydáno `v1.1.0`** (postavy, featy, podtřídy…) – uživatel otestoval, vše v pořádku.
+- ✅ 19. 11. 2026: výběr podtřídy rovnou v `ClassPickerDialog` (nová postava i přidání classy; vlastní `Dialog` – na širokém okně
+  dva sloupce, max 620 dp), subdomény jen ke zvolené doméně, druid jen domény Nature Bond; docs po přechodu decky → postavy aktualizované.
+- ✅ 19. 11. 2026: **rasa postavy** (`Character.race`, 80 ras z Foundry, výběr v panelu class) – rasové prerekvizity featů,
+  velikost → nosnost propojeného inventáře, v exportu postavy (i `raceBonus`), výběr i v dialogu nové postavy (`ClassPick`).
+  `Character.abilities` = základ, výsledné `Character.scores` (+ rasa, human/half-elf/half-orc +2 podle volby); human a half-elf +1 feat.
+- ✅ 19. 11. 2026: **skills** (`Character.skills`, class skills z Foundry, skill body, prerekvizity na ranky; bez zadaných
+  ranků „?“). Opraveno: „—“ = feat bez prerekvizit, zkratky knih u jmen featů, „…, or X“. Featů s „?“: 2 475 → 1 728.
+- ✅ 19. 11. 2026: odvozené prerekvizity (`PrereqRules`), `Character.alignment`, `deity`, `confirmedPrereqs` (tlačítko „Mám“),
+  `ClassInfo.armorProf/weaponProf`, `RaceInfo.darkvision/lowLightVision`. Featů s „?“ u vyplněné postavy: 974.
+  `tools/build_races.py [races.zip]` – lokální ZIP, když Python neověří certifikát GitLabu (curl funguje).
+- ✅ 19. 11. 2026: božstvo ze seznamu (AoN, přesvědčení → „worshiper of a good deity“, „within one step of your deity“), vlastní text dál možný;
+  klerik volí domény i subdomény jen svého božstva (`SubclassFields(deity = …)`, `DeityInfo.subdomains`; nesoulad → `ClassEntry.deityConflicts`, `DeityConflictWarning`), božstvo i v dialogu nové postavy (`ClassPick.deity`).
+  `tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` – stránky božstev jde stáhnout curlem (`--rate 1/s -K cfg`), Python neověří certifikát.
 - ✅ **Vydáno `v1.0.1`** (GitHub Release): APK, MSI, DMG, DEB, web zip – všechny joby workflowu Release zelené.
   APK je podepsané **dočasným debug klíčem CI** (secrets s keystorem zatím nenastavené → aktualizace APK vyžaduje přeinstalaci).
   Tag `1.0.0` (bez „v“) je starý ruční release s debug APK – workflow na něj nereaguje.
 - ✅ **Web běží na VPS uživatele** z image `ghcr.io/dejvhehe/pf-spellbook-web:edge` (`.env`: `TAG=edge` + `UMAMI_*`), za jeho nginx na `127.0.0.1:8888`.
   Image `:edge`, `:latest`, `:1.0.1` jsou veřejné.
-- ✅ Desktop: testy (`desktopTest`, 57 testů) zelené, appka běží.
+- ✅ Desktop: testy (`desktopTest`, 75 testů) zelené, appka běží.
 - ✅ 18. 11. 2026: deck → **postava** (multiclass, podtřídy, sloty/known, herní režim, featy z AoN, schopnosti s počtem použití,
   propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy).
 - ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
 - 🟡 iOS: Kotlin část ověřena cross-kompilací na Windows a v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru);
   Xcode build na skutečném Macu zatím nikdo nezkoušel (návod pro kamarády: `docs/ios-install.md`).
-- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\ms-21.0.10` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
+- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\temurin-21.0.11` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
   Docker ani `gh` nejsou nainstalované. Port 8080 drží služba NI Application Web Server (National Instruments) – pro lokální test webu jiný port.
-
+- 
 ## Stack
 - Kotlin 2.1.0, Compose Multiplatform 1.7.3, Material 3, AGP 8.7.3, Gradle wrapper 8.10.2
 - kotlinx-serialization-json 1.7.3, kotlinx-coroutines 1.9.0, multiplatform-settings-no-arg 1.3.0 (decky, inventáře)
@@ -57,7 +71,12 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/CastingTable.kt    GENEROVANÉ `tools/build_casting.py` z tabulek class na AoN (spells per day, spells known / arcanist prepared)
   data/ClassInfo.kt       ClassInfo (BAB, záchrany, HD), ClassCatalog, ClassGroup, Character.stats(), abilityMod
   data/ClassTable.kt      GENEROVANÉ `tools/build_classes.py` z Foundry packs/classes (49 class vč. nesesílacích a NPC)
-  data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
+  data/Deities.kt        DeityInfo, DeityCatalog, `Character.deityInfo`; data/DeityTable.kt GENEROVANÉ `tools/build_deities.py` (AoN, 463 božstev)
+  ui/DeityUi.kt          DeityPickerDialog (seznam + vlastní text)
+  data/PrereqRules.kt    odvozené prerekvizity featů (class features z class a úrovní, přesvědčení, božstvo, velikost/typ, HD, záchrany, proficience, kouzla, domény, rasové traity)
+  data/Skills.kt         SkillInfo, Skills (26 skillů, id jako Foundry, Craft/Perform/Profession „craft:alchemy“), isClassSkill, skillTotal, skillPoints
+  data/Races.kt          RaceInfo, RaceGroup, RaceCatalog, `Character.raceInfo`; data/RaceTable.kt GENEROVANÉ `tools/build_races.py` (Foundry packs/races, 80 ras)
+  data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, SUBDOMAIN_DOMAINS (subdoména → doména, AoN), DRUID_DOMAINS, withSubclass, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
   data/CharacterTransfer.kt  export/import postav (`pf-spellbook-characters`) a featů (`pf-spellbook-feats`), import starých decků
   data/ClassFeatures.kt  FeaturePresets (Smite Evil, Rage, Ki Pool… – vzorce max použití), Resource, Character.resources()
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
@@ -73,8 +92,10 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/Common.kt            NbScreen (kostra obrazovky) + společné komponenty
   ui/WideLayout.kt        třísloupcové rozložení (hlavička se záložkami | sidebar · hlavní · detail)
   ui/DeckListScreen.kt    úvod se záložkami Spellbook/Inventory, seznam postav, AppMenu (⋮), nová postava přes ClassPickerDialog
-  ui/DeckDetailScreen.kt (detail postavy: classy, atributy, kouzla po classách), ui/ClassPicker.kt (výběr classy), SpellBrowserScreen.kt (picker + kompendium), SpellDetailScreen.kt
-  ui/SubclassUi.kt       souhrn a dialog podtřídy, sekce bonusových kouzel (doménový slot, mystérium, bloodline)
+  ui/DeckDetailScreen.kt (detail postavy: classy, atributy, kouzla po classách), ui/ClassPicker.kt (výběr classy + podtřídy), SpellBrowserScreen.kt (picker + kompendium), SpellDetailScreen.kt
+  ui/SkillsUi.kt         SkillsPanel (přehled skillů s ranky / úprava všech)
+  ui/RaceUi.kt           RacePickerDialog, raceDetail (velikost · rychlost · úpravy atributů)
+  ui/SubclassUi.kt       souhrn podtřídy, `SubclassFields` (sdílí picker classy i `SubclassDialog`), sekce bonusových kouzel (doménový slot, mystérium, bloodline)
   ui/ResourcesUi.kt      sekce „Schopnosti s počtem použití“ (předvyplněné + vlastní počítadla `Tracker`)
   ui/FeatScreens.kt      FeatsPanel (sekce v detailu postavy), FeatPickerScreen, FeatDetailScreen, CustomFeatDialog
   ui/InventoryCommon.kt   formát ceny/váhy, skryté ceny, mince, LoadBar, SectionTabs, dialogy čísla/textu
@@ -94,7 +115,7 @@ composeApp/src/commonTest, desktopTest   testy + PreviewRender (náhledy do PNG)
 iosApp/                Xcode projekt (SwiftUI obal)
 tools/build_items.py   sestavení přibalených dat itemů (Python + pyyaml; jen pro vývojáře)
 tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/feat-cache – běh ~3 h, přerušitelný)
-tools/build_casting.py, tools/build_classes.py   CastingTable.kt (AoN) a ClassTable.kt (Foundry)
+tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml
 ```

@@ -26,16 +26,23 @@ import cz.pfspells.AppState
 import cz.pfspells.Strings
 import cz.pfspells.data.CasterClass
 import cz.pfspells.data.Character
+import cz.pfspells.data.DeityInfo
+import cz.pfspells.data.deityConflicts
+import cz.pfspells.data.deityInfo
 import cz.pfspells.data.ClassEntry
 import cz.pfspells.data.MAGIC_SCHOOLS
 import cz.pfspells.data.Spell
 import cz.pfspells.data.SpellDatabase
+import cz.pfspells.data.SubclassIndex
 import cz.pfspells.data.SubclassKind
 import cz.pfspells.data.SubclassSlot
 import cz.pfspells.data.SubclassType
 import cz.pfspells.data.UNIVERSALIST
 import cz.pfspells.data.bonusSpellClassLevel
 import cz.pfspells.data.bonusSpellsByLevel
+import cz.pfspells.data.scores
+import cz.pfspells.data.domainsFor
+import cz.pfspells.data.subdomainsOf
 import cz.pfspells.data.levelSlots
 import cz.pfspells.data.subclassType
 import cz.pfspells.str
@@ -72,9 +79,37 @@ fun subclassSummary(s: Strings, e: ClassEntry): String? {
 fun SubclassDialog(state: AppState, db: SpellDatabase, c: Character, e: ClassEntry, onDismiss: () -> Unit) {
     val s = str
     val type = subclassType(e.classId) ?: return
-    val idx = db.subclasses
-    val set: (String, String?) -> Unit = { key, v -> state.setSubclass(c.id, e.classId, key, v) }
-    val sub = e.subclass
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Nb.panel,
+        title = { Text(s.subclassTitle(s.classNameOf(e.classId)), color = Nb.ink) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                c.deityInfo?.let { d ->
+                    val bad = e.deityConflicts(d)
+                    if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad)
+                }
+                SubclassFields(e.classId, type, e.subclass, db.subclasses, deity = c.deityInfo) { key, v -> state.setSubclass(c.id, e.classId, key, v) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(s.close, color = Nb.ink) } },
+    )
+}
+
+/**
+ * Pole pro výběr podtřídy podle [type] (domény + subdomény, mystérium, bloodline, škola + opoziční školy).
+ * Sdílí je [SubclassDialog] (u existující classy) i [ClassPickerDialog] (rovnou při výběru classy).
+ */
+@Composable
+fun SubclassFields(
+    classId: String,
+    type: SubclassType,
+    sub: Map<String, String>,
+    idx: SubclassIndex,
+    deity: DeityInfo? = null,
+    set: (key: String, value: String?) -> Unit,
+) {
+    val s = str
 
     @Composable
     fun pick(label: String, key: String, options: List<String>, name: (String) -> String = ::cap) {
@@ -87,48 +122,48 @@ fun SubclassDialog(state: AppState, db: SpellDatabase, c: Character, e: ClassEnt
         )
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Nb.panel,
-        title = { Text(s.subclassTitle(s.classNameOf(e.classId)), color = Nb.ink) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                when (type) {
-                    SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> {
-                        val domains = idx.names(SubclassKind.DOMAIN)
-                        val subdomains = idx.names(SubclassKind.SUBDOMAIN)
-                        pick(s.domainN(1), SubclassSlot.DOMAIN1, domains)
-                        if (sub[SubclassSlot.DOMAIN1] != null) pick(s.subdomain, SubclassSlot.SUBDOMAIN1, subdomains)
-                        if (type == SubclassType.TWO_DOMAINS) {
-                            pick(s.domainN(2), SubclassSlot.DOMAIN2, domains.filter { it != sub[SubclassSlot.DOMAIN1] })
-                            if (sub[SubclassSlot.DOMAIN2] != null) pick(s.subdomain, SubclassSlot.SUBDOMAIN2, subdomains)
-                        }
-                        Text(s.subdomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
-                    }
-                    SubclassType.MYSTERY -> pick(s.subclassLabel(type), SubclassSlot.MYSTERY, idx.names(SubclassKind.MYSTERY))
-                    SubclassType.BLOODLINE -> pick(s.subclassLabel(type), SubclassSlot.BLOODLINE, idx.names(SubclassKind.BLOODLINE))
-                    SubclassType.SCHOOL -> {
-                        val elements = idx.names(SubclassKind.ELEMENT).map { "element:$it" }
-                        val school = sub[SubclassSlot.SCHOOL]
-                        pick(s.subclassLabel(type), SubclassSlot.SCHOOL, listOf(UNIVERSALIST) + MAGIC_SCHOOLS + elements) { schoolOptionName(s, it) }
-                        when {
-                            school == null || school == UNIVERSALIST -> {}
-                            school.startsWith("element:") ->
-                                // elementární škola: jeden opoziční element
-                                pick(s.oppositionN(1), SubclassSlot.OPPOSITION1, elements.filter { it != school }) { schoolOptionName(s, it) }
-                            else -> {
-                                val others = MAGIC_SCHOOLS.filter { it != school }
-                                pick(s.oppositionN(1), SubclassSlot.OPPOSITION1, others.filter { it != sub[SubclassSlot.OPPOSITION2] }) { schoolOptionName(s, it) }
-                                pick(s.oppositionN(2), SubclassSlot.OPPOSITION2, others.filter { it != sub[SubclassSlot.OPPOSITION1] }) { schoolOptionName(s, it) }
-                            }
-                        }
-                        Text(s.schoolHint, fontSize = 12.5.sp, color = Nb.inkMuted)
-                    }
+    when (type) {
+        SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> {
+            // klerik volí z domén svého božstva (ze seznamu); bez božstva nebo s vlastním všechny
+            val deityDomains = deity?.domains?.takeIf { classId == "cleric" && it.isNotEmpty() }
+            val domains = idx.domainsFor(classId).filter { deityDomains == null || it in deityDomains }
+            // subdomény jen ty, které božstvo dává („archon (good, law)“ ↔ „archon“)
+            val deitySubs = deity?.subdomains?.takeIf { deityDomains != null }
+            fun subsOf(d: String) = idx.subdomainsOf(d, classId).filter { sd -> deitySubs == null || sd.substringBefore(" (") in deitySubs }
+            val d1 = sub[SubclassSlot.DOMAIN1]
+            val d2 = sub[SubclassSlot.DOMAIN2]
+            pick(s.domainN(1), SubclassSlot.DOMAIN1, domains.filter { it != d2 })
+            // subdomény jen ke zvolené doméně; stejnou subdoménu nejde vzít dvakrát
+            d1?.let { d -> subsOf(d).filter { it != sub[SubclassSlot.SUBDOMAIN2] } }
+                ?.takeIf { it.isNotEmpty() }?.let { pick(s.subdomain, SubclassSlot.SUBDOMAIN1, it) }
+            if (type == SubclassType.TWO_DOMAINS) {
+                pick(s.domainN(2), SubclassSlot.DOMAIN2, domains.filter { it != d1 })
+                d2?.let { d -> subsOf(d).filter { it != sub[SubclassSlot.SUBDOMAIN1] } }
+                    ?.takeIf { it.isNotEmpty() }?.let { pick(s.subdomain, SubclassSlot.SUBDOMAIN2, it) }
+            }
+            if (deityDomains != null) Text(s.deityDomainsHint(deity.name), fontSize = 12.5.sp, color = Nb.inkMuted)
+            Text(if (classId == "druid") s.druidDomainHint else s.subdomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
+        }
+        SubclassType.MYSTERY -> pick(s.subclassLabel(type), SubclassSlot.MYSTERY, idx.names(SubclassKind.MYSTERY))
+        SubclassType.BLOODLINE -> pick(s.subclassLabel(type), SubclassSlot.BLOODLINE, idx.names(SubclassKind.BLOODLINE))
+        SubclassType.SCHOOL -> {
+            val elements = idx.names(SubclassKind.ELEMENT).map { "element:$it" }
+            val school = sub[SubclassSlot.SCHOOL]
+            pick(s.subclassLabel(type), SubclassSlot.SCHOOL, listOf(UNIVERSALIST) + MAGIC_SCHOOLS + elements) { schoolOptionName(s, it) }
+            when {
+                school == null || school == UNIVERSALIST -> {}
+                school.startsWith("element:") ->
+                    // elementární škola: jeden opoziční element
+                    pick(s.oppositionN(1), SubclassSlot.OPPOSITION1, elements.filter { it != school }) { schoolOptionName(s, it) }
+                else -> {
+                    val others = MAGIC_SCHOOLS.filter { it != school }
+                    pick(s.oppositionN(1), SubclassSlot.OPPOSITION1, others.filter { it != sub[SubclassSlot.OPPOSITION2] }) { schoolOptionName(s, it) }
+                    pick(s.oppositionN(2), SubclassSlot.OPPOSITION2, others.filter { it != sub[SubclassSlot.OPPOSITION1] }) { schoolOptionName(s, it) }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(s.close, color = Nb.ink) } },
-    )
+            Text(s.schoolHint, fontSize = 12.5.sp, color = Nb.inkMuted)
+        }
+    }
 }
 
 /**
@@ -206,7 +241,7 @@ fun LazyListScope.subclassBonusSpells(
                     game -> {
                         // mystérium / bloodline: sesílá se ze slotu spell levelu
                         val key = Character.slotKey(e.classId, lvl)
-                        val slots = cls.levelSlots(e.level, c.abilities[cls.ability], lvl)
+                        val slots = cls.levelSlots(e.level, c.scores[cls.ability], lvl)
                         val total = (slots.perDay ?: 0) + slots.bonus
                         val used = c.cast(key)
                         NbDashedButton(str.castSpell, { state.setCast(c.id, key, used + 1) }, enabled = used < total && slots.abilityOk)

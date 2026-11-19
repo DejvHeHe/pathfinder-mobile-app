@@ -46,7 +46,7 @@ Android SDK **není** potřeba.
 ## Omezení bezplatného účtu
 
 - Podpis platí **7 dní** – pak appka nejde spustit. Stačí telefon znovu připojit a v Xcode dát ▶
-  (data – decky a inventáře – zůstanou, pokud appku nesmažete).
+  (data – postavy a inventáře – zůstanou, pokud appku nesmažete).
 - Najednou můžete mít z bezplatného účtu nainstalované max. 3 vlastní appky.
 - Pro jistotu občas *Export all* (menu ⋮) – kdyby se appka smazala, data jdou zpět importovat.
 

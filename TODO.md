@@ -12,20 +12,21 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 - [x] Karty class seskupené podle počtu spell levelů (9 / 6 / 4 / bez kouzel / NPC), hledání, náhled spell levelů pro úroveň
 - [x] Stejný výběr pro novou postavu i přidání classy (`ui/ClassPicker.kt`), design „Linkovaný zápisník“
 - [ ] Štítky *arcane / divine / psychic* a *prepared / spontaneous* na kartách
-- [ ] Výběr podtřídy rovnou jako krok v pickeru (teď se nastavuje odkazem pod classou v detailu postavy)
+- [x] Výběr podtřídy rovnou v pickeru podle vybrané classy (nová postava i přidání classy; změna dál odkazem pod classou)
 
 ### 2. Podtřídy a spelly podle nich
 - [x] Data z `access_ways` (`SpellParser.parseSubLevels`, `Spell.subLevels`, `SubclassIndex`) včetně oprav chyb ve zdroji
 - [x] Cleric 2 domény, druid doména (+ subdomény), doménový slot 1 / spell level (`ClassEntry.bonusSpells`)
+- [x] Klerik volí jen domény a subdomény svého božstva (božstvo ze seznamu AoN, subdomény ze stránek božstev)
 - [x] Oracle mystérium, sorcerer bloodline – bonusová známá kouzla podle úrovně
 - [x] Wizard specializace / elementární škola + opoziční školy: školní slot, upozornění u opozičních kouzel
 - [x] Uložení v postavě (`ClassEntry.subclass`) a v exportu postavy
 - [ ] Witch – **patron**, Shaman – **spirit**, Bloodrager – **bloodline**, Psychic – **discipline** (ve zdroji spellů nejsou data)
 - [ ] Warpriest / inquisitor – domény a blessingy (bez bonusových kouzel – jen schopnosti)
-- [ ] **Lepší rozdělení podtříd:**
-  - [ ] druid jen domény Nature Bond (Air, Animal, Earth, Fire, Plant, Water, Weather + jejich subdomény), teď nabízí všech 37
-  - [ ] subdomény seskupit pod jejich doménu (zdroj vazbu neobsahuje – teď výběr ze všech 113)
-  - [ ] výběr podtřídy jako krok rovnou ve výběru classy
+- [x] **Lepší rozdělení podtříd:**
+  - [x] druid jen domény Nature Bond (Air, Animal, Earth, Fire, Plant, Water, Weather + jejich subdomény kromě Metal)
+  - [x] subdomény jen ke zvolené doméně (`SUBDOMAIN_DOMAINS` podle AoN; boreal a sleep v tabulce chybí)
+  - [x] výběr podtřídy jako krok rovnou ve výběru classy
 - [ ] **Archetypy** (Grey Paladin, Sacred Servant…, 1 000+): seznam z AoN (název, classa, zdroj, nahrazené class features)
   stáhnout jako featy, u classy postavy vybrat jeden či víc a ukázat jejich text – jen evidence, mechanicky nepočítat
   - archetypy měnící spell list nebo sesílání (Sacred Servant, Thassilonian Specialist, Vigilante – Warlock / Zealot…) jen informativně
@@ -60,17 +61,24 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Featy u postavy – nejlépe společně s multiclassem (bod 3), aby deck byl „postava“ se spelly i featy
   - [x] kontrola prerekvizit (úroveň, BAB, atributy, jiné featy) – aspoň upozornění, nevynucovat
   - [x] počet featů podle úrovně postavy (1 + každá lichá úroveň) + bonusové featy classy (fighter, wizard…)
-- [ ] **Rasa postavy** (výběr ze seznamu) – automatické ověření rasových prerekvizit featů (~400 featů má „?“ kvůli rase);
-  případně i přesvědčení / božstvo (~200 featů)
-- [ ] **Skills** u postavy (ranky, class skills, bonusy z atributů) – ověření prerekvizit typu „Acrobatics 5 ranks“ (~650 featů)
-- [ ] Ruční potvrzení „?“ prerekvizit (uložené u postavy) → přísný režim povoleno / zakázáno
+- [x] **Rasa postavy** (80 ras z Foundry `packs/races`) – ověření rasových prerekvizit featů, velikost → nosnost inventáře, export
+  - [x] výchozí rasové traity (tabulka v `PrereqRules`), darkvision / low-light vision z Foundry
+  - [ ] alternativní rasové traity (Halfling Jinx…) – teď jen ruční potvrzení
+  - [x] výběr rasy rovnou v dialogu nové postavy, úpravy atributů (+2 podle volby), bonusový feat (human, half-elf)
+  - [x] přesvědčení / božstvo
+- [x] **Skills** u postavy (ranky, class skills z Foundry, bonusy z atributů a rasy, skill body) – ověření prerekvizit
+  typu „Acrobatics 5 ranks“ (featů s „?“ při vyplněných skillech 2 131 → 1 728)
+- [x] Ruční potvrzení „?“ / ✗ prerekvizit (uložené u postavy, tlačítko „Mám“ v detailu featu)
+- [x] Odvozené prerekvizity: class features, velikost / typ, HD, záchrany, proficience, druh kouzel, konkrétní kouzla, domény
+  (featů s „?“ 2 475 → 974 u vyplněné postavy)
+- [ ] přísný režim (nesplněné featy nejde přidat)
 - [ ] Metamagické featy propojit se spelly (např. u spellu ukázat, o kolik levelů ho metamagie zvýší)
 - [x] Export/import featů spolu s postavou (i samostatně); nový zdroj dat v `NOTICE.md`, OGL Section 15 a About
 
 ## Další nápady
 
 - [x] Spell sloty za den podle classy/úrovně + bonusové sloty z atributu; režim „hra“ s odškrtáváním seslaných spellů a resetem po odpočinku
-- [ ] Spontánní sesilatelé: „spells known“ místo počtu kopií
+- [x] Spontánní sesilatelé: „spells known“ místo počtu kopií (limit „x / y známých“ z `CastingTable`)
 - [x] Doplnit classu **Medium** (knacky od 1. úrovně, spelly 1.–4. levelu jako paladin)
 - [x] Řazení spellů (název / úroveň / škola) a filtr PFS legal
 - [x] Oblíbené spelly (hvězdička v detailu, filtr „favorites only“)

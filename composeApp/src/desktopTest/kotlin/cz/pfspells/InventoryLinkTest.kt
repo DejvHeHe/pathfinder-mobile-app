@@ -49,4 +49,35 @@ class InventoryLinkTest {
         state.deleteInventory(inv.id)
         assertNull(state.character(d.id)!!.inventoryId)
     }
+
+    @Test
+    fun raceSizeGoesToInventory() = onMain {
+        val state = AppState(inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings), settings = settings)
+        val c = state.createCharacter("Pip", "rogue", 2)
+        val inv = state.createInventoryFor(c.id)!!
+        assertEquals("MEDIUM", state.inventory(inv.id)!!.size)
+        state.setRace(c.id, "halfling")
+        assertEquals("SMALL", state.inventory(inv.id)!!.size)
+        // neznámá rasa se neuloží
+        state.setRace(c.id, "nonsense")
+        assertNull(state.character(c.id)!!.race)
+        // propojení nového inventáře převezme velikost rasy
+        state.setRace(c.id, "gnome")
+        val other = state.createInventory("Other")
+        state.linkInventory(c.id, other.id)
+        assertEquals("SMALL", state.inventory(other.id)!!.size)
+        // nosnost počítá s rasou: gnóm −2 STR
+        state.setAbility(c.id, Ability.STR, 14)
+        assertEquals(12, state.inventory(other.id)!!.strength)
+        // STR z inventáře → základ postavy bez rasy
+        state.setInventoryStrength(other.id, 10)
+        assertEquals(12, state.character(c.id)!!.abilities.str)
+        // human +2 k síle
+        state.setRace(c.id, "human")
+        state.setRaceBonus(c.id, Ability.STR)
+        assertEquals(14, state.inventory(other.id)!!.strength)
+        // jiná rasa volbu zahodí
+        state.setRace(c.id, "elf")
+        assertNull(state.character(c.id)!!.raceBonus)
+    }
 }

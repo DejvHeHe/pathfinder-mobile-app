@@ -14,19 +14,28 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
   (na Androidu i systémovým tlačítkem Zpět). Hlavní akce je zelené tlačítko vpravo dole.
 - **Desktop / tablet na šířku (od 1000 px):** tři sloupce:
   1. vlevo seznam postav nebo inventářů,
-  2. uprostřed otevřený deck / inventář / výběr,
+  2. uprostřed otevřená postava / inventář / výběr,
   3. vpravo detail spellu nebo itemu (zavře se křížkem nebo klávesou **Esc**).
 
 ## Spellbook
 
 ### Postava
-1. **New character** → jméno, classa a úroveň. Výběr classy má hledání, classy jsou seskupené podle počtu úrovní kouzel
+1. **New character** → jméno, rasa a božstvo (nepovinné), classa a úroveň. Výběr classy má hledání, classy jsou seskupené podle počtu úrovní kouzel
    (9 / 6 / 4 / bez kouzel / NPC) a pod seznamem je náhled spell levelů pro zvolenou úroveň.
-2. **Multiclass:** v detailu postavy v panelu **Classes** → **Add class** (i nesesílací – fighter, rogue, swashbuckler…).
+   Má-li vybraná classa podtřídu (klerik, druid, orákulum, čaroděj, kouzelník), objeví se pod úrovní rovnou její výběr –
+   domény, mystérium, bloodline nebo škola. Je nepovinný, jde nastavit i později.
+2. **Multiclass:** v detailu postavy v panelu **Classes** → **Add class** (i nesesílací – fighter, rogue, swashbuckler…);
+   podtřídu přidávané classy jde vybrat rovnou ve stejném dialogu.
    Úroveň každé classy se mění stepperem, celkem max. 20; classu jde odebrat (×) i s jejími kouzly.
-3. Pod classami je souhrn – úroveň postavy, **BAB** a záchrany (součet za všechny classy) – a **atributy** STR–CHA
+3. **Rasa** se vybírá při vytvoření postavy nebo později nahoře v panelu s classami (80 ras po skupinách: základní,
+   významné, neobvyklé, ostatní, s velikostí, rychlostí a úpravami atributů). Rasa:
+   - **přičte úpravy atributů** – u atributů zadáváte základní hodnoty, dlaždice ukazují výsledek včetně rasy
+     (pod nimi je rozpis); člověk, půlelf a půlork si vyberou, ke kterému atributu dostanou +2,
+   - dá člověku a půlelfovi **bonusový feat** (u půlelfa Skill Focus),
+   - ověří rasové prerekvizity featů a její velikost se propíše do nosnosti propojeného inventáře.
+4. Pod classami je souhrn – úroveň postavy, **BAB** a záchrany (součet za všechny classy) – a **atributy** STR–CHA
    (klepnutím upravíte hodnotu, vedle je modifikátor).
-4. Každá sesílací classa má vlastní sekci kouzel s tlačítkem **Add spells**.
+5. Každá sesílací classa má vlastní sekci kouzel s tlačítkem **Add spells**.
 
 Původní „decky“ se při prvním spuštění nové verze automaticky převedly na postavy (se všemi kouzly).
 
@@ -38,8 +47,14 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   může zůstat nepropojený.
 
 ### Podtřídy (domény, bloodline, mystérium, škola)
-- Pod classou, která podtřídu má, je odkaz (např. **Domény: vybrat…**) – otevře výběr:
-  - **Klerik**: 2 domény, ke každé volitelně subdoména (nahrazuje část kouzel domény); **druid**: doména.
+- Podtřídu jde vybrat už při vytvoření postavy nebo přidání classy (viz výše).
+- Později ji změníte odkazem pod classou (např. **Domény: vybrat…**) – otevře výběr:
+  - **Klerik**: 2 domény, ke každé volitelně subdoména (nahrazuje část kouzel domény) – nabízí se jen subdomény zvolené
+    domény (např. k Fire: Arson, Ash, Smoke). Má-li postava božstvo ze seznamu, nabízí se jen jeho domény
+    (Iomedae: Glory, Good, Law, Sun, War) a jen subdomény, které bůh dává (Iomedae u Sun: Day, Light, Revelation);
+    bez božstva nebo s vlastním všechny. Když vybraná doména / subdoména božstvu neodpovídá (např. po změně božstva),
+    pod classou se objeví červené upozornění „Torag nedává: Fire – vyberte znovu“ (klepnutím otevře výběr).
+  - **Druid**: jedna přírodní doména (Air, Animal, Earth, Fire, Plant, Water, Weather), volitelně její subdoména (kromě Metal).
   - **Orákulum**: mystérium, **čaroděj**: bloodline.
   - **Kouzelník**: škola specializace (nebo univerzalista / elementární škola) a opoziční školy.
 - Klerik / druid: pod kouzly je sekce **Doménová kouzla** – na každé úrovni kouzel jeden doménový slot (počet „x / 1“).
@@ -60,11 +75,30 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 - Sekce **Featy** v detailu postavy ukazuje „vybrané / dostupné“: featy za úrovně (1. a každá lichá) + bonusové featy class
   (bojovník, kouzelník, mnich, magus…) + ruční **Navíc** (např. human, traity).
 - **Přidat feat** otevře přehled ~3 400 featů z Archives of Nethys: hledání, typ, „Jen featy, na které mám“, PFS, hledání v textu.
-  U každého featu je stav prerekvizit: ✓ splněno, ✗ nesplněno, ? ověř ručně (skill ranky, rasa…). Appka nic nezakazuje.
+  U každého featu je stav prerekvizit: ✓ splněno, ✗ nesplněno, ? ověř ručně (skill ranky, rasové traity…). Rasa se ověří,
+  když ji má postava vybranou (half-elf platí i jako elf a člověk). Appka nic nezakazuje.
+- Ověřuje se i: class features podle class a úrovní (channel energy, rage, ki pool…), **přesvědčení** a **božstvo**
+  (nastavíte nahoře v panelu postavy pod rasou; božstvo ze seznamu ~460 božstev s přesvědčením, panteonem a oblíbenou
+  zbraní – hledání i podle oblasti, např. „healing“; **Vlastní…** = homebrew božstvo jako text), velikost a typ tvora podle rasy, Hit Dice, základní záchrany,
+  proficience se zbrojí a zbraněmi, sesílání kouzel (arcane / divine, konkrétní kouzlo), domény a výchozí rasové traity.
+- Co appka ověřit nemůže (archetypy, alternativní rasové traity, zvláštní podmínky), potvrdíte v detailu featu
+  tlačítkem **Mám** u dané prerekvizity – potvrzení platí pro všechny featy se stejnou prerekvizitou, **Zrušit** ho vrátí.
 - Klepnutím se otevře detail s plným textem a prerekvizitami po jedné. U featu postavy lze doplnit **poznámku**
   (např. zvolenou zbraň u Weapon Focus).
 - **Vlastní feat** = název + popis (homebrew, rasové schopnosti…), u postavy jde upravit tužkou v detailu.
 - Featy z databáze se neaktualizují tlačítkem (jsou přibalené k appce).
+
+### Dovednosti (skills)
+- Sekce **Dovednosti** v detailu postavy ukazuje skilly s ranky (celkový bonus a počet ranků) a vpravo nahoře
+  „utracené / dostupné“ skill body.
+- **Upravit dovednosti** ukáže všechny skilly se steppery ranků. U každého je atribut a „třídní“ (class skill některé
+  z class nebo rasy – s aspoň 1 rankem +3). Řemeslo, Vystupování a Profese mají druhy: **Přidat: Řemeslo** → „alchemy“.
+- Celkový bonus = ranky + modifikátor atributu (včetně rasy) + 3 za třídní + rasový bonus (např. elf +2 Vnímání).
+  „—“ = dovednost jen pro trénované bez ranků.
+- Body: za každou úroveň classy její body + mod. INT (min. 1), člověk +1 za úroveň; bonus za oblíbenou classu a jiné
+  přidejte do **Navíc**. Max. ranků v jedné dovednosti = úroveň postavy.
+- Prerekvizity featů typu „Acrobatics 5 ranks“ appka ověří, jakmile má postava zadaný aspoň jeden rank
+  (do té doby „?“, aby postava bez vyplněných skillů neměla všude ✗).
 
 ### Kouzla postavy
 1. U každé sesílací classy vidíte rozsah spell levelů, které na své úrovni sesílá (např. *Wizard 5 · spell levels 0–3*).
@@ -80,7 +114,7 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 4. **Herní režim** (zaškrtávátko pod atributy) slouží u stolu: připravující classy odklikávají seslané kopie
    (seslané kouzlo se přeškrtne), spontánní classy a arcanist mají u každého spell levelu řadu slotů
    a u kouzla tlačítko **Seslat**. Triky jsou libovolně. **Odpočinek** vše obnoví. Seslaná kouzla se ukládají u postavy.
-4. Klepnutím na spell se otevře detail: casting time, components, range, duration, save, SR, celý popis,
+5. Klepnutím na spell se otevře detail: casting time, components, range, duration, save, SR, celý popis,
    mythic verze, zdroj a odkaz na Archives of Nethys.
 
 **Oblíbené:** hvězdička v detailu spellu ho přidá do oblíbených (platí pro všechny postavy i kompendium).
@@ -142,7 +176,7 @@ Funguje pro postavy, featy i inventáře. Výsledkem je čitelný text (JSON), k
 | Import | menu **⋮ → Importovat postavu / inventář** |
 | Export / import jen featů | tlačítka **Export / Import** v sekci Featy postavy |
 
-- **Postava** se exportuje celá: classy a úrovně, atributy, kouzla, featy (i vlastní a poznámky), „Navíc“.
+- **Postava** se exportuje celá: rasa, classy a úrovně, atributy, dovednosti, kouzla, featy (i vlastní a poznámky), „Navíc“.
   Má-li propojený inventář, jde ho zaškrtnutím **Včetně propojeného inventáře** přibalit – po importu se založí a propojí.
   Seslaná kouzla z herního režimu se neexportují.
 - **Featy** se importují do otevřené postavy (přidají se k existujícím); featy, které postava už má a nejdou vzít víckrát,
@@ -152,7 +186,7 @@ Funguje pro postavy, featy i inventáře. Výsledkem je čitelný text (JSON), k
 - **Export:** *Copy* (do schránky) a *Save to file* (desktop) nebo *Share* (Android, iOS).
 - **Import:** *Paste from clipboard* nebo *Open file* (desktop, Android), případně text vložit ručně.
   Před potvrzením uvidíte náhled; spelly, které v databázi nejsou, se vypíšou a vynechají.
-  Importované decky/inventáře se přidají jako nové (při shodě jména dostanou „(imported)“) – nic se nepřepíše.
+  Importované postavy/inventáře se přidají jako nové (při shodě jména dostanou „(imported)“) – nic se nepřepíše.
 
 ## Aktualizace databází
 
@@ -162,21 +196,21 @@ Menu **⋮ → Spell & item database / update**:
 - **Download latest item database** – stáhne aktuální tabulky zbraní, munice a magických itemů.
 - **Restore bundled version** – vrátí verzi přibalenou v appce.
 
-Pathfinder 1e je uzavřený systém, takže aktualizace přinese hlavně opravy. Decky a inventáře zůstávají –
+Pathfinder 1e je uzavřený systém, takže aktualizace přinese hlavně opravy. Postavy a inventáře zůstávají –
 spelly se párují podle id a jména, položky inventáře si nesou vlastní název, cenu a váhu.
 
 ## Kde jsou moje data
 
 Vše je jen v zařízení:
 
-| Platforma | Decky, inventáře | Stažené databáze |
+| Platforma | Postavy, inventáře | Stažené databáze |
 |---|---|---|
 | Android | SharedPreferences appky | soukromá složka appky |
 | iOS | NSUserDefaults | složka Documents appky |
 | Desktop | Java Preferences (Windows: registr `HKCU\Software\JavaSoft\Prefs`) | `~/.pfspells/` |
 | Web | `localStorage` prohlížeče (pro danou adresu) | IndexedDB prohlížeče |
 
-Odinstalací appky (Android/iOS) nebo vymazáním dat webu v prohlížeči se data smažou – pro zálohu použijte **Export all**.
+Odinstalací appky (Android/iOS) nebo vymazáním dat webu v prohlížeči se data smažou – pro zálohu použijte **⋮ → Exportovat všechny postavy / inventáře**.
 Na webu jsou data vázaná na prohlížeč a adresu stránky.
 
 ## Webová verze

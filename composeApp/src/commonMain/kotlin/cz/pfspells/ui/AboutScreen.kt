@@ -95,6 +95,8 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                 Source(s.sourceGear, "Pathfinder 1e system for Foundry VTT (GPL-3.0, content OGL)")
                 Source(s.sourceFeats, "Archives of Nethys (aonprd.com) – OGL / Paizo Community Use Policy")
                 Source(s.sourceClasses, "Archives of Nethys class tables; Foundry VTT PF1 packs/classes (GPL-3.0, content OGL)")
+                Source(s.sourceRaces, "Foundry VTT PF1 packs/races (GPL-3.0, content OGL)")
+                Source(s.sourceDeities, "Archives of Nethys (aonprd.com) – OGL / Paizo Community Use Policy")
 
                 SectionHeader(s.fonts)
                 Body(s.fontsText)

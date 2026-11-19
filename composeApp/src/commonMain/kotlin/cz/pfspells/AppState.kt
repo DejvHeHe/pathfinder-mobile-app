@@ -2,7 +2,11 @@ package cz.pfspells
 
 import cz.pfspells.data.Tracker
 import cz.pfspells.data.ResourceUnit
-import cz.pfspells.data.SubclassSlot
+import cz.pfspells.data.withSubclass
+import cz.pfspells.data.RaceCatalog
+import cz.pfspells.data.raceInfo
+import cz.pfspells.data.raceMod
+import cz.pfspells.data.scores
 import cz.pfspells.data.ImportedCharacter
 import cz.pfspells.data.FeatRepository
 import cz.pfspells.data.FeatPick
@@ -312,7 +316,11 @@ class AppState(
         }
         updateCharacter(charId) { it.copy(inventoryId = invId) }
         val c = character(charId) ?: return
-        if (invId != null) updateInventory(invId) { it.copy(strength = c.abilities.str) }
+        if (invId != null) updateInventory(invId) { inv ->
+            // velikost rasy → nosnost (jen když je rasa vybraná)
+            val size = c.raceInfo?.size
+            inv.copy(strength = c.scores.str, size = size?.name ?: inv.size, quadruped = if (size != null) false else inv.quadruped)
+        }
     }
 
     /** Nový inventář pojmenovaný po postavě, rovnou propojený. */
@@ -323,11 +331,11 @@ class AppState(
         return inv
     }
 
-    /** STR z inventáře – u propojeného inventáře se změní i atribut postavy. */
+    /** STR z inventáře – u propojeného inventáře se změní i atribut postavy (základ = výsledná STR − rasa). */
     fun setInventoryStrength(invId: String, value: Int) {
         updateInventory(invId) { it.copy(strength = value) }
         characterOfInventory(invId)?.let { c ->
-            updateCharacter(c.id) { it.copy(abilities = it.abilities.with(Ability.STR, value.coerceIn(1, 99))) }
+            updateCharacter(c.id) { it.copy(abilities = it.abilities.with(Ability.STR, (value - it.raceMod(Ability.STR)).coerceIn(1, 99))) }
         }
     }
 
@@ -446,6 +454,9 @@ class AppState(
     // ---- spelly ----
     var db: DbState by mutableStateOf(DbState.Loading)
         private set
+
+    /** Načtená databáze kouzel (null = ještě se načítá / chyba) – i pro prerekvizity „ability to cast X“. */
+    val spellDb: cz.pfspells.data.SpellDatabase? get() = (db as? DbState.Ready)?.db
     var downloading by mutableStateOf(false)
         private set
     var downloadMessage: UiMessage? by mutableStateOf(null)
@@ -528,7 +539,7 @@ class AppState(
                 var invName = inv.name
                 while (inventories.any { it.name == invName }) invName = "$invName ${strings.importedSuffix}"
                 val id = newId()
-                inventories.add(inv.copy(id = id, name = invName, strength = ic.character.abilities.str))
+                inventories.add(inv.copy(id = id, name = invName, strength = ic.character.scores.str))
                 inventoryId = id
             }
             characters.add(ic.character.copy(id = newId(), name = name, inventoryId = inventoryId))
@@ -557,8 +568,15 @@ class AppState(
 
     private fun newId(): String = Random.nextLong().toULong().toString(36)
 
-    fun createCharacter(name: String, classId: String, level: Int): Character {
-        val c = Character(newId(), name.ifBlank { strings.newCharacter }, listOf(ClassEntry(classId, level.coerceIn(1, 20))))
+    fun createCharacter(
+        name: String, classId: String, level: Int,
+        subclass: Map<String, String> = emptyMap(), race: String? = null, raceBonus: Ability? = null,
+    ): Character {
+        val r = RaceCatalog.get(race)
+        val c = Character(
+            newId(), name.ifBlank { strings.newCharacter }, listOf(ClassEntry(classId, level.coerceIn(1, 20), subclass = subclass)),
+            race = r?.id, raceBonus = raceBonus.takeIf { r?.anyBonus == true },
+        )
         characters.add(c)
         persist()
         return c
@@ -583,9 +601,9 @@ class AppState(
     }
 
     /** Přidá classu (multiclass); classa už v postavě je → nic. */
-    fun addClass(charId: String, classId: String, level: Int) = updateCharacter(charId) { c ->
+    fun addClass(charId: String, classId: String, level: Int, subclass: Map<String, String> = emptyMap()) = updateCharacter(charId) { c ->
         if (c.classes.any { it.classId == classId }) c
-        else c.copy(classes = c.classes + ClassEntry(classId, level.coerceIn(1, 20)))
+        else c.copy(classes = c.classes + ClassEntry(classId, level.coerceIn(1, 20), subclass = subclass))
     }
 
     /** Odebere classu i s jejími spelly (poslední classa zůstane). */
@@ -638,14 +656,8 @@ class AppState(
 
     /** Nastaví podtřídu classy ([key] = `SubclassSlot`, null = zrušit). Změna domén vyprázdní doménový slot. */
     fun setSubclass(charId: String, classId: String, key: String, value: String?) = updateClass(charId, classId) { e ->
-        var sub = if (value == null) e.subclass - key else e.subclass + (key to value)
-        // zrušená doména ruší i svou subdoménu
-        if (value == null && key == SubclassSlot.DOMAIN1) sub = sub - SubclassSlot.SUBDOMAIN1
-        if (value == null && key == SubclassSlot.DOMAIN2) sub = sub - SubclassSlot.SUBDOMAIN2
-        // jiná specializace → opoziční školy znovu
-        if (key == SubclassSlot.SCHOOL) sub = sub - SubclassSlot.OPPOSITION1 - SubclassSlot.OPPOSITION2
         val domainsChanged = key.startsWith("domain") || key.startsWith("subdomain")
-        e.copy(subclass = sub, bonusSpells = if (domainsChanged) emptyMap() else e.bonusSpells)
+        e.copy(subclass = e.subclass.withSubclass(key, value), bonusSpells = if (domainsChanged) emptyMap() else e.bonusSpells)
     }
 
     /** Doménový slot: počet připravených kopií kouzla domény. */
@@ -684,11 +696,58 @@ class AppState(
         showToast(UiMessage { it.restedToast })
     }
 
+    /** Rasa postavy (null = žádná); velikost rasy se propíše do propojeného inventáře (nosnost). */
+    fun setRace(charId: String, raceId: String?) {
+        updateCharacter(charId) { c ->
+            val r = RaceCatalog.get(raceId)
+            // volba „+2 k jednomu atributu“ platí jen pro rasy, které ji mají
+            c.copy(race = r?.id, raceBonus = c.raceBonus.takeIf { r?.anyBonus == true })
+        }
+        syncInventory(charId)
+    }
+
+    /** Rasa s „+2 k jednomu atributu“ (human, half-elf, half-orc): který atribut. */
+    fun setRaceBonus(charId: String, ability: Ability?) {
+        updateCharacter(charId) { it.copy(raceBonus = ability) }
+        syncInventory(charId)
+    }
+
+    /** Výsledná STR a velikost rasy → propojený inventář. */
+    private fun syncInventory(charId: String) {
+        val c = character(charId) ?: return
+        val inv = c.inventoryId ?: return
+        val size = c.raceInfo?.size
+        updateInventory(inv) {
+            it.copy(strength = c.scores.str, size = size?.name ?: it.size, quadruped = if (size != null) false else it.quadruped)
+        }
+    }
+
+    /** Ranky ve skillu (klíč [cz.pfspells.data.Skills.key]); max = úroveň postavy, 0 = odebrat. */
+    fun setSkillRanks(charId: String, key: String, ranks: Int) = updateCharacter(charId) { c ->
+        val r = ranks.coerceIn(0, c.level)
+        c.copy(skills = if (r == 0) c.skills - key else c.skills + (key to r))
+    }
+
+    /** Odebere skill (i druh Craft / Perform / Profession). */
+    fun removeSkill(charId: String, key: String) = updateCharacter(charId) { it.copy(skills = it.skills - key) }
+
+    fun setAlignment(charId: String, a: cz.pfspells.data.Alignment?) = updateCharacter(charId) { it.copy(alignment = a) }
+
+    fun setDeity(charId: String, deity: String) = updateCharacter(charId) { it.copy(deity = deity.trim()) }
+
+    /** Ručně potvrdí (nebo zruší potvrzení) prerekvizitu featu – platí pro všechny featy se stejným textem. */
+    fun setPrereqConfirmed(charId: String, text: String, confirmed: Boolean) = updateCharacter(charId) { c ->
+        val key = cz.pfspells.data.FeatPrereqs.confirmKey(text)
+        c.copy(confirmedPrereqs = if (confirmed) c.confirmedPrereqs + key else c.confirmedPrereqs - key)
+    }
+
+    fun setExtraSkillPoints(charId: String, n: Int) = updateCharacter(charId) { it.copy(extraSkillPoints = n.coerceIn(-50, 200)) }
+
     fun setAbility(charId: String, ability: Ability, value: Int) {
         updateCharacter(charId) { it.copy(abilities = it.abilities.with(ability, value.coerceIn(1, 99))) }
         // STR → nosnost propojeného inventáře
         val c = character(charId) ?: return
-        if (ability == Ability.STR) c.inventoryId?.let { inv -> updateInventory(inv) { it.copy(strength = c.abilities.str) } }
+        if (ability == Ability.STR) c.inventoryId?.let { inv -> updateInventory(inv) { it.copy(strength = c.scores.str) } }
     }
 
     fun setClassLevel(charId: String, classId: String?, level: Int) =

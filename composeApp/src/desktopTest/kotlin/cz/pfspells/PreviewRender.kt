@@ -1,5 +1,7 @@
 package cz.pfspells
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.use
@@ -8,6 +10,9 @@ import cz.pfspells.data.InvEntry
 import cz.pfspells.data.InventoryStore
 import cz.pfspells.data.ItemCategory
 import cz.pfspells.data.ItemRepository
+import cz.pfspells.ui.ClassPickerDialog
+import cz.pfspells.ui.PfTheme
+import cz.pfspells.ui.RacePickerDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -38,6 +43,11 @@ class PreviewRender {
             state.addClass(thomas.id, "fighter", 2)
             state.setAbility(thomas.id, cz.pfspells.data.Ability.WIS, 17)
             state.setAbility(thomas.id, cz.pfspells.data.Ability.STR, 14)
+            state.setRace(thomas.id, "dwarf")
+            state.setAlignment(thomas.id, cz.pfspells.data.Alignment.LG)
+            state.setDeity(thomas.id, "Torag")
+            mapOf("knowledge.religion" to 5, "heal" to 4, "diplomacy" to 3, "sense motive" to 0, "intimidate" to 2, "craft:armor" to 2)
+                .filterValues { it > 0 }.forEach { (k, v) -> state.setSkillRanks(thomas.id, k, v) }
             state.updateCharacter(thomas.id) {
                 it.copy(
                     feats = listOf(
@@ -89,9 +99,12 @@ class PreviewRender {
         }
         val out = File("build/previews").apply { mkdirs() }
 
-        suspend fun shot(name: String, w: Int, h: Int, nav: AppState.() -> Unit) {
+        suspend fun shot(name: String, w: Int, h: Int, overlay: (@Composable () -> Unit)? = null, nav: AppState.() -> Unit) {
             withContext(Dispatchers.Main) { state.nav() }
-            ImageComposeScene(w, h, Density(1f)) { App(state) }.use { scene ->
+            ImageComposeScene(w, h, Density(1f)) {
+                App(state)
+                overlay?.let { PfTheme { CompositionLocalProvider(LocalStrings provides state.strings) { it() } } }
+            }.use { scene ->
                 var t = 0L
                 repeat(12) { scene.render(t); t += 50_000_000; delay(40) }
                 val img = scene.render(t)
@@ -164,7 +177,32 @@ class PreviewRender {
         shot("cs-desktop-myitem", 1440, 1000) {
             openRoot(Screen.ItemPicker(inv.id)); itemFilter = ItemFilter(mine = true); showItem("my-p1", inv.id)
         }
+        shot("cs-phone-deitypicker", 390, 844, overlay = { cz.pfspells.ui.DeityPickerDialog("Torag", onDismiss = {}, onCustom = {}) { } }) { openRoot(Screen.Decks) }
+        shot("cs-phone-feat-prereqs", 390, 1000) { openRoot(Screen.CharacterDetail(thomasId)); showFeat("cloak-of-stone", thomasId) }
         shot("cs-phone-database", 390, 844) { openRoot(Screen.Decks); push(Screen.Database) }
+        // výběr classy s podtřídou (nová postava – klerik)
+        val subIdx = (state.db as DbState.Ready).db.subclasses
+        shot("cs-phone-classpicker-subclass", 390, 844, overlay = {
+            ClassPickerDialog("Nová postava", "Vytvořit", withName = true, subclasses = subIdx, initialClassId = "cleric", initialRace = "half-elf", onDismiss = {}) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-classpicker-druid", 390, 844, overlay = {
+            ClassPickerDialog(
+                "Nová postava", "Vytvořit", withName = true, subclasses = subIdx, initialClassId = "druid",
+                initialSubclass = mapOf(cz.pfspells.data.SubclassSlot.DOMAIN1 to "fire"), onDismiss = {},
+            ) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-desktop-classpicker-cleric", 1440, 1000, overlay = {
+            ClassPickerDialog(
+                "Nová postava", "Vytvořit", withName = true, subclasses = subIdx, initialClassId = "cleric",
+                initialSubclass = mapOf(cz.pfspells.data.SubclassSlot.DOMAIN1 to "sun", cz.pfspells.data.SubclassSlot.DOMAIN2 to "law"),
+                characterDeity = "Iomedae", onDismiss = {},
+            ) { }
+        }) { switchSection(Section.SPELLBOOK); openRoot(Screen.Decks) }
+        shot("cs-phone-racepicker", 390, 844, overlay = { RacePickerDialog("dwarf", onDismiss = {}) { } }) { openRoot(Screen.Decks) }
+        shot("cs-desktop-racepicker", 1440, 1000, overlay = { RacePickerDialog(null, onDismiss = {}) { } }) { openRoot(Screen.Decks) }
+        shot("desktop-classpicker-wizard", 1440, 1000, overlay = {
+            ClassPickerDialog("New character", "Create", withName = true, subclasses = subIdx, initialClassId = "wizard", onDismiss = {}) { }
+        }) { changeLang(Lang.EN); openRoot(Screen.Decks) }
         node.removeNode()
     }
 }

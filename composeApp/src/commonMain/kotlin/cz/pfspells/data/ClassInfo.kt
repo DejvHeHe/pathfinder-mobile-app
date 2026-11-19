@@ -25,6 +25,12 @@ data class ClassInfo(
     val hd: Int,
     val skills: Int,
     val npc: Boolean = false,
+    /** class skills (id z [Skills]; „knowledge“ = všechny Knowledge, „knowledge.local“ = jedna) */
+    val classSkills: Set<String> = emptySet(),
+    /** proficience se zbrojí: lgt, med, hvy, shl (štíty vč. bucklerů), twr (pavéza) */
+    val armorProf: Set<String> = emptySet(),
+    /** proficience se zbraněmi: simple, martial nebo jednotlivé zbraně („club“, „favored weapon“…) */
+    val weaponProf: Set<String> = emptySet(),
 ) {
     val caster: CasterClass? get() = CasterClasses.get(id)
 

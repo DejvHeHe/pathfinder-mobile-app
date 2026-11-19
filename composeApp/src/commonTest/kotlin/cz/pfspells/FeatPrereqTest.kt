@@ -12,6 +12,8 @@ import cz.pfspells.data.PrereqStatus.MET
 import cz.pfspells.data.PrereqStatus.UNKNOWN
 import cz.pfspells.data.PrereqStatus.UNMET
 import cz.pfspells.data.featSlots
+import cz.pfspells.data.Ability
+import cz.pfspells.data.scores
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -81,5 +83,54 @@ class FeatPrereqTest {
         assertEquals(mapOf("fighter" to 3), slots.bonus)
         assertEquals(7, slots.total)
         assertEquals(8, c.copy(extraFeats = 1).featSlots().total)
+    }
+
+    @Test
+    fun racePrerequisites() {
+        fun race(id: String?, text: String) = FeatPrereqs.status(c.copy(race = id), db, text)
+        // bez rasy: ověř ručně
+        assertEquals(UNKNOWN, race(null, "Dwarf"))
+        assertEquals(MET, race("dwarf", "Dwarf"))
+        assertEquals(UNMET, race("elf", "Dwarf"))
+        // half-elf platí jako elf i člověk, half-orc jako orc
+        assertEquals(MET, race("half-elf", "Elf"))
+        assertEquals(MET, race("half-elf", "Human"))
+        assertEquals(MET, race("half-orc", "Half-orc or orc"))
+        assertEquals(MET, race("orc", "Half-orc or orc"))
+        assertEquals(UNMET, race("human", "Half-orc or orc"))
+        assertEquals(MET, race("drow", "elf"))
+        assertEquals(MET, race("svirfneblin", "gnome subtype"))
+        // etnikum / varianta: se správnou rasou ověř ručně, s jinou nesplněno
+        assertEquals(UNKNOWN, race("human", "Human (Varisian)"))
+        assertEquals(UNMET, race("dwarf", "Human (Varisian)"))
+        // rasové traity rasa neověří
+        assertEquals(UNKNOWN, race("halfling", "halfling jinx trait"))
+    }
+
+    @Test
+    fun raceAbilitiesAndBonusFeat() {
+        // elf: +2 DEX, +2 INT, −2 CON k základu
+        val elf = c.copy(race = "elf")
+        assertEquals(16, elf.scores.int)
+        assertEquals(8, elf.scores.con)
+        assertEquals(MET, FeatPrereqs.status(elf, db, "Int 15"))
+        assertEquals(UNMET, FeatPrereqs.status(c, db, "Int 15"))
+        // human: +2 podle volby, bonusový feat
+        val human = c.copy(race = "human", raceBonus = Ability.STR)
+        assertEquals(17, human.scores.str)
+        assertEquals(15, c.copy(race = "human").scores.str)
+        assertEquals(c.featSlots().total + 1, human.featSlots().total)
+        assertEquals(c.featSlots().total, elf.featSlots().total)
+    }
+
+    @Test
+    fun sourceQuirks() {
+        // „—“ = bez prerekvizit
+        assertEquals(emptyList(), FeatPrereqs.split("—"))
+        assertEquals(MET, FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, "—")))
+        // zkratka knihy přilepená ke jménu featu, „… with the chosen weapon“
+        assertEquals(MET, st("Power AttackAPG"))
+        assertEquals(UNMET, st("DodgeUC"))
+        assertEquals(MET, st("Weapon Focus with the chosen weapon"))
     }
 }

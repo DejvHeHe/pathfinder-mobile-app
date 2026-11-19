@@ -3,6 +3,7 @@ package cz.pfspells.ui
 import cz.pfspells.data.ClassCatalog
 import cz.pfspells.data.CasterClasses
 import cz.pfspells.data.Character
+import cz.pfspells.data.raceInfo
 import cz.pfspells.str
 import cz.pfspells.Strings
 import cz.pfspells.Lang
@@ -313,7 +314,11 @@ fun <T> SimpleDropdown(
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         NbDashedButton("$label: ${optionLabel(selected)}", { open = true }, trailing = NbIcons.ChevronDown)
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = Nb.panel) {
+        // dlouhé seznamy (domény, subdomény, bloodline…) se nerozbalí přes celou výšku okna, ale posouvají se
+        DropdownMenu(
+            expanded = open, onDismissRequest = { open = false }, containerColor = Nb.panel,
+            modifier = Modifier.heightIn(max = 320.dp).widthIn(min = 180.dp),
+        ) {
             options.forEach { opt ->
                 DropdownMenuItem(
                     text = { Text(optionLabel(opt), color = Nb.ink) },
@@ -390,7 +395,7 @@ fun classLevelSummary(s: Strings, cls: CasterClass?, level: Int): String {
 
 /** „Wizard 5 / Fighter 2“ */
 fun classesSummary(s: Strings, c: Character): String =
-    c.classes.joinToString(" / ") { e -> "${s.classNameOf(e.classId)} ${e.level}" }
+    (c.raceInfo?.let { s.raceNameOf(it) + " · " } ?: "") + c.classes.joinToString(" / ") { e -> "${s.classNameOf(e.classId)} ${e.level}" }
 
 /** Název classy podle id (sesílací i nesesílací) v jazyce rozhraní. */
 fun Strings.classNameOf(classId: String): String =

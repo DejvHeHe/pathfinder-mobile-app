@@ -8,6 +8,8 @@ import cz.pfspells.data.CharacterStats
 import cz.pfspells.data.Ability
 import cz.pfspells.data.SpellItemKind
 import cz.pfspells.data.CreatureSize
+import cz.pfspells.data.RaceGroup
+import cz.pfspells.data.Alignment
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -189,7 +191,9 @@ interface Strings {
     fun element(name: String): String
     val noneChosen: String
     val chooseSubclass: String
+    val subclassLaterHint: String
     val subdomainHint: String
+    val druidDomainHint: String
     val schoolHint: String
     fun bonusSpellsHeader(t: SubclassType): String
     fun domainSlot(chosen: Int): String
@@ -389,6 +393,8 @@ interface Strings {
     val sourceSpells: String
     val sourceFeats: String
     val sourceClasses: String
+    val sourceRaces: String
+    val sourceDeities: String
     val sourceWeapons: String
     val sourceGear: String
     val fonts: String
@@ -439,6 +445,46 @@ interface Strings {
     fun classSpellsHeader(className: String): String
     val noCasterClasses: String
     val maxLevelReached: String
+
+    // rasa
+    val raceLabel: String
+    val chooseRaceTitle: String
+    val searchRaces: String
+    val noRace: String
+    fun raceGroup(g: RaceGroup): String
+    fun raceName(id: String, original: String): String
+    val anyAbilityBonus: String
+    val raceSizeHint: String
+    val raceBonusLabel: String
+
+    // skills
+    val skillsHeader: String
+
+    // přesvědčení, božstvo, ruční potvrzení prerekvizit
+    val alignmentLabel: String
+    fun alignmentName(a: Alignment): String
+    val deityLabel: String
+    val chooseDeityTitle: String
+    fun deityDomainsHint(deity: String): String
+    fun deityConflict(deity: String, items: String): String
+    val searchDeities: String
+    val customDeity: String
+    val noDeity: String
+    val confirmPrereq: String
+    val unconfirmPrereq: String
+    val confirmedByHand: String
+    val confirmPrereqHint: String
+    fun skillName(id: String, original: String): String
+    val classSkillShort: String
+    fun ranks(n: Int): String
+    val showAllSkills: String
+    val showTrainedSkills: String
+    val noSkillRanks: String
+    fun addSubSkill(skill: String): String
+    val subSkillLabel: String
+    val skillsHint: String
+    fun abilityBaseTitle(name: String, raceMod: Int): String
+    fun raceIncludedHint(mods: String): String
 
     // vlastní katalog
     val myItems: String
@@ -603,7 +649,9 @@ object EnStrings : Strings {
     override fun element(name: String) = name.replaceFirstChar { it.uppercase() }
     override val noneChosen = "none"
     override val chooseSubclass = "choose…"
-    override val subdomainHint = "A subdomain replaces some spells of its domain – pick one that belongs to the chosen domain."
+    override val subclassLaterHint = "Optional – you can also set or change it later in the character detail."
+    override val subdomainHint = "A subdomain replaces some spells and a power of its domain – only subdomains of the chosen domain are offered."
+    override val druidDomainHint = "Nature bond: a druid picks one of the nature domains (Air, Animal, Earth, Fire, Plant, Water, Weather), optionally one of its subdomains (not Metal)."
     override val schoolHint = "Specialists get one extra slot per spell level for spells of their school; preparing an opposition-school spell takes two slots."
     override fun bonusSpellsHeader(t: SubclassType) = when (t) {
         SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> "Domain spells"
@@ -869,6 +917,53 @@ object EnStrings : Strings {
     override val noCasterClasses = "This character casts no spells – add a spellcasting class to build a spellbook."
     override val maxLevelReached = "Character level 20 reached."
 
+    override val raceLabel = "Race"
+    override val chooseRaceTitle = "Choose race"
+    override val searchRaces = "Search races…"
+    override val noRace = "No race"
+    override fun raceGroup(g: RaceGroup) = when (g) {
+        RaceGroup.CORE -> "Core races"
+        RaceGroup.FEATURED -> "Featured races"
+        RaceGroup.UNCOMMON -> "Uncommon races"
+        RaceGroup.OTHER -> "Other races"
+    }
+    override fun raceName(id: String, original: String) = original
+    override val anyAbilityBonus = "+2 to one ability"
+    override val raceSizeHint = "Racial ability modifiers are added to the character's base scores. The race size is copied to the linked inventory (carrying capacity)."
+    override val raceBonusLabel = "+2 to"
+
+    override val skillsHeader = "Skills"
+
+    override val alignmentLabel = "Alignment"
+    override fun alignmentName(a: Alignment) = when (a) {
+        Alignment.LG -> "Lawful good"; Alignment.NG -> "Neutral good"; Alignment.CG -> "Chaotic good"
+        Alignment.LN -> "Lawful neutral"; Alignment.N -> "Neutral"; Alignment.CN -> "Chaotic neutral"
+        Alignment.LE -> "Lawful evil"; Alignment.NE -> "Neutral evil"; Alignment.CE -> "Chaotic evil"
+    }
+    override val deityLabel = "Deity"
+    override val chooseDeityTitle = "Choose deity"
+    override fun deityConflict(deity: String, items: String) = "$deity does not grant: $items – choose again."
+    override fun deityDomainsHint(deity: String) = "Only domains granted by $deity are offered (without a deity, or with a custom one, all domains)."
+    override val searchDeities = "Search name, pantheon, area…"
+    override val customDeity = "Custom…"
+    override val noDeity = "No deity"
+    override val confirmPrereq = "I have it"
+    override val unconfirmPrereq = "Undo"
+    override val confirmedByHand = "confirmed"
+    override val confirmPrereqHint = "What the app cannot check (racial traits, archetypes…) you can confirm by hand – it then counts for every feat with the same prerequisite."
+    override fun skillName(id: String, original: String) = original
+    override val classSkillShort = "class skill"
+    override fun ranks(n: Int) = if (n == 1) "1 rank" else "$n ranks"
+    override val showAllSkills = "Edit skills"
+    override val showTrainedSkills = "Done"
+    override val noSkillRanks = "No skill ranks yet. Until you assign some, skill prerequisites of feats stay „?“."
+    override fun addSubSkill(skill: String) = "Add $skill"
+    override val subSkillLabel = "Kind (e.g. alchemy, sing, sailor)"
+    override val skillsHint = "Class skill = +3 with at least 1 rank. Max ranks per skill = character level. Points per level: class + Int modifier (min 1), human +1; favored class bonus goes to Extra."
+    override fun abilityBaseTitle(name: String, raceMod: Int) =
+        if (raceMod == 0) name else "$name – base score (race ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
+    override fun raceIncludedHint(mods: String) = "Includes race: $mods. Tap a score to edit its base value."
+
     override val myItems = "My items"
     override val saveToMyItems = "Save to my items"
     override val removeFromMyItems = "Remove from my items"
@@ -903,6 +998,8 @@ object EnStrings : Strings {
     override val sourceSpells = "Spells"
     override val sourceFeats = "Feats"
     override val sourceClasses = "Classes (spells per day, BAB, saves)"
+    override val sourceRaces = "Races (size, speed, ability modifiers)"
+    override val sourceDeities = "Deities (alignment, domains, favored weapon)"
     override val sourceWeapons = "Weapons, ammunition, magic items"
     override val sourceGear = "Gear, armor, alchemical items, mounts"
     override val fonts = "Fonts"
@@ -926,6 +1023,21 @@ private fun Int.signedPlus(): String = if (this < 0) "−${-this}" else "+$this"
 private fun Int.signed(): String = if (this < 0) "−${-this}" else "$this"
 
 /** České názvy class podle [cz.pfspells.data.CasterClass.id] (a částí spell listů se stejným názvem). */
+private val csSkills = mapOf(
+    "acrobatics" to "Akrobacie", "appraise" to "Oceňování", "bluff" to "Blafování", "climb" to "Šplhání",
+    "craft" to "Řemeslo", "diplomacy" to "Diplomacie", "disableDevice" to "Zneškodnění mechanismu", "disguise" to "Převleky",
+    "escapeArtist" to "Vyklouznutí", "fly" to "Létání", "handleAnimal" to "Zacházení se zvířaty", "heal" to "Léčení",
+    "intimidate" to "Zastrašování", "knowledge" to "Znalost", "linguistics" to "Jazykověda", "perception" to "Vnímání",
+    "perform" to "Vystupování", "profession" to "Profese", "ride" to "Jízda", "senseMotive" to "Odhalení úmyslu",
+    "sleightOfHand" to "Zručnost", "spellcraft" to "Kouzelnictví", "stealth" to "Nenápadnost", "survival" to "Přežití",
+    "swim" to "Plavání", "useMagicDevice" to "Použití magického předmětu",
+)
+
+private val csRaces = mapOf(
+    "dwarf" to "Trpaslík", "elf" to "Elf", "gnome" to "Gnóm", "half-elf" to "Půlelf", "half-orc" to "Půlork",
+    "halfling" to "Půlčík", "human" to "Člověk", "orc" to "Ork", "drow" to "Drow", "aquatic-elf" to "Vodní elf",
+)
+
 private val csClasses = mapOf(
     "wizard" to "Kouzelník", "sorcerer" to "Čaroděj", "arcanist" to "Arkanista", "cleric" to "Klerik",
     "oracle" to "Orákulum", "druid" to "Druid", "witch" to "Čarodějnice", "shaman" to "Šaman", "psychic" to "Psychik",
@@ -1115,7 +1227,9 @@ object CsStrings : Strings {
     }
     override val noneChosen = "žádná"
     override val chooseSubclass = "vybrat…"
-    override val subdomainHint = "Subdoména nahrazuje některá kouzla své domény – vyberte takovou, která k doméně patří."
+    override val subclassLaterHint = "Nepovinné – jde nastavit nebo změnit i později v detailu postavy."
+    override val subdomainHint = "Subdoména nahrazuje některá kouzla a schopnost své domény – nabízí se jen subdomény zvolené domény."
+    override val druidDomainHint = "Pouto s přírodou: druid volí jednu z přírodních domén (Air, Animal, Earth, Fire, Plant, Water, Weather), volitelně její subdoménu (kromě Metal)."
     override val schoolHint = "Specialista má na každé úrovni kouzel slot navíc pro kouzlo své školy; kouzlo opoziční školy zabere při přípravě dva sloty."
     override fun bonusSpellsHeader(t: SubclassType) = when (t) {
         SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> "Doménová kouzla"
@@ -1424,6 +1538,54 @@ object CsStrings : Strings {
     override val noCasterClasses = "Tato postava nesesílá kouzla – pro knihu kouzel přidejte sesílací classu."
     override val maxLevelReached = "Postava má 20. úroveň."
 
+    override val raceLabel = "Rasa"
+    override val chooseRaceTitle = "Výběr rasy"
+    override val searchRaces = "Hledat rasy…"
+    override val noRace = "Bez rasy"
+    override fun raceGroup(g: RaceGroup) = when (g) {
+        RaceGroup.CORE -> "Základní rasy"
+        RaceGroup.FEATURED -> "Významné rasy"
+        RaceGroup.UNCOMMON -> "Neobvyklé rasy"
+        RaceGroup.OTHER -> "Ostatní rasy"
+    }
+    override fun raceName(id: String, original: String) = csRaces[id] ?: original
+    override val anyAbilityBonus = "+2 k jednomu atributu"
+    override val raceSizeHint = "Rasové úpravy se přičtou k základním atributům postavy. Velikost rasy se propíše do propojeného inventáře (nosnost)."
+    override val raceBonusLabel = "+2 k"
+
+    override val skillsHeader = "Dovednosti"
+
+    override val alignmentLabel = "Přesvědčení"
+    override fun alignmentName(a: Alignment) = when (a) {
+        Alignment.LG -> "Zákonně dobrý"; Alignment.NG -> "Neutrálně dobrý"; Alignment.CG -> "Chaoticky dobrý"
+        Alignment.LN -> "Zákonně neutrální"; Alignment.N -> "Neutrální"; Alignment.CN -> "Chaoticky neutrální"
+        Alignment.LE -> "Zákonně zlý"; Alignment.NE -> "Neutrálně zlý"; Alignment.CE -> "Chaoticky zlý"
+    }
+    override val deityLabel = "Božstvo"
+    override val chooseDeityTitle = "Výběr božstva"
+    override fun deityConflict(deity: String, items: String) = "$deity nedává: $items – vyberte znovu."
+    override fun deityDomainsHint(deity: String) = "Nabízí se jen domény božstva $deity (bez božstva nebo s vlastním všechny)."
+    override val searchDeities = "Hledat jméno, panteon, oblast…"
+    override val customDeity = "Vlastní…"
+    override val noDeity = "Bez božstva"
+    override val confirmPrereq = "Mám"
+    override val unconfirmPrereq = "Zrušit"
+    override val confirmedByHand = "potvrzeno"
+    override val confirmPrereqHint = "Co appka neověří (rasové traity, archetypy…), můžete potvrdit ručně – platí pak pro všechny featy se stejnou prerekvizitou."
+    override fun skillName(id: String, original: String) = csSkills[id.substringBefore('.')]
+        ?.let { if (id.startsWith("knowledge.")) "$it (${id.substringAfter('.')})" else it } ?: original
+    override val classSkillShort = "třídní"
+    override fun ranks(n: Int) = cz(n, "rank", "ranky", "ranků")
+    override val showAllSkills = "Upravit dovednosti"
+    override val showTrainedSkills = "Hotovo"
+    override val noSkillRanks = "Zatím žádné ranky. Dokud je nezadáte, prerekvizity featů na dovednosti zůstanou „?“."
+    override fun addSubSkill(skill: String) = "Přidat: $skill"
+    override val subSkillLabel = "Druh (např. alchemy, sing, sailor)"
+    override val skillsHint = "Třídní dovednost = +3, má-li aspoň 1 rank. Max. ranků v dovednosti = úroveň postavy. Body za úroveň: classa + mod. INT (min. 1), člověk +1; bonus za oblíbenou classu přidejte do „Navíc“."
+    override fun abilityBaseTitle(name: String, raceMod: Int) =
+        if (raceMod == 0) name else "$name – základ (rasa ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
+    override fun raceIncludedHint(mods: String) = "Včetně rasy: $mods. Klepnutím na atribut upravíte základní hodnotu."
+
     override val myItems = "Moje předměty"
     override val saveToMyItems = "Uložit do mých předmětů"
     override val removeFromMyItems = "Odebrat z mých předmětů"
@@ -1458,6 +1620,8 @@ object CsStrings : Strings {
     override val sourceSpells = "Kouzla"
     override val sourceFeats = "Featy"
     override val sourceClasses = "Classy (kouzla za den, ZÚB, záchrany)"
+    override val sourceRaces = "Rasy (velikost, rychlost, úpravy atributů)"
+    override val sourceDeities = "Božstva (přesvědčení, domény, oblíbená zbraň)"
     override val sourceWeapons = "Zbraně, střelivo, magické předměty"
     override val sourceGear = "Výbava, zbroje, alchymie, zvířata"
     override val fonts = "Písma"

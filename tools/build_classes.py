@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generates composeApp/src/commonMain/kotlin/cz/pfspells/data/ClassTable.kt – base data of all PF1 classes
-(BAB progression, good saves, hit die, skill ranks) for multiclass characters and feat prerequisites.
+(BAB progression, good saves, hit die, skill ranks, class skills, armor / weapon proficiencies) for multiclass characters and feat prerequisites.
 
 Source: Foundry VTT PF1 system, packs/classes (OGL content, GPL-3.0 project)
         https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1
@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "composeApp/src/commonMain/kotlin/cz/pfspells/data/ClassTable.kt"
 ZIP = "https://gitlab.com/api/v4/projects/16774935/repository/archive.zip?sha=master&path=packs/classes"
 BAB = {"high": "HIGH", "med": "MED", "low": "LOW"}
+# skilly z Background Skills (Unchained) appka nepoužívá
+IGNORED_SKILLS = {"artistry", "lore"}
 
 
 def fetch(url: str) -> bytes:
@@ -46,7 +48,9 @@ def main():
         st = s.get("savingThrows") or {}
         good = lambda k: (st.get(k) or {}).get("value") == "high"
         rows.append((class_id(d["name"]), d["name"], BAB[s["bab"]], good("fort"), good("ref"), good("will"),
-                     int(s["hd"]), int(s["skillsPerLevel"]), s["subType"] == "npc"))
+                     int(s["hd"]), int(s["skillsPerLevel"]), s["subType"] == "npc",
+                     sorted(x for x in (s.get("classSkills") or []) if x not in IGNORED_SKILLS),
+                     sorted(s.get("armorProf") or []), sorted({str(x).lower() for x in (s.get("weaponProf") or [])})))
     rows.sort(key=lambda r: r[1])
     b = lambda v: "true" if v else "false"
     lines = [
@@ -57,7 +61,10 @@ def main():
     ]
     for r in rows:
         lines.append(f'    ClassInfo("{r[0]}", "{r[1]}", Bab.{r[2]}, fort = {b(r[3])}, ref = {b(r[4])}, will = {b(r[5])}, '
-                     f'hd = {r[6]}, skills = {r[7]}, npc = {b(r[8])}),')
+                     f'hd = {r[6]}, skills = {r[7]}, npc = {b(r[8])}, '
+                     f'classSkills = setOf({", ".join(chr(34) + x + chr(34) for x in r[9])}), '
+                     f'armorProf = setOf({", ".join(chr(34) + x + chr(34) for x in r[10])}), '
+                     f'weaponProf = setOf({", ".join(chr(34) + x + chr(34) for x in r[11])})),')
     lines.append(")")
     OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"{OUT.relative_to(ROOT)}: {len(rows)} classes")

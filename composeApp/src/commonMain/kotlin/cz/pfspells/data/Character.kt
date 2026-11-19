@@ -7,6 +7,13 @@ import kotlinx.serialization.json.Json
 
 enum class Ability { STR, DEX, CON, INT, WIS, CHA }
 
+/** Přesvědčení: osa zákon–chaos ([law] 1 / 0 / −1) a dobro–zlo ([good] 1 / 0 / −1). */
+enum class Alignment(val law: Int, val good: Int) {
+    LG(1, 1), NG(0, 1), CG(-1, 1),
+    LN(1, 0), N(0, 0), CN(-1, 0),
+    LE(1, -1), NE(0, -1), CE(-1, -1),
+}
+
 /** Atributy postavy (bonusové sloty, prerekvizity featů, nosnost). */
 @Serializable
 data class Abilities(
@@ -76,6 +83,7 @@ data class Character(
     val name: String,
     /** multiclass; úroveň postavy = součet */
     val classes: List<ClassEntry>,
+    /** základní hodnoty atributů (bez rasy) – výsledné jsou [scores] */
     val abilities: Abilities = Abilities(),
     val feats: List<FeatPick> = emptyList(),
     /** ručně přidané featy navíc (rasa human, traity…) */
@@ -88,6 +96,20 @@ data class Character(
     val trackers: List<Tracker> = emptyList(),
     /** skryté předvyplněné schopnosti class (id z [FeaturePresets]) */
     val hiddenPresets: Set<String> = emptySet(),
+    /** rasa ([RaceCatalog] id, null = nevybraná) – úpravy atributů, rasové prerekvizity featů, velikost pro nosnost */
+    val race: String? = null,
+    /** atribut s rasovým +2 podle volby (human, half-elf, half-orc) */
+    val raceBonus: Ability? = null,
+    /** ranky ve skillech: klíč [Skills.key] („perception“, „knowledge.arcana“, „craft:alchemy“) → ranky */
+    val skills: Map<String, Int> = emptyMap(),
+    /** ručně přidané skill body navíc (oblíbená classa, traity…) */
+    val extraSkillPoints: Int = 0,
+    /** přesvědčení (null = nezadané) */
+    val alignment: Alignment? = null,
+    /** božstvo (volný text, prázdné = nezadané) */
+    val deity: String = "",
+    /** ručně potvrzené prerekvizity featů (text malými písmeny) – platí jako splněné */
+    val confirmedPrereqs: Set<String> = emptySet(),
 ) {
     val level: Int get() = classes.sumOf { it.level }
     val primary: ClassEntry? get() = classes.firstOrNull()

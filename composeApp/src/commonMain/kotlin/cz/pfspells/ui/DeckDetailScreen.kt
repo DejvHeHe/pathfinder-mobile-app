@@ -49,6 +49,9 @@ import cz.pfspells.data.LevelSlots
 import cz.pfspells.data.CastingKind
 import cz.pfspells.data.CasterClass
 import cz.pfspells.data.Ability
+import cz.pfspells.data.Alignment as CharAlignment
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import cz.pfspells.data.CasterClasses
 import cz.pfspells.data.Character
 import cz.pfspells.data.ClassEntry
@@ -56,6 +59,11 @@ import cz.pfspells.data.Spell
 import cz.pfspells.data.SpellDatabase
 import cz.pfspells.data.abilityMod
 import cz.pfspells.data.stats
+import cz.pfspells.data.raceInfo
+import cz.pfspells.data.deityInfo
+import cz.pfspells.data.deityConflicts
+import cz.pfspells.data.raceMod
+import cz.pfspells.data.scores
 import cz.pfspells.str
 
 /**
@@ -84,6 +92,9 @@ fun DeckDetailScreen(
     var removeClass by remember { mutableStateOf<String?>(null) }
     var editAbility by remember { mutableStateOf<Ability?>(null) }
     var subclassFor by remember { mutableStateOf<String?>(null) }
+    var pickRace by remember { mutableStateOf(false) }
+    var editDeity by remember { mutableStateOf(false) }
+    var customDeity by remember { mutableStateOf(false) }
     if (export) ExportDialog(state, listOf(c), db) { export = false }
 
     val stats = c.stats()
@@ -111,7 +122,10 @@ fun DeckDetailScreen(
             contentPadding = PaddingValues(start = if (wide) 0.dp else 16.dp, end = if (wide) 0.dp else 16.dp, top = 6.dp, bottom = 96.dp),
         ) {
             item(key = "classes") {
-                ClassesPanel(state, c, wide, onAdd = { addClass = true }, onRemove = { removeClass = it }, onSubclass = { subclassFor = it })
+                ClassesPanel(
+                    state, c, wide,
+                    onAdd = { addClass = true }, onRemove = { removeClass = it }, onSubclass = { subclassFor = it }, onRace = { pickRace = true }, onDeity = { editDeity = true },
+                )
             }
             if (!wide) {
                 item(key = "stats") {
@@ -122,10 +136,17 @@ fun DeckDetailScreen(
                 Column(Modifier.padding(top = 4.dp)) {
                     SectionHeader(s.abilitiesHeader)
                     AbilityRow(s, c) { editAbility = it }
+                    c.raceInfo?.let { r ->
+                        val mods = raceModsText(s, r, c.raceBonus)
+                        if (Ability.entries.any { c.raceMod(it) != 0 }) {
+                            Text(s.raceIncludedHint(mods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 6.dp))
+                        }
+                    }
                 }
             }
             item(key = "inventory") { InventoryLink(state, c, wide) }
             item(key = "feats") { FeatsPanel(state, c, wide, selectedFeatPick) }
+            item(key = "skills") { SkillsPanel(state, c) }
             item(key = "resources") { ResourcesPanel(state, c, wide) }
             if (casters.isNotEmpty() || c.resources().isNotEmpty()) {
                 item(key = "game") {
@@ -160,10 +181,12 @@ fun DeckDetailScreen(
             title = s.addClass, confirmLabel = s.add, withName = false,
             exclude = c.classes.map { it.classId }.toSet(),
             maxLevel = (20 - c.level).coerceAtLeast(1),
+            subclasses = db.subclasses,
+            characterDeity = c.deity,
             onDismiss = { addClass = false },
-        ) { _, classId, level ->
+        ) { p ->
             addClass = false
-            state.addClass(charId, classId, level)
+            state.addClass(charId, p.classId, p.level, p.subclass)
         }
     }
     removeClass?.let { classId ->
@@ -181,11 +204,30 @@ fun DeckDetailScreen(
             dismissButton = { TextButton(onClick = { removeClass = null }) { Text(s.cancel, color = Nb.ink) } },
         )
     }
+    if (editDeity) {
+        DeityPickerDialog(c.deity, onDismiss = { editDeity = false }, onCustom = { editDeity = false; customDeity = true }) { name ->
+            editDeity = false
+            state.setDeity(charId, name)
+        }
+    }
+    if (customDeity) {
+        // vlastní / homebrew božstvo – jen text (přesvědčení božstva appka nezná)
+        TextFieldDialog(s.deityLabel, c.deity.takeIf { cz.pfspells.data.DeityCatalog.get(it) == null }.orEmpty(), s.deityLabel, onDismiss = { customDeity = false }) { v ->
+            customDeity = false
+            state.setDeity(charId, v)
+        }
+    }
+    if (pickRace) {
+        RacePickerDialog(c.race, onDismiss = { pickRace = false }) { id ->
+            pickRace = false
+            state.setRace(charId, id)
+        }
+    }
     subclassFor?.let { classId ->
         c.classEntry(classId)?.let { e -> SubclassDialog(state, db, c, e) { subclassFor = null } }
     }
     editAbility?.let { a ->
-        NumberDialog(s.abilityLong(a), c.abilities[a], onDismiss = { editAbility = null }) { v ->
+        NumberDialog(s.abilityBaseTitle(s.abilityLong(a), c.raceMod(a)), c.abilities[a], onDismiss = { editAbility = null }) { v ->
             state.setAbility(charId, a, v)
             editAbility = null
         }
@@ -227,6 +269,7 @@ fun DeckDetailScreen(
 }
 
 /** Seznam class postavy: název, úroveň (stepper), odebrání; tlačítko „Přidat classu“. Celkem max. 20 úrovní. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ClassesPanel(
     state: AppState,
@@ -235,10 +278,45 @@ private fun ClassesPanel(
     onAdd: () -> Unit,
     onRemove: (String) -> Unit,
     onSubclass: (String) -> Unit,
+    onRace: () -> Unit,
+    onDeity: () -> Unit,
 ) {
     val s = str
     val fonts = LocalNbFonts.current
     NbPanel(Modifier.fillMaxWidth().padding(top = if (wide) 14.dp else 0.dp), color = Nb.inset) {
+        // rasa: název + velikost, rychlost, úpravy atributů; klepnutím výběr
+        MonoLabel(s.raceLabel)
+        val race = c.raceInfo
+        Column(Modifier.padding(top = 4.dp, bottom = 10.dp).clip(Nb.shape).clickable(onClick = onRace).padding(vertical = 2.dp)) {
+            if (race != null) {
+                Text(s.raceNameOf(race), fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Nb.ink)
+                Text(raceDetail(s, race, c.raceBonus), fontSize = 12.5.sp, color = Nb.rust)
+            } else {
+                Text(
+                    "${s.raceLabel}: ${s.chooseSubclass}",
+                    fontSize = 13.sp, color = Nb.accent, textDecoration = TextDecoration.Underline,
+                )
+            }
+        }
+        if (race?.anyBonus == true) RaceBonusDropdown(c.raceBonus, Modifier.padding(bottom = 10.dp)) { state.setRaceBonus(c.id, it) }
+        // přesvědčení a božstvo (prerekvizity featů „good alignment“, „worshiper of Iomedae“)
+        FlowRow(
+            Modifier.padding(bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SimpleDropdown(
+                label = s.alignmentLabel,
+                options = listOf<CharAlignment?>(null) + CharAlignment.entries,
+                selected = c.alignment,
+                optionLabel = { it?.let(s::alignmentName) ?: s.chooseOption },
+                onSelect = { state.setAlignment(c.id, it) },
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                NbDashedButton(deityButtonText(s, c.deity), onDeity)
+                if (c.deity.isNotBlank()) NbIconButton(NbIcons.Close, s.delete, { state.setDeity(c.id, "") }, Nb.inkMuted, 14.dp)
+            }
+        }
         MonoLabel(s.classesHeader)
         c.classes.forEach { e ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -265,6 +343,11 @@ private fun ClassesPanel(
                     fontSize = 13.sp, color = Nb.accent, textDecoration = TextDecoration.Underline,
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
+            }
+            // doména / subdoména, kterou božstvo nedává (třeba po změně božstva)
+            c.deityInfo?.let { d ->
+                val bad = e.deityConflicts(d)
+                if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad, Modifier.clip(Nb.shape).clickable { onSubclass(e.classId) })
             }
         }
         Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -318,7 +401,7 @@ private fun AbilityRow(s: Strings, c: Character, onEdit: (Ability) -> Unit) {
     val fonts = LocalNbFonts.current
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Ability.entries.forEach { a ->
-            val v = c.abilities[a]
+            val v = c.scores[a]
             val mod = abilityMod(v)
             Column(
                 Modifier.weight(1f).clip(Nb.shape).background(Nb.panel).dashedBorder()
@@ -350,7 +433,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
     val entries = e.spells.mapNotNull { (id, count) -> db.get(id)?.let { it to count } }
     val byLevel = entries.groupBy { (spell, _) -> cls.spellLevelOf(spell) ?: -1 }
     val maxLevel = cls.maxSpellLevel(e.level)
-    val score = c.abilities[cls.ability]
+    val score = c.scores[cls.ability]
     // všechny dostupné levely (i prázdné – kvůli limitům), pak případné kouzla nad úrovní / mimo list
     val levels = ((if (cls.hasCantrips) 0 else 1)..maxLevel).toList() + byLevel.keys.filter { it > maxLevel || it < 0 }.sorted()
     val grouped: List<Pair<Int, List<Pair<Spell, Int>>>> = levels.map { lvl ->

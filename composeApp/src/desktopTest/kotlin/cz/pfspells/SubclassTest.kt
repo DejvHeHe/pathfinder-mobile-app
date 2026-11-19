@@ -10,6 +10,11 @@ import cz.pfspells.data.bonusSpellsByLevel
 import cz.pfspells.data.hasSubclassSlot
 import cz.pfspells.data.isOppositionSpell
 import cz.pfspells.data.isSchoolSpell
+import cz.pfspells.data.withSubclass
+import cz.pfspells.data.DRUID_DOMAINS
+import cz.pfspells.data.domainsFor
+import cz.pfspells.data.subdomainParents
+import cz.pfspells.data.subdomainsOf
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,5 +80,38 @@ class SubclassTest {
         val fireSchool = ClassEntry("wizard", 5, subclass = mapOf(SubclassSlot.SCHOOL to "element:fire", SubclassSlot.OPPOSITION1 to "element:water"))
         assertTrue(fireSchool.isSchoolSpell(fireball))
         assertFalse(ClassEntry("wizard", 5, subclass = mapOf(SubclassSlot.SCHOOL to "universalist")).hasSubclassSlot())
+    }
+
+    @Test
+    fun subclassMapChanges() {
+        var sub = emptyMap<String, String>()
+            .withSubclass(SubclassSlot.DOMAIN1, "fire").withSubclass(SubclassSlot.SUBDOMAIN1, "ash")
+        assertEquals("ash", sub[SubclassSlot.SUBDOMAIN1])
+        // zrušená doména ruší i subdoménu
+        sub = sub.withSubclass(SubclassSlot.DOMAIN1, null)
+        assertTrue(sub.isEmpty())
+        // jiná specializace ruší opoziční školy
+        sub = emptyMap<String, String>().withSubclass(SubclassSlot.SCHOOL, "evocation")
+            .withSubclass(SubclassSlot.OPPOSITION1, "illusion").withSubclass(SubclassSlot.SCHOOL, "abjuration")
+        assertEquals(mapOf(SubclassSlot.SCHOOL to "abjuration"), sub)
+    }
+
+    @Test
+    fun subdomainsBelongToTheirDomain() {
+        assertEquals(listOf("arson", "ash", "smoke"), idx.subdomainsOf("fire", "cleric"))
+        assertTrue(idx.subdomainsOf("law", "cleric").any { it.startsWith("archon") })
+        assertTrue(idx.subdomainsOf("good", "cleric").any { it.startsWith("archon") })
+        assertTrue("metal" in idx.subdomainsOf("earth", "cleric"))
+        assertFalse("metal" in idx.subdomainsOf("earth", "druid"))
+        // druid jen přírodní domény
+        assertEquals(DRUID_DOMAINS, idx.domainsFor("druid"))
+        assertTrue(idx.domainsFor("cleric").size > 30)
+        // téměř každá subdoména ze zdroje má známou doménu
+        val unknown = idx.names(SubclassKind.SUBDOMAIN).filter { subdomainParents(it).isEmpty() }
+        assertTrue(unknown.size <= 3, "neznámé subdomény: $unknown")
+        // jiná doména zruší cizí subdoménu, vlastní nechá
+        val sub = mapOf(SubclassSlot.DOMAIN1 to "fire", SubclassSlot.SUBDOMAIN1 to "ash")
+        assertEquals(null, sub.withSubclass(SubclassSlot.DOMAIN1, "water")[SubclassSlot.SUBDOMAIN1])
+        assertEquals("ash", sub.withSubclass(SubclassSlot.DOMAIN1, "fire")[SubclassSlot.SUBDOMAIN1])
     }
 }

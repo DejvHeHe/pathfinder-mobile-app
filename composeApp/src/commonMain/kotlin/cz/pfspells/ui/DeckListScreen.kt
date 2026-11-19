@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
+import cz.pfspells.DbState
 import cz.pfspells.Screen
 import cz.pfspells.Section
 import cz.pfspells.data.CasterClasses
@@ -104,9 +105,13 @@ fun DeckListScreen(state: AppState, db: SpellDatabase) {
             state.push(Screen.InventoryDetail(inv.id))
         }
     } else if (showNew) {
-        ClassPickerDialog(str.newCharacter, str.create, withName = true, onDismiss = { showNew = false }) { name, classId, level ->
+        ClassPickerDialog(
+            str.newCharacter, str.create, withName = true,
+            subclasses = (state.db as? DbState.Ready)?.db?.subclasses, onDismiss = { showNew = false },
+        ) { p ->
             showNew = false
-            val c = state.createCharacter(name, classId, level)
+            val c = state.createCharacter(p.name, p.classId, p.level, p.subclass, p.race, p.raceBonus)
+            if (p.deity.isNotBlank()) state.setDeity(c.id, p.deity)
             state.push(Screen.CharacterDetail(c.id))
         }
     }
@@ -133,9 +138,13 @@ fun DeckSidebar(state: AppState, selectedDeckId: String?, modifier: Modifier = M
         }
     }
     if (showNew) {
-        ClassPickerDialog(str.newCharacter, str.create, withName = true, onDismiss = { showNew = false }) { name, classId, level ->
+        ClassPickerDialog(
+            str.newCharacter, str.create, withName = true,
+            subclasses = (state.db as? DbState.Ready)?.db?.subclasses, onDismiss = { showNew = false },
+        ) { p ->
             showNew = false
-            val c = state.createCharacter(name, classId, level)
+            val c = state.createCharacter(p.name, p.classId, p.level, p.subclass, p.race, p.raceBonus)
+            if (p.deity.isNotBlank()) state.setDeity(c.id, p.deity)
             state.openRoot(Screen.CharacterDetail(c.id))
         }
     }

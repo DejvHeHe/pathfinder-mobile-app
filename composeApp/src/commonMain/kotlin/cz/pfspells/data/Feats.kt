@@ -53,7 +53,10 @@ object FeatRepository {
     @OptIn(ExperimentalResourceApi::class)
     suspend fun load(): FeatDatabase = withContext(Dispatchers.Default) {
         val text = Res.readBytes("files/Feats.json").decodeToString()
-        FeatDatabase(json.decodeFromString(ListSerializer(Feat.serializer()), text))
+        // „—“ ve zdroji = žádné prerekvizity
+        FeatDatabase(json.decodeFromString(ListSerializer(Feat.serializer()), text).map { f ->
+            if (FeatPrereqs.isNone(f.prereq)) f.copy(prereq = "") else f
+        })
     }
 }
 
@@ -61,12 +64,13 @@ object FeatRepository {
 
 enum class PrereqStatus { MET, UNMET, UNKNOWN }
 
-data class Prereq(val text: String, val status: PrereqStatus)
+/** Jedna prerekvizita; [confirmed] = uživatel ji u postavy ručně potvrdil (pak je [status] MET). */
+data class Prereq(val text: String, val status: PrereqStatus, val confirmed: Boolean = false)
 
 /**
  * Hrubé vyhodnocení textu prerekvizit („Str 13, Power Attack, base attack bonus +1“). Ověřuje atributy, BAB,
- * úroveň postavy / classy, caster level, schopnost sesílat kouzla N. levelu a featy postavy; ostatní
- * (skill ranky, rasa, class feature…) je „ověř ručně“. Nic se nevynucuje.
+ * úroveň postavy / classy, caster level, schopnost sesílat kouzla N. levelu, rasu (je-li u postavy vybraná) a featy postavy;
+ * ostatní (skill ranky, rasové traity, class feature…) je „ověř ručně“. Nic se nevynucuje.
  */
 object FeatPrereqs {
     private val ABILITY = Regex("""^(str|dex|con|int|wis|cha)[a-z]*\s+(\d+)""")
@@ -76,8 +80,90 @@ object FeatPrereqs {
     private val CLASS_LEVEL = Regex("""^([a-z][a-z' ()]*?)\s+level\s+(\d+)""")
     private val CAST_LEVEL = Regex("""ability to cast\s+(\d+)(?:st|nd|rd|th)-level(\s+(arcane|divine|psychic))?\s+spells""")
 
+    /** Zkratka knihy přilepená ke jménu featu ve zdroji („Improved Dirty TrickAPG“). */
+    private val SOURCE_SUFFIX = Regex("""(apg|arg|acg|uc|um|ue|ui|uw|oa|isg)$""")
+
+    /** Zkratka knihy přilepená ke slovu („brawlerACG“, „vishkanyaARG“); bez „ue“ / „um“ (true, medium…). */
+    private val GLUED_SOURCE = Regex("""(?<=[a-z]{3})(acg|apg|arg|uc|ui|oa|isg|iswg)\b""")
+    private val FEAT_TYPE = Regex("""^(?:any|one|at least one|a)\s+([a-z ]+?)\s+feat$""")
+
+    /** „any teamwork feat“, „one metamagic feat“, „teamwork“: postava má feat daného typu (podle databáze featů). */
+    private fun featTypeStatus(c: Character, db: FeatDatabase?, t: String): PrereqStatus? {
+        if (db == null) return null
+        val type = FEAT_TYPE.find(t)?.groupValues?.get(1)?.trim() ?: t.takeIf { it == "teamwork" } ?: return null
+        val known = db.types.any { it.lowercase() == type }
+        if (!known) return null
+        val has = c.feats.any { p -> p.featId?.let { db.get(it) }?.types?.any { it.lowercase() == type } == true }
+        return met(has)
+    }
+
+    private val OR_SUFFIXES = listOf(" alignment", " domain", " class feature", " racial trait", " subtype", " spells")
+    private val NTH_LEVEL_CLASS = Regex("""^(\d+)(?:st|nd|rd|th)-level\s+([a-z ()]+)$""")
+    private val HD_SHORT = Regex("""^(\d+)\s+(?:or more\s+)?hd$""")
+
+    private val RANK_SUFFIX = Regex("""\s+\d+\s+ranks?\b.*$""")
+    private val SKILL_RANKS = Regex("""^([a-z ]+?)(?:\s*\(([^)]*)\))?\s+(\d+)\s+ranks?\b""")
+    private val RANKS_IN = Regex("""^(\d+)\s+ranks?\s+in\s+(.+)$""")
+    private val SKILL_REF = Regex("""^(?:at least one\s+)?([a-z ]+?)(?:\s*\(([^)]*)\))?(?:\s+skills?)?(?:\s*\(.*\))?$""")
+
+    /** Rozdělí podle „ or “ mimo závorky. */
+    private fun splitOr(t: String): List<String> {
+        val out = mutableListOf<String>()
+        var depth = 0
+        var start = 0
+        var i = 0
+        while (i < t.length) {
+            when {
+                t[i] == '(' -> depth++
+                t[i] == ')' -> depth = (depth - 1).coerceAtLeast(0)
+                depth == 0 && t.startsWith(" or ", i) -> { out += t.substring(start, i); start = i + 4; i += 3 }
+            }
+            i++
+        }
+        out += t.substring(start)
+        return out.map { it.trim().removePrefix("or ").trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun isSkillName(name: String) = name.trim() == "knowledge" || Skills.byName(name) != null
+
+    /**
+     * Skill ranky: „Acrobatics 5 ranks“, „Knowledge (planes) 3 ranks“, „Knowledge (arcana, …, or religion) 5 ranks“,
+     * „Craft (any) 1 rank“, „5 ranks in Sense Motive“, „1 rank in at least one Knowledge skill“. Null = text není skill.
+     * Postava bez zadaných skillů → „ověř ručně“ (skilly se u ní nevedou).
+     */
+    private fun skillStatus(c: Character, t: String): PrereqStatus? {
+        val skillName: String
+        val spec: String?
+        val n: Int
+        val a = SKILL_RANKS.find(t)?.takeIf { isSkillName(it.groupValues[1]) }
+        if (a != null) {
+            skillName = a.groupValues[1].trim(); spec = a.groupValues[2].ifEmpty { null }; n = a.groupValues[3].toInt()
+        } else {
+            val b = RANKS_IN.find(t) ?: return null
+            val m = SKILL_REF.find(b.groupValues[2].trim())?.takeIf { isSkillName(it.groupValues[1]) } ?: return null
+            n = b.groupValues[1].toInt(); skillName = m.groupValues[1].trim(); spec = m.groupValues[2].ifEmpty { null }
+        }
+        if (c.skills.isEmpty()) return PrereqStatus.UNKNOWN
+        val keys = skillKeys(c, skillName, spec) ?: return null
+        return met((keys.maxOfOrNull { c.ranks(it) } ?: 0) >= n)
+    }
+
+    /** Klíče ranků, z nichž stačí kterýkoli („Knowledge (any)“, „Perform (sing, or wind)“…). */
+    private fun skillKeys(c: Character, skillName: String, spec: String?): List<String>? {
+        val any = spec == null || spec.startsWith("any")
+        val listed = spec?.split(',', ' ')?.map { it.trim() }?.filter { it.isNotEmpty() && it != "or" && it != "and" }.orEmpty()
+        if (skillName == "knowledge") return (if (any) Skills.KNOWLEDGE else listed.filter { it in Skills.KNOWLEDGE }).map { "knowledge.$it" }
+        val info = Skills.byName(skillName) ?: return null
+        if (!info.subtyped) return listOf(info.id)
+        return if (any) c.skills.keys.filter { Skills.idOf(it) == info.id } else listed.map { Skills.key(info.id, it) }
+    }
+
+    /** „—“ (pomlčka ve zdroji) = feat nemá prerekvizity. */
+    fun isNone(prereq: String): Boolean = prereq.trim().trimEnd('.').let { it.isEmpty() || it == "—" || it == "–" || it == "-" }
+
     /** Rozdělí podle čárek a středníků mimo závorky. */
     fun split(prereq: String): List<String> {
+        if (isNone(prereq)) return emptyList()
         val out = mutableListOf<String>()
         var depth = 0
         val cur = StringBuilder()
@@ -90,11 +176,26 @@ object FeatPrereqs {
             }
         }
         out += cur.toString()
-        return out.map { it.trim().trimEnd('.').trim() }.filter { it.isNotEmpty() }
+        val parts = out.map { it.trim().trimEnd('.').trim() }.filter { it.isNotEmpty() }
+        // „Half-orc, or orc“ – část začínající „or“ je alternativa k předchozí
+        val merged = mutableListOf<String>()
+        for (p in parts) {
+            if (merged.isNotEmpty() && p.startsWith("or ", ignoreCase = true)) merged[merged.lastIndex] = merged.last() + " " + p
+            else merged += p
+        }
+        return merged
     }
 
-    fun evaluate(c: Character, db: FeatDatabase?, prereq: String): List<Prereq> =
-        split(prereq).map { Prereq(it, status(c, db, it)) }
+    /** Klíč ručního potvrzení prerekvizity (stejný text u různých featů = jedno potvrzení). */
+    fun confirmKey(text: String): String = text.lowercase().trim()
+
+    /** [spells] = databáze kouzel pro „ability to cast dispel magic“ (null → takové prerekvizity zůstanou „?“). */
+    fun evaluate(c: Character, db: FeatDatabase?, prereq: String, spells: SpellDatabase? = null): List<Prereq> =
+        split(prereq).map { text ->
+            val s = status(c, db, text, spells)
+            if (s != PrereqStatus.MET && confirmKey(text) in c.confirmedPrereqs) Prereq(text, PrereqStatus.MET, confirmed = true)
+            else Prereq(text, s)
+        }
 
     /** Souhrn: některá nesplněná → UNMET, jinak některá neověřitelná → UNKNOWN, jinak MET. */
     fun overall(list: List<Prereq>): PrereqStatus = when {
@@ -103,20 +204,45 @@ object FeatPrereqs {
         else -> PrereqStatus.MET
     }
 
-    fun status(c: Character, db: FeatDatabase?, text: String): PrereqStatus {
-        val t = text.lowercase().trim()
-        if (" or " in t) {
-            val parts = t.split(" or ").map { status(c, db, it) }
+    fun status(c: Character, db: FeatDatabase?, text: String, spells: SpellDatabase? = null): PrereqStatus {
+        val t = text.lowercase().trim().replace('’', '\'').replace('�', '\'').replace(Regex("""\s+"""), " ")
+            .replace(Regex("""\s*\(see [^)]*\)$"""), "") // „Int 13 (see special)“
+            .replace(GLUED_SOURCE, "") // „brawlerACG level 8th“
+            .replace(Regex("""^performance \("""), "perform (") // překlep ve zdroji
+            .trim()
+        // proficience mají „or“ / „and“ uvnitř („proficiency with medium or heavy armor“)
+        PrereqRules.proficiency(c, t)?.let { return it }
+        PrereqRules.size(c, t)?.let { return it } // „small size or smaller“
+        PrereqRules.hitDiceOrSave(c, t)?.let { return it } // „5 or more Hit Dice“
+        featTypeStatus(c, db, t)?.let { return it } // „any teamwork feat“
+        PrereqRules.racialTrait(c, t)?.let { return it } // „defensive training and hatred racial traits“
+        val alternatives = splitOr(t)
+        if (alternatives.size > 1) {
+            // společná přípona / předpona platí pro všechny části: „Knowledge (nature) or Survival 5 ranks“,
+            // „good or lawful alignment“, „animal or plant domain“, „ability to cast possession or greater possession“
+            val last = alternatives.last()
+            val suffixes = listOfNotNull(RANK_SUFFIX.find(last)?.value) +
+                OR_SUFFIXES.filter { last.endsWith(it) }
+            val castPrefix = "ability to cast ".takeIf { alternatives.first().startsWith(it) }
+            val parts = alternatives.map { p ->
+                // nejdřív s příponou („animal“ + „ domain“ – samotné „animal“ by se vyhodnotilo jako typ tvora)
+                val rank = RANK_SUFFIX.find(last)?.value
+                val withSuffix = suffixes.filter { sfx -> !p.endsWith(sfx.trim()) && !(sfx == rank && p.any { it.isDigit() }) }.map { p + it }
+                val variants = withSuffix + p + listOfNotNull(castPrefix?.takeIf { !p.startsWith(it) }?.let { it + p })
+                // první varianta, kterou appka umí vyhodnotit
+                variants.map { status(c, db, it, spells) }.firstOrNull { it != PrereqStatus.UNKNOWN } ?: PrereqStatus.UNKNOWN
+            }
             return when {
                 parts.any { it == PrereqStatus.MET } -> PrereqStatus.MET
                 parts.all { it == PrereqStatus.UNMET } -> PrereqStatus.UNMET
                 else -> PrereqStatus.UNKNOWN
             }
         }
+        skillStatus(c, t)?.let { return it }
         ABILITY.find(t)?.let { m ->
             if (m.range.last == t.lastIndex) {
                 val a = Ability.entries.first { it.name.lowercase() == m.groupValues[1] }
-                return met(c.abilities[a] >= m.groupValues[2].toInt())
+                return met(c.scores[a] >= m.groupValues[2].toInt())
             }
         }
         BAB.find(t)?.let { return met(c.stats().bab >= it.groupValues[1].toInt()) }
@@ -125,6 +251,13 @@ object FeatPrereqs {
             val cl = c.classes.filter { CasterClasses.get(it.classId) != null }.maxOfOrNull { it.level } ?: 0
             return met(cl >= m.groupValues[1].toInt())
         }
+        NTH_LEVEL_CLASS.find(t)?.let { m ->
+            classByName(m.groupValues[2].trim())?.let { cls ->
+                return met((c.classes.firstOrNull { it.classId == cls.id }?.level ?: 0) >= m.groupValues[1].toInt())
+            }
+        }
+        HD_SHORT.find(t)?.let { return met(c.level >= it.groupValues[1].toInt()) }
+        PrereqRules.spellKind(c, t)?.let { return it }
         CAST_LEVEL.find(t)?.let { m ->
             val n = m.groupValues[1].toInt()
             val can = c.classes.any { e -> CasterClasses.get(e.classId)?.let { it.maxSpellLevel(e.level) >= n } == true }
@@ -135,16 +268,46 @@ object FeatPrereqs {
             val cls = classByName(m.groupValues[1].trim())
             if (cls != null) return met((c.classes.firstOrNull { it.classId == cls.id }?.level ?: 0) >= m.groupValues[2].toInt())
         }
-        // feat – přesné jméno, nebo „Weapon Focus (longsword)“ → stačí mít Weapon Focus
-        val base = t.substringBefore(" (").trim()
-        if (db != null && (db.byName(t) != null || db.byName(base) != null)) {
-            val has = c.feats.any { p -> p.name.lowercase().let { it == t || it == base || it.startsWith("$base (") } }
-            return if (has) PrereqStatus.MET else PrereqStatus.UNMET
+        raceStatus(c, t)?.let { return it }
+        PrereqRules.hitDiceOrSave(c, t)?.let { return it }
+        PrereqRules.alignment(c, t)?.let { return it }
+        PrereqRules.deity(c, t)?.let { return it }
+        PrereqRules.size(c, t)?.let { return it }
+        PrereqRules.creatureType(c, t)?.let { return it }
+        // feat – přesné jméno, nebo „Weapon Focus (longsword)“ / „Weapon Focus with the chosen weapon“ → stačí mít Weapon Focus;
+        // zdroj občas ke jménu přilepí zkratku knihy („Improved Dirty TrickAPG“)
+        if (db != null) {
+            val noFeat = t.removeSuffix(" feat").trim()
+            val candidates = listOf(t, noFeat, t.substringBefore(" ("), t.substringBefore(" with "), t.replace(SOURCE_SUFFIX, ""), noFeat.replace(SOURCE_SUFFIX, ""))
+                .map { it.trim() }.distinct()
+            val name = candidates.firstOrNull { db.byName(it) != null }
+            if (name != null) {
+                val has = c.feats.any { p -> p.name.lowercase().let { it == t || it == name || it.startsWith("$name (") } }
+                return if (has) PrereqStatus.MET else PrereqStatus.UNMET
+            }
         }
+        PrereqRules.classFeature(c, t)?.let { return it }
+        PrereqRules.namedSpell(c, t, spells)?.let { return it }
+        PrereqRules.domain(c, t)?.let { return it }
         return PrereqStatus.UNKNOWN
     }
 
     private fun met(b: Boolean) = if (b) PrereqStatus.MET else PrereqStatus.UNMET
+
+    /**
+     * Rasa: „Dwarf“, „Half-orc“, „gnome subtype“, „Human (Varisian)“. Null = text není rasa.
+     * Bez vybrané rasy „ověř ručně“; s upřesněním v závorce (etnikum, varianta) při správné rase taky.
+     */
+    private fun raceStatus(c: Character, t: String): PrereqStatus? {
+        val base = t.removeSuffix(" subtype").removeSuffix(" race").substringBefore(" (").trim()
+        if (!RaceCatalog.isRaceWord(base)) return null
+        val race = c.raceInfo ?: return PrereqStatus.UNKNOWN
+        return when {
+            !race.countsAs(base) -> PrereqStatus.UNMET
+            "(" in t -> PrereqStatus.UNKNOWN
+            else -> PrereqStatus.MET
+        }
+    }
 
     private fun classByName(name: String): ClassInfo? =
         ClassCatalog.all.firstOrNull { it.name.lowercase() == name || it.id == name.replace(' ', '_') }
@@ -178,8 +341,10 @@ data class FeatSlots(
     /** bonusové featy podle class: classId → počet */
     val bonus: Map<String, Int>,
     val extra: Int,
+    /** rasový bonusový feat (human, half-elf) */
+    val race: Int = 0,
 ) {
-    val total: Int get() = general + bonus.values.sum() + extra
+    val total: Int get() = general + bonus.values.sum() + extra + race
 }
 
 fun Character.featSlots(): FeatSlots = FeatSlots(
@@ -189,4 +354,5 @@ fun Character.featSlots(): FeatSlots = FeatSlots(
         if (n > 0) e.classId to n else null
     }.toMap(),
     extra = extraFeats,
+    race = raceInfo?.bonusFeats ?: 0,
 )

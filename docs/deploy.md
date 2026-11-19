@@ -140,6 +140,6 @@ Appka je jednostránková (URL se nemění), Umami proto zaznamená jedno zobraz
 (návštěvníci, země, zařízení); akce uvnitř appky by šly doplnit vlastními událostmi `umami.track(...)`.
 
 ### Data uživatelů
-Server **nic neukládá**. Decky a inventáře jsou v prohlížeči každého uživatele (localStorage/IndexedDB, vázané na adresu webu).
+Server **nic neukládá**. Postavy a inventáře jsou v prohlížeči každého uživatele (localStorage/IndexedDB, vázané na adresu webu).
 Kontejner je bezstavový – aktualizace ani smazání kontejneru data uživatelů neovlivní.
-Při změně domény/adresy se ale data v prohlížeči „ztratí“ (jsou vázaná na původní adresu) – pomůže Export all / Import.
+Při změně domény/adresy se ale data v prohlížeči „ztratí“ (jsou vázaná na původní adresu) – pomůže export všech postav a inventářů a import na nové adrese.

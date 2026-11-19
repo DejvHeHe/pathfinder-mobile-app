@@ -52,6 +52,7 @@ import cz.pfspells.data.FeatDatabase
 import cz.pfspells.data.FeatPrereqs
 import cz.pfspells.data.PrereqStatus
 import cz.pfspells.data.featSlots
+import cz.pfspells.data.raceInfo
 import cz.pfspells.str
 
 // ---------------- sekce v detailu postavy ----------------
@@ -84,6 +85,7 @@ fun FeatsPanel(state: AppState, c: Character, wide: Boolean, selectedPick: Int?)
             verticalArrangement = Arrangement.Center,
         ) {
             val parts = listOf(s.featSlotsGeneral(slots.general)) +
+                listOfNotNull(c.raceInfo?.takeIf { slots.race > 0 }?.let { "${s.raceNameOf(it)} +${slots.race}" }) +
                 slots.bonus.map { (cls, n) -> "${s.classNameOf(cls)} +$n" }
             Text(
                 parts.joinToString(" · "), Modifier.align(Alignment.CenterVertically),
@@ -99,7 +101,7 @@ fun FeatsPanel(state: AppState, c: Character, wide: Boolean, selectedPick: Int?)
         }
         c.feats.forEachIndexed { i, pick ->
             val feat = pick.featId?.let { db?.get(it) }
-            val status = feat?.let { FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, it.prereq)) }
+            val status = feat?.let { FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, it.prereq, state.spellDb)) }
             val base = Modifier.fillMaxWidth()
             Row(
                 (if (selectedPick == i) base.clip(Nb.shape).background(Nb.panel).dashedBorder() else base.bottomRule(if (wide) Nb.ruleSoft else Nb.rule))
@@ -209,7 +211,7 @@ fun FeatPickerScreen(state: AppState, charId: String, wide: Boolean = false, sel
                 if (q.isNotEmpty() && !f.searchName.contains(q) &&
                     !(filter.fullText && (f.summary.contains(q, true) || f.sections.any { it.last().contains(q, true) }))
                 ) return@filter false
-                if (filter.onlyMet && FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, f.prereq)) == PrereqStatus.UNMET) return@filter false
+                if (filter.onlyMet && FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, f.prereq, state.spellDb)) == PrereqStatus.UNMET) return@filter false
                 true
             }
         }
@@ -239,7 +241,7 @@ fun FeatPickerScreen(state: AppState, charId: String, wide: Boolean = false, sel
         ) {
             items(results, key = { it.id }) { f ->
                 FeatRow(
-                    s, f, FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, f.prereq)), taken[f.id] ?: 0,
+                    s, f, FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, f.prereq, state.spellDb)), taken[f.id] ?: 0,
                     selected = f.id == selectedFeatId,
                     onClick = { state.showFeat(f.id, charId) },
                     onAdd = if (f.repeatable || (taken[f.id] ?: 0) == 0) ({ state.addFeat(charId, f) }) else null,
@@ -357,15 +359,29 @@ fun FeatDetailScreen(state: AppState, featId: String?, charId: String?, pick: In
                     }
                     if (feat.prereq.isNotBlank()) {
                         SectionHeader(s.prerequisites, Modifier.padding(top = 0.dp))
-                        val list = if (c != null) FeatPrereqs.evaluate(c, db, feat.prereq) else FeatPrereqs.split(feat.prereq).map { cz.pfspells.data.Prereq(it, PrereqStatus.UNKNOWN) }
+                        val list = if (c != null) FeatPrereqs.evaluate(c, db, feat.prereq, state.spellDb) else FeatPrereqs.split(feat.prereq).map { cz.pfspells.data.Prereq(it, PrereqStatus.UNKNOWN) }
                         list.forEach { pr ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (c != null) PrereqIcon(s, pr.status, 16.dp)
                                 Text(
-                                    pr.text, Modifier.padding(start = if (c != null) 6.dp else 0.dp),
+                                    pr.text + if (pr.confirmed) " (${s.confirmedByHand})" else "",
+                                    Modifier.weight(1f).padding(start = if (c != null) 6.dp else 0.dp),
                                     fontSize = 14.5.sp, color = if (pr.status == PrereqStatus.UNMET) Nb.error else Nb.ink,
                                 )
+                                // ruční potvrzení – co appka neověří (rasový trait, archetyp…), platí pro všechny featy se stejným textem
+                                if (c != null && (pr.status != PrereqStatus.MET || pr.confirmed)) {
+                                    Text(
+                                        if (pr.confirmed) s.unconfirmPrereq else s.confirmPrereq,
+                                        Modifier.padding(start = 8.dp).clip(Nb.shape)
+                                            .clickable { state.setPrereqConfirmed(c.id, pr.text, !pr.confirmed) }
+                                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                                        fontSize = 13.sp, color = Nb.accent, textDecoration = TextDecoration.Underline,
+                                    )
+                                }
                             }
+                        }
+                        if (c != null && list.any { it.status != PrereqStatus.MET || it.confirmed }) {
+                            Text(s.confirmPrereqHint, fontSize = 12.5.sp, color = Nb.inkMuted)
                         }
                     }
                     SelectionContainer {

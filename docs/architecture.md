@@ -14,20 +14,20 @@ flowchart TB
   end
   subgraph UI["UI (commonMain/ui, Compose Material 3)"]
     APP[App.kt: téma, mobil vs. široké okno, 10× ťuk] --> ROUTER[Router / WideLayout]
-    ROUTER --> SCREENS[Obrazovky: decky, spelly, inventář, itemy, databáze, about]
+    ROUTER --> SCREENS[Obrazovky: postavy, spelly, featy, inventář, itemy, databáze, about]
   end
   subgraph STATE["Stav (AppState.kt)"]
-    NAV[back stack Screen] & SEC[sekce Spellbook/Inventory] & ST[decky, inventáře, filtry, stav databází]
+    NAV[back stack Screen] & SEC[sekce Spellbook/Inventory] & ST[postavy, inventáře, filtry, stav databází]
   end
   subgraph DATA["Data (commonMain/data)"]
-    SR[SpellRepository + SpellParser] & IR[ItemRepository + ItemParser] & STORE[DeckStore · InventoryStore] & TR[DeckTransfer · InventoryTransfer] & RULES[CasterClasses · CarryingCapacity]
+    SR[SpellRepository + SpellParser] & IR[ItemRepository + ItemParser] & FR[FeatRepository] & STORE[CharacterStore · InventoryStore] & TR[CharacterTransfer · InventoryTransfer] & RULES[CasterClasses · ClassCatalog · Subclasses · CarryingCapacity]
   end
-  RES[(composeResources/files: SpellList.json, ItemsBase.json, *.csv)]
+  RES[(composeResources/files: SpellList.json, Feats.json, ItemsBase.json, *.csv)]
   NET[(GitHub raw: SpellTable-pf1e, randomitemgenerator)]
   MA & MVC & MAIN & WEB --> APP
   SCREENS <--> STATE
   STATE --> DATA
-  SR & IR --> RES
+  SR & IR & FR --> RES
   SR & IR -. aktualizace .-> NET
   DATA --> PF
 ```
@@ -60,6 +60,11 @@ composeApp/src/
       CastingTable.kt         GENEROVANÉ: spells per day / known (AoN, tools/build_casting.py)
       ClassInfo.kt            ClassInfo (BAB, záchrany, HD), ClassCatalog, Character.stats()
       ClassTable.kt           GENEROVANÉ: 49 class (Foundry, tools/build_classes.py)
+      Deities.kt / DeityTable.kt  DeityInfo, DeityCatalog; GENEROVANÉ: 463 božstev (AoN, tools/build_deities.py)
+      PrereqRules.kt          odvozené prerekvizity: class features, přesvědčení, božstvo, velikost, typ, HD, proficience, kouzla, domény, rasové traity
+      Skills.kt               SkillInfo, Skills (26 skillů), isClassSkill, skillTotal, skillPoints
+      Races.kt                RaceInfo, RaceGroup, RaceCatalog, Character.scores (základ + rasa), rasa jako prerekvizita featu
+      RaceTable.kt            GENEROVANÉ: 80 ras (Foundry, tools/build_races.py)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       Subclasses.kt           domény, mystéria, bloodline, školy – SubclassIndex, bonusová kouzla
       Feats.kt                Feat, FeatDatabase, FeatRepository, FeatPrereqs, featSlots
@@ -78,8 +83,11 @@ composeApp/src/
       WideLayout.kt           třísloupcové rozložení
       DeckListScreen.kt       úvod (záložky), seznam postav, menu ⋮, nová postava
       DeckDetailScreen.kt     detail postavy: classy, atributy, inventář, featy, schopnosti, kouzla po classách, herní režim
-      ClassPicker.kt          výběr classy (karty, hledání, náhled)
-      SubclassUi.kt           výběr podtřídy, bonusová kouzla podtřídy
+      ClassPicker.kt          výběr classy (karty, hledání, náhled, rovnou i podtřída)
+      DeityUi.kt              DeityPickerDialog (výběr božstva, vlastní text)
+      SkillsUi.kt             SkillsPanel (dovednosti postavy: ranky, body, class skills)
+      RaceUi.kt               RacePickerDialog, souhrn rasy (velikost, rychlost, úpravy atributů)
+      SubclassUi.kt           SubclassFields (pole podtřídy – sdílí picker i dialog), SubclassDialog, bonusová kouzla podtřídy
       FeatScreens.kt          featy postavy, výběr a detail featu
       ResourcesUi.kt          schopnosti s počtem použití, vlastní počítadla
       SpellBrowserScreen.kt   výběr spellů pro classu postavy + kompendium
@@ -100,7 +108,7 @@ composeApp/src/
   commonTest/, desktopTest/   testy + PreviewRender (náhledy obrazovek do PNG)
 iosApp/          Xcode projekt (SwiftUI obal kolem ComposeApp)
 tools/build_items.py   sestavení přibalené databáze itemů
-tools/build_feats.py, build_casting.py, build_classes.py   featy (AoN), tabulky slotů (AoN), classy (Foundry)
+tools/build_feats.py, build_casting.py, build_classes.py, build_races.py   featy (AoN), tabulky slotů (AoN), classy a rasy (Foundry)
 ```
 
 ## Stav a navigace
@@ -179,13 +187,14 @@ a při přechodu do inventáře spustí líné načtení databáze itemů.
 | Vlastní katalog itemů | `Settings` `custom_items_v1` | JSON `List<CustomItem>` |
 | Jazyk rozhraní | `Settings` `ui_lang` | `en` / `cs` |
 
-Každá změna decku/inventáře se hned uloží (`persist()`), žádné „Uložit“.
-Při změně schématu je potřeba zvýšit verzi klíče (`decks_v2`…) nebo napsat migraci.
+Každá změna postavy/inventáře se hned uloží (`persist()`), žádné „Uložit“.
+Při změně schématu je potřeba zvýšit verzi klíče (`characters_v2`…) a napsat migraci (vzor: `CharacterStore` převádí
+staré decky z `decks_v1`, starý klíč nechává jako zálohu).
 
 ### Úložiště na platformách
 `AppFiles` má `suspend` API, protože na webu je asynchronní:
 
-| Platforma | `Settings` (decky, inventáře) | `AppFiles` (stažené databáze) |
+| Platforma | `Settings` (postavy, inventáře) | `AppFiles` (stažené databáze) |
 |---|---|---|
 | Android | SharedPreferences | `filesDir` |
 | iOS | NSUserDefaults | Documents |
@@ -194,23 +203,36 @@ Při změně schématu je potřeba zvýšit verzi klíče (`decks_v2`…) nebo n
 
 ### Načítání databází
 - **Spelly** se načtou při startu (`SpellRepository.load` na `Dispatchers.Default`, ~0,35 s). Do té doby je vidět „Loading spells…“.
+- **Featy** (`Feats.json`, jen přibalené) se načtou **líně** při prvním otevření postavy nebo výběru featů (`ensureFeats`).
 - **Itemy** se načtou **líně** – až při otevření inventáře, importu inventáře nebo obrazovky databází (`ensureItems`, ~0,3 s).
 - Obě repository nejdřív zkusí staženou verzi z `AppFiles`; když chybí nebo je poškozená, smažou ji a použijí přibalenou z resources.
 - **Stažení:** HTTP GET → celé naparsovat (validace) → teprve pak zapsat do cache. Chyba stahování nic nepoškodí.
 
 ### Vazby mezi daty
-- Deck ukládá `spellId → počet`. Id = slug jména (`magic-missile`). Po aktualizaci databáze se spell, který chybí, v decku hlásí jako chybějící.
+- Postava má seznam class (`ClassEntry`): každá ukládá `spellId → počet`, podtřídu (`subclass`, klíče `SubclassSlot`)
+  a kouzla v doménovém slotu (`bonusSpells`). Id spellu = slug jména (`magic-missile`). Po aktualizaci databáze se spell,
+  který chybí, u postavy hlásí jako chybějící.
+- Featy postavy (`FeatPick`) nesou `featId` (null = vlastní feat) a kopii jména, takže fungují i bez databáze featů.
 - Položka inventáře (`InvEntry`) si nese **vlastní kopii** jména, kategorie, ceny, váhy a krátkého info; `itemId` je jen odkaz na detail.
   Inventář tak nezávisí na verzi databáze a vlastní itemy (`itemId = null`) fungují stejně.
 
 ## Export / import
 
-`DeckTransfer` a `InventoryTransfer` převádí data na čitelný JSON s hlavičkou `format` + `version`:
+`CharacterTransfer` a `InventoryTransfer` převádí data na čitelný JSON s hlavičkou `format` + `version`:
 
 ```json
-{ "format": "pf-spellbook-decks", "version": 1,
-  "decks": [ { "name": "Elara", "class": "wizard", "level": 5,
-               "spells": [ { "id": "fireball", "name": "Fireball", "count": 1 } ] } ] }
+{ "format": "pf-spellbook-characters", "version": 1,
+  "characters": [ { "name": "Elara", "race": "human", "raceBonus": "INT",
+                    "classes": [ { "class": "wizard", "level": 5,
+                                   "subclass": { "school": "evocation", "opposition1": "enchantment", "opposition2": "illusion" },
+                                   "spells": [ { "id": "fireball", "name": "Fireball", "count": 1 } ] } ],
+                    "abilities": { "int": 16, "str": 10 },
+                    "feats": [ { "id": "spell-focus", "name": "Spell Focus", "note": "evocation" } ],
+                    "inventory": { "name": "Elara", "strength": 10, "items": [ … ] } } ] }
+```
+```json
+{ "format": "pf-spellbook-feats", "version": 1,
+  "feats": [ { "id": "power-attack", "name": "Power Attack" }, { "name": "Blessed by Iomedae", "text": "…" } ] }
 ```
 ```json
 { "format": "pf-spellbook-inventories", "version": 1,
@@ -219,13 +241,18 @@ Při změně schématu je potřeba zvýšit verzi klíče (`decks_v2`…) nebo n
                                                 "qty": 1, "price": 15.0, "weight": 4.0, "info": "1d8 / 19-20/×2" } ] } ] }
 ```
 
-Import přijme i samotný deck/inventář bez obálky, spelly páruje podle id a pak podle jména, a chyby hlásí přes
-`DeckImportException`. UI je společné: `TextExportDialog` a `TextImportDialog` (náhled před potvrzením).
+- Postava nese i počítadla (`trackers`), skryté předvolby schopností a volitelně propojený inventář (po importu se založí
+  a propojí). Seslaná kouzla z herního režimu (`castToday`) se neexportují.
+- Import featů přijme `pf-spellbook-feats` i celý export postavy (vezme z něj featy).
+- Starý formát `pf-spellbook-decks` v1 (`DeckTransfer`) jde dál importovat – z decku vznikne postava s jednou classou.
+- Spelly a featy se párují podle id, pak podle jména; chyby hlásí `DeckImportException(ImportError)`.
+  UI je společné: `TextExportDialog` a `TextImportDialog` (náhled před potvrzením).
+
 Uložení/otevření souboru řeší platformní `deckFileIo`:
 
 | Platforma | Export | Import ze souboru |
 |---|---|---|
-| Desktop | AWT `FileDialog` – uložit `.pfdeck.json` / `.pfinv.json` | `FileDialog` – otevřít |
+| Desktop | AWT `FileDialog` – uložit `.pfchar.json` / `.pffeats.json` / `.pfinv.json` | `FileDialog` – otevřít |
 | Android | systémové sdílení (text) | `ActivityResultContracts.OpenDocument` |
 | iOS | `UIActivityViewController` | – (jen schránka) |
 | Web | stažení souboru (Blob + `<a download>`) | `<input type=file>` |
@@ -265,8 +292,19 @@ Design „Linkovaný zápisník“ (podle návrhu uživatele v Claude Design):
 | Test | Co ověřuje |
 |---|---|
 | `CasterClassTest` | spell levely class proti tabulkám z Core Rulebooku, cantripy, parser |
+| `SlotTableTest` | sloty za den a spells known (`CastingTable` z AoN), bonusová kouzla z atributu |
+| `CastTodayTest` | herní režim: seslaná kouzla a sloty, odpočinek |
+| `ClassInfoTest` | data všech class, BAB a záchrany při multiclassu, modifikátory atributů |
+| `ClassFeaturesTest` | předvyplněné schopnosti (Smite Evil, Rage, Ki…) – počty použití, skryté a vlastní |
+| `PrereqRulesTest` | class features, přesvědčení, božstvo, velikost, typ, HD, záchrany, proficience, druh kouzel, ruční potvrzení |
+| `SkillTest` | class skills, celkový bonus, skill body, prerekvizity na ranky (Knowledge, Craft, „or“) |
+| `FeatPrereqTest` | dělení a vyhodnocení prerekvizit featů, opakovatelné featy, počet featů podle úrovně |
 | `BundledDataTest` | přibalené spelly jdou načíst, každá classa má spelly, unikátní id |
-| `DeckTransferTest` | export → import decku, párování podle jména, odmítnutí nesmyslů |
+| `SubclassTest` | domény, bloodline, mystéria a školy z `access_ways`, bonusová kouzla podle úrovně, změny podtřídy |
+| `CharacterStoreTest` | migrace starých decků na postavy |
+| `CharacterTransferTest` | export → import postavy (s inventářem i bez), jen featy, staré decky, chyby |
+| `DeckTransferTest` | starý formát decků: export → import, párování podle jména, odmítnutí nesmyslů |
+| `InventoryLinkTest` | propojení postavy s inventářem – STR na obou stranách |
 | `ItemDataTest` | přibalené itemy, CSV parser, ceny/váhy, nosnost, skryté ceny, export → import inventáře |
 | `SpellItemsTest` | ceny lektvarů/svitků/hůlek, limity levelů, min. CL, převod do katalogu |
 | `StringsTest` | české tvary množného čísla, kódy jazyků, texty pro všechny kategorie/zatížení/velikosti, české classy a školy |
