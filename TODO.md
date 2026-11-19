@@ -94,4 +94,7 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [ ] Stabilní podpisový klíč pro Android APK (secrets v GitHubu – postup v `docs/deploy.md`)
 - [ ] Vyzkoušet appku na skutečném Android zařízení
 - [ ] Vyzkoušet iOS build na Macu (`docs/ios-install.md`)
+- [ ] Web: v `docker/nginx.conf` dát `.js` / `.wasm` místo `max-age=3600` `no-cache` (revalidace přes ETag) – po nové verzi
+  teď prohlížeč až hodinu ukazuje starou appku, dokud uživatel nedá Ctrl+F5
+- [ ] CI: job `ios` (macOS runner) u commitu `d10f495` skončil jako cancelled – prověřit (timeout?)
 - [x] Rozšířit Section 15 v OGL o další použité knihy (21 hlavních knih s autory z Paizo PRD a d20pfsrd)
