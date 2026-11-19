@@ -1,5 +1,7 @@
 # Data
 
+**Čeština** | [English](en/data.md)
+
 Všechna data jsou **přibalená v appce** (`composeApp/src/commonMain/composeResources/files/`), takže appka funguje offline.
 Část jde tlačítkem v appce stáhnout znovu ze zdroje.
 

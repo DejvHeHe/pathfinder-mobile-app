@@ -1,5 +1,7 @@
 # Uživatelská příručka
 
+**Čeština** | [English](en/user-guide.md)
+
 Appka má dvě části, mezi kterými přepínáte záložkami **Spellbook | Inventory**:
 na telefonu jsou pod nadpisem „PF1 Spellbook“, na desktopu v horní liště.
 

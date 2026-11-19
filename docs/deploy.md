@@ -1,5 +1,7 @@
 # Vydání a nasazení
 
+**Čeština** | [English](en/deploy.md)
+
 ## Buildy na GitHubu (Releases)
 
 Hotové buildy se nedávají do gitu (repo by s každou verzí narostlo o ~150 MB), ale na stránku

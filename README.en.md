@@ -28,7 +28,7 @@ Ready-made builds (Android `.apk`, Windows `.msi`, macOS `.dmg`, Linux `.deb`, w
 **[Releases](https://github.com/DejvHeHe/pathfinder-mobile-app/releases)** page. The web version can also be deployed with Docker:
 
 ```bash
-docker compose pull && docker compose up -d   # 127.0.0.1:8888 for your reverse proxy – see docs/deploy.md
+docker compose pull && docker compose up -d   # 127.0.0.1:8888 for your reverse proxy – see docs/en/deploy.md
 ```
 
 ## Quick start
@@ -41,21 +41,19 @@ docker compose pull && docker compose up -d   # 127.0.0.1:8888 for your reverse 
 ./gradlew :composeApp:desktopTest      # tests
 ```
 
-iOS: build the app yourself on a Mac with Xcode and a free Apple ID – step-by-step guide (Czech):
-[docs/ios-install.md](docs/ios-install.md).
+iOS: build the app yourself on a Mac with Xcode and a free Apple ID – step-by-step guide:
+[docs/en/ios-install.md](docs/en/ios-install.md).
 
 ## Documentation
 
-The detailed documentation is written in Czech:
-
 | File | For | About |
 |---|---|---|
-| [docs/user-guide.md](docs/user-guide.md) | players | how to use the app: characters, spells, skills, feats, inventory, export, updates, hidden prices |
-| [docs/architecture.md](docs/architecture.md) | developers | how it works inside: layers, state, navigation, UI, platforms |
-| [docs/data.md](docs/data.md) | developers | data sources and formats, updates, PF1 rules in code |
-| [docs/build.md](docs/build.md) | developers | building each platform, tests, design previews, regenerating data |
-| [docs/ios-install.md](docs/ios-install.md) | Mac users | installing on your own iPhone with Xcode (free Apple ID) |
-| [docs/deploy.md](docs/deploy.md) | developers / admins | releases on GitHub (CI), APK signing, web in Docker, HTTPS |
+| [docs/en/user-guide.md](docs/en/user-guide.md) | players | how to use the app: characters, spells, skills, feats, inventory, export, updates, hidden prices |
+| [docs/en/architecture.md](docs/en/architecture.md) | developers | how it works inside: layers, state, navigation, UI, platforms |
+| [docs/en/data.md](docs/en/data.md) | developers | data sources and formats, updates, PF1 rules in code |
+| [docs/en/build.md](docs/en/build.md) | developers | building each platform, tests, design previews, regenerating data |
+| [docs/en/ios-install.md](docs/en/ios-install.md) | Mac users | installing on your own iPhone with Xcode (free Apple ID) |
+| [docs/en/deploy.md](docs/en/deploy.md) | developers / admins | releases on GitHub (CI), APK signing, web in Docker, HTTPS |
 
 ## License
 

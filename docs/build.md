@@ -1,5 +1,7 @@
 # Build, testy a vydání
 
+**Čeština** | [English](en/build.md)
+
 ## Požadavky
 
 | Co | Kde je potřeba |
@@ -100,8 +102,13 @@ Výstup: `composeApp/build/previews/*.png`.
 |---|---|
 | Spelly | stáhnout aktuální `SpellList.json` ze [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e/tree/main/data) do `composeResources/files/` |
 | Itemy | `pip install pyyaml && python tools/build_items.py` |
+| Featy | `python tools/build_feats.py` (~3 400 stránek AoN po 1 s – asi 3 h, přerušitelné) |
+| Tabulky class | `python tools/build_casting.py` (kouzla za den / známá), `python tools/build_classes.py` (BAB, záchrany, class skills, proficience) |
+| Rasy | `python tools/build_races.py [races.zip]` |
+| Božstva | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 stránek božstev po 1 s) |
 
-Pak spustit testy (`BundledDataTest`, `ItemDataTest` ověří, že data jdou načíst).
+Když Python neověří certifikát webu, stáhněte zdroj přes `curl` a předejte lokální soubor (viz hlavička skriptů).
+Pak spustit testy (`BundledDataTest`, `ItemDataTest`… ověří, že data jdou načíst).
 
 ## Verze
 

@@ -1,5 +1,7 @@
 # Instalace na iPhone (vlastní build přes Xcode)
 
+**Čeština** | [English](en/ios-install.md)
+
 Apple neumožňuje šířit hotový instalační soubor bez placeného vývojářského účtu, ale každý s **Macem**
 si appku může sestavit a nahrát na svůj iPhone sám – stačí **bezplatné Apple ID**.
 

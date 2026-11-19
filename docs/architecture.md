@@ -1,5 +1,7 @@
 # Architektura
 
+**Čeština** | [English](en/architecture.md)
+
 ## Přehled
 
 Jedna Kotlin Multiplatform aplikace (`composeApp`). Téměř všechno – data, logika i UI – je ve `commonMain`

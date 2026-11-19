@@ -1,7 +1,7 @@
 # CLAUDE.md – PF1 Spellbook (Kotlin Multiplatform)
 
 Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolupráce.
-- Podrobná dokumentace: `README.md` (česky) + `README.en.md` (anglicky – při změně funkcí upravit obě) a `docs/` (user-guide, architecture, data, build, deploy, ios-install) – při změnách ji udržuj aktuální.
+- Podrobná dokumentace: `README.md` (česky) + `README.en.md` (anglicky) a `docs/` (česky) + `docs/en/` (anglicky) – při změně upravit obě jazykové verze (user-guide, architecture, data, build, deploy, ios-install) – při změnách ji udržuj aktuální.
 - Plánovaná práce: **`TODO.md`** (hlavní vylepšení + nápady) – hotové body odškrtávej.
 
 ## Pravidla spolupráce

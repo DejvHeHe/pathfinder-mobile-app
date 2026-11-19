@@ -52,6 +52,7 @@ iOS: na Macu si appku sestaví každý sám přes Xcode s bezplatným Apple ID �
 | [docs/build.md](docs/build.md) | vývojář | build pro jednotlivé platformy, testy, náhledy designu, regenerace dat |
 | [docs/ios-install.md](docs/ios-install.md) | hráč s Macem | instalace na vlastní iPhone přes Xcode (bezplatné Apple ID) |
 | [docs/deploy.md](docs/deploy.md) | vývojář / správce | vydání verze na GitHub Releases (CI), podepsání APK, web v Dockeru, HTTPS |
+| [docs/en/](docs/en/) | – | anglické verze všech dokumentů |
 | [CLAUDE.md](CLAUDE.md) | AI asistent | stručné poznámky, rozhodnutí a TODO pro Claude Code |
 
 ## Licence
