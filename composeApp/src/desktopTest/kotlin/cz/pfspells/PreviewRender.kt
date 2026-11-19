@@ -73,7 +73,21 @@ class PreviewRender {
             listOf("detect-magic", "light", "magic-missile", "shield", "mage-armor", "invisibility")
                 .forEach { state.addSpell(nyx.id, null, it) }
             val d = state.createCharacter("Elara", "wizard", 5)
-            state.setAbility(d.id, cz.pfspells.data.Ability.INT, 17)
+            state.setAbility(d.id, cz.pfspells.data.Ability.INT, 16)
+            state.setAbility(d.id, cz.pfspells.data.Ability.DEX, 14)
+            state.setAbility(d.id, cz.pfspells.data.Ability.WIS, 12)
+            state.setRace(d.id, "elf")
+            state.setAlignment(d.id, cz.pfspells.data.Alignment.NG)
+            state.setDeity(d.id, "Nethys")
+            mapOf("spellcraft" to 5, "knowledge.arcana" to 5, "knowledge.planes" to 3, "perception" to 2, "linguistics" to 1)
+                .forEach { (k, v) -> state.setSkillRanks(d.id, k, v) }
+            state.updateCharacter(d.id) {
+                it.copy(feats = listOf(
+                    cz.pfspells.data.FeatPick("spell-focus", "Spell Focus", note = "evocation"),
+                    cz.pfspells.data.FeatPick("scribe-scroll", "Scribe Scroll"),
+                    cz.pfspells.data.FeatPick("improved-initiative", "Improved Initiative"),
+                ))
+            }
             state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.SCHOOL, "evocation")
             state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.OPPOSITION1, "enchantment")
             state.setSubclass(d.id, "wizard", cz.pfspells.data.SubclassSlot.OPPOSITION2, "illusion")
