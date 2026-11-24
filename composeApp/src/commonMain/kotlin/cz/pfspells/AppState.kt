@@ -1,5 +1,9 @@
 package cz.pfspells
 
+import cz.pfspells.data.ClassAbility
+import cz.pfspells.data.ClassAbilityDatabase
+import cz.pfspells.data.ClassAbilityRepository
+import cz.pfspells.data.toPick
 import cz.pfspells.data.Tracker
 import cz.pfspells.data.trackEvent
 import cz.pfspells.data.CompanionKind
@@ -112,6 +116,14 @@ data class FeatFilter(
     /** prohledávat i shrnutí a text */
     val fullText: Boolean = false,
 )
+
+/** Stav databáze hexů a revelations (`ClassAbilities.json`, líně). */
+sealed interface AbilityDbState {
+    data object NotLoaded : AbilityDbState
+    data object Loading : AbilityDbState
+    data class Ready(val db: ClassAbilityDatabase) : AbilityDbState
+    data class Failed(val message: String) : AbilityDbState
+}
 
 sealed interface FeatDbState {
     data object NotLoaded : FeatDbState
@@ -775,6 +787,36 @@ class AppState(
                 FeatDbState.Failed(e.message ?: e.toString())
             }
         }
+    }
+
+    // ---- hexy a revelations (databáze se načítá líně) ----
+    var abilityDbState: AbilityDbState by mutableStateOf(AbilityDbState.NotLoaded)
+        private set
+    val abilityDb: ClassAbilityDatabase? get() = (abilityDbState as? AbilityDbState.Ready)?.db
+
+    fun ensureClassAbilities() {
+        if (abilityDbState != AbilityDbState.NotLoaded && abilityDbState !is AbilityDbState.Failed) return
+        abilityDbState = AbilityDbState.Loading
+        scope.launch {
+            abilityDbState = try {
+                AbilityDbState.Ready(ClassAbilityRepository.load())
+            } catch (e: Exception) {
+                AbilityDbState.Failed(e.message ?: e.toString())
+            }
+        }
+    }
+
+    /** Přidá hex / revelation ke classe (každý jen jednou). */
+    fun addClassAbility(charId: String, classId: String, a: ClassAbility) {
+        val ch = character(charId) ?: return
+        val e = ch.classEntry(classId) ?: return
+        if (e.abilities.any { it.id == a.id }) return
+        if (strictBlocked(StrictRules.classAbilityBlock(ch, classId, a))) return
+        updateClass(charId, classId) { it.copy(abilities = it.abilities + a.toPick()) }
+    }
+
+    fun removeClassAbility(charId: String, classId: String, abilityId: String) = updateClass(charId, classId) { e ->
+        e.copy(abilities = e.abilities.filterNot { it.id == abilityId })
     }
 
     /** Přidá feat; neopakovatelný feat, který postava už má, se podruhé nepřidá. */

@@ -72,41 +72,47 @@ data class Resource(
 )
 
 /**
- * Schopnosti 1. úrovně podle podtřídy (Core Rulebook / APG): doménová schopnost klerika a druida 3 + Wis za den,
- * schopnost bloodline čaroděje 3 + Cha za den. Výjimky: Sun (pasivní) a Knowledge se nepočítají, Animal = rounds
- * 3 + úroveň (speak with animals), Liberation = rounds podle úrovně, Arcane bloodline má místo schopnosti arcane bond.
+ * Schopnosti podtřídy s počtem použití dostupné na úrovni classy – z Foundry ([SubclassPowers]: domény, subdomény,
+ * bloodline, školy kouzelníka; název „Fire Bolt (Fire)“). Podtřída, kterou Foundry nezná (bloodline z pozdějších knih…),
+ * dostane obecnou schopnost 1. úrovně: doména 3 + Wis, bloodline 3 + Cha za den.
  */
-private fun subclassPresets(e: ClassEntry): List<FeaturePreset> {
-    fun title(v: String) = v.split(' ', '-').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
-    val domains = when (e.classId) {
-        "cleric" -> listOfNotNull(e.subclass[SubclassSlot.DOMAIN1], e.subclass[SubclassSlot.DOMAIN2])
-        "druid" -> listOfNotNull(e.subclass[SubclassSlot.DOMAIN1])
-        else -> emptyList()
-    }.map { it.lowercase() }.distinct()
-    val domainPowers = domains.mapNotNull { d ->
-        val id = "domain-power:${e.classId}:$d"
-        val name = "${title(d)} domain power (1st level)"
-        when (d) {
-            "sun", "knowledge" -> null
-            "animal" -> FeaturePreset(id, e.classId, "Animal domain: speak with animals", ResourceUnit.ROUNDS) { l, _ -> 3 + l }
-            "liberation" -> FeaturePreset(id, e.classId, "Liberation domain: liberation", ResourceUnit.ROUNDS) { l, _ -> l }
-            else -> FeaturePreset(id, e.classId, name, ResourceUnit.PER_DAY) { _, c -> (3 + c.mod(Ability.WIS)).coerceAtLeast(0) }
-        }
-    }
-    val bloodline = e.subclass[SubclassSlot.BLOODLINE]?.lowercase()
-        ?.takeIf { e.classId == "sorcerer" && it != "arcane" }
-        ?.let { b ->
-            FeaturePreset("bloodline-power:$b", e.classId, "${title(b)} bloodline power (1st level)", ResourceUnit.PER_DAY) { _, c ->
-                (3 + c.mod(Ability.CHA)).coerceAtLeast(0)
+private fun subclassPresets(e: ClassEntry): List<FeaturePreset> = SubclassPowers.keysOf(e).flatMap { (key, label) ->
+    val powers = SubclassPowers.of(key)
+    when {
+        powers != null -> powers.filter { it.uses != null && e.level >= it.level }.map { p ->
+            FeaturePreset("power:${e.classId}:$key:${p.name.lowercase()}", e.classId, "${p.name} ($label)", p.unit ?: ResourceUnit.PER_DAY, p.level) { l, c ->
+                FoundryFormula.uses(p.uses!!, l, c)
             }
         }
-    return domainPowers + listOfNotNull(bloodline)
+        key.startsWith("domain:") -> listOf(
+            FeaturePreset("power:${e.classId}:$key", e.classId, "$label domain power (1st level)", ResourceUnit.PER_DAY) { _, c ->
+                (3 + c.mod(Ability.WIS)).coerceAtLeast(0)
+            },
+        )
+        key.startsWith("bloodline:") -> listOf(
+            FeaturePreset("power:${e.classId}:$key", e.classId, "$label bloodline power (1st level)", ResourceUnit.PER_DAY) { _, c ->
+                (3 + c.mod(Ability.CHA)).coerceAtLeast(0)
+            },
+        )
+        else -> emptyList()
+    }
+}
+
+/** Kouzelník se školou, kterou zná Foundry, má schopnosti školy z tabulky místo obecné „Arcane school power“. */
+private fun ClassEntry.hasSchoolPowers(): Boolean =
+    classId == "wizard" && SubclassPowers.keysOf(this).any { SubclassPowers.of(it.first) != null }
+
+/** Vybrané hexy / revelations s počtem použití. */
+private fun abilityPresets(e: ClassEntry): List<FeaturePreset> = e.abilities.filter { it.uses != null }.distinctBy { it.id }.map { a ->
+    FeaturePreset("ability:${e.classId}:${a.id}", e.classId, a.name, a.unit ?: ResourceUnit.PER_DAY) { l, c -> FoundryFormula.uses(a.uses!!, l, c) }
 }
 
 /** Předvyplněné schopnosti class postavy (dostupné na její úrovni, bez skrytých) + vlastní počítadla. */
 fun Character.resources(includeHidden: Boolean = false): List<Resource> {
     val presets = classes.flatMap { e ->
-        (FeaturePresets.all.filter { it.classId == e.classId && e.level >= it.minLevel } + subclassPresets(e)).map { p ->
+        val base = FeaturePresets.all.filter { it.classId == e.classId && e.level >= it.minLevel }
+            .filterNot { it.id == "wizard-school-power" && e.hasSchoolPowers() }
+        (base + subclassPresets(e) + abilityPresets(e)).map { p ->
             Resource("res:${p.id}", p.name, p.unit, p.max(e.level, this), e.classId, preset = p)
         }
     }.filter { includeHidden || it.preset!!.id !in hiddenPresets }

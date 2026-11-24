@@ -9,6 +9,7 @@ Všechna data jsou **přibalená v appce** (`composeApp/src/commonMain/composeRe
 |---|---|---|---|
 | `SpellList.json` (6 MB) | 3 040 záznamů → 3 030 spellů s class listem | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) `data/SpellList.json` (MIT, data z Archives of Nethys) | ano |
 | `ItemsBase.json` (0,7 MB) | 1 541 položek: výstroj, oblečení, nástroje, jídlo, alchymie, byliny, zvířata, zbroje a štíty | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/items`, `packs/armors-and-shields` (OGL) | ne (jen přibalené) |
+| `ClassAbilities.json` (0,3 MB) | 420 hexů a zjevení s textem; schopnosti podtříd v `ClassAbilityTable.kt` | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/class-abilities` (OGL) – `tools/build_class_abilities.py` | ne (jen přibalené) |
 | `Weapons.csv` | 243 zbraní | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) `data/weapons.csv` (d20pfsrd/AoN) | ano |
 | `Ammunition.csv` | 36 druhů munice | tamtéž `data/ammunition.csv` | ano |
 | `MagicItems.csv` (4 MB) | 4 241 magických itemů | tamtéž `data/magic_items_full - Updated 19Jan2020.csv` (d20pfsrd „magic_items_full“) | ano |
@@ -166,6 +167,33 @@ ze seznamu volí domény jen z `DeityInfo.domains` a subdomény jen z `DeityInfo
 `DeityDisplay.aspx`, ~460 požadavků po 1 s, cache `build/deity-cache`; subdomény podmíněné traitem, „*“, se počítají).
 `subdomains = null` = stránka chybí → nabídnou se všechny subdomény domény.
 
+### Schopnosti class (`ClassAbilityTable.kt`, `ClassAbilities.json`)
+`python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` (pyyaml) zpracuje Foundry VTT PF1
+`packs/class-abilities` (~4 700 YAML) a názvy knih z `module/registry/sources.mjs` (kód „PZO1115“ → „Advanced Player's Guide“):
+
+- **`ClassAbilityTable.kt`** – schopnosti podtříd: kontejnery domén, subdomén, bloodline (11 z CRB / APG) a škol
+  kouzelníka (i elementárních) mají v `system.links.supplements` odkazy na schopnosti s úrovní, kdy je postava získá;
+  ze schopnosti se bere `system.uses.maxFormula` (jen „per day“). Klíče: `domain:fire`, `subdomain:ash`,
+  `subdomain:archon@good` (subdoména pod dvěma doménami), `bloodline:draconic`, `school:evocation`, `school:element:fire`.
+  325 schopností ze 136 podtříd, 240 s počtem použití. Kde Foundry vzorec nemá, ale text ho uvádí („number of rounds per day
+  equal to 3 + your Charisma modifier“), skript ho doplní. Druh jednotky: „rounds per day“ v textu → kola.
+- **`ClassAbilities.json`** – hexy (tagy Hex / Major Hex / Grand Hex, classy witch a shaman, bez hexů spiritů) a zjevení
+  (tag Revelation, oracle, mystéria z tagů „X Mystery“, bez finálních zjevení): text z HTML (odkazy `@UUID[…]{Jméno}` → jméno),
+  vzorec použití, Ex / Su / Sp, zdroj, minimální úroveň (velký hex 10, nejvyšší 18, zjevení z textu „must be at least 7th
+  level“). 420 položek (117 hexů, 303 zjevení), načítá se líně.
+
+V appce:
+- `SubclassPowers.keysOf(ClassEntry)` převede podtřídu postavy na klíče (subdoména má přednost před doménou, kterou
+  nahrazuje – její seznam schopností je úplný), `Character.resources()` z nich udělá schopnosti dostupné na úrovni classy.
+  Neznámá doména / bloodline → obecná schopnost 1. úrovně (3 + Wis / Cha). Kouzelník se školou z tabulky nemá obecnou
+  „Arcane school power“.
+- `FoundryFormula` vyhodnotí vzorec: `@class.unlevel` / `@class.level` = úroveň classy, `@attributes.hd.total` = HD postavy,
+  `@abilities.X.mod`; funkce `floor`, `ceil`, `min`, `max`, `clamp`, `abs`, `if`, `gt`, `gte`, `lt`, `lte`, `eq`; výsledek
+  dolů, nikdy záporný. Skript i test `BundledDataTest` hlídají, že každý vzorec jde spočítat.
+- Vybrané hexy / zjevení: `ClassEntry.abilities` (`AbilityPick` = id, jméno, druh, kopie vzorce) – počítadlo funguje i bez
+  načtené databáze. Počet (`AbilityRules.slots`): witch 1 + úroveň / 2, shaman na 2., 4., 8., 10., 12., 16., 18., 20.,
+  oracle na 1., 3., 7., 11., 15., 19. úrovni.
+
 ### Featy (`Feats.json`)
 `python tools/build_feats.py` stáhne přehled [aonprd.com/Feats.aspx](https://aonprd.com/Feats.aspx) (jméno, prerekvizity,
 shrnutí, PFS) a detail každého featu (typy, zdroj, flavor, sekce Benefit / Normal / Special…). ~3 400 požadavků po 1 s
@@ -231,3 +259,55 @@ Násobitel podle velikosti tvora (`CreatureSize`, uložený v inventáři jako `
 
 Postihy zatížení (`Load`): medium – max Dex +3, check penalty −3, běh ×4; heavy – max Dex +1, check −6, běh ×3;
 obojí rychlost 30 → 20 ft (20 → 15 ft). Přetížení – jen 5 ft za kolo, bez Dex bonusu k AC.
+
+### Nasazené vybavení (`Equipment.kt`)
+Položka inventáře (`InvEntry`) má `equipped`, `slot` (`ItemSlot`: hlava, čelenka, oči, ramena, krk, hruď, tělo, zbroj,
+opasek, zápěstí, ruce, 2× prsten, nohy, hlavní ruka, štít) a `bonuses` (`ItemBonus`: cíl, hodnota, typ, u skillu klíč).
+
+- Platí jen nasazené položky **propojeného inventáře**; ve slotu jen tolik, kolik se vejde (první v pořadí inventáře),
+  další jsou konflikt (`slotConflicts` → červený banner). Položky bez slotu platí všechny. `AppState.updateInventory`
+  a `linkInventory` kopírují bonusy do `Character.gear`.
+- Sčítání (`stackBonuses`): bonusy stejného typu se nesčítají – platí nejvyšší; dodge, untyped a circumstance se sčítají;
+  postihy se sčítají vždy.
+- Cíle: atributy (`gearMod` → `scores`, tedy i bonusová kouzla, skill body, prerekvizity, nosnost), záchrany (`gearSave`),
+  AC, skill (`gearSkill`; bonus ke „knowledge“ platí pro všechny Knowledge), `MAX_DEX` (platí nejnižší) a `ARMOR_CHECK`.
+- Zbroj / štít z databáze: `ItemBonusGuess.of(Item)` vyplní AC (typ armor / shield), max Dex a postih zbroje.
+  Magické předměty podle jména: čelenky a opasky atributů, Cloak of Resistance, Ring of Protection, Amulet of Natural Armor,
+  Bracers of Armor; ostatní se zadají ručně.
+- Zatížení inventáře (`loadBonuses`) přidá do `gear` max Dex a postih ke skillům (typ untyped).
+
+### Obrana a životy (`Defense.kt`)
+- **AC** = 10 + zbroj + štít + Obratnost (omezená max Dex) + velikost (`sizeAcMod`: Small +1, Large −1, Tiny +2…)
+  + přirozená zbroj (vybavení, zvířecí společník) + deflection + dodge + ostatní typy + ruční `Character.acMisc`.
+  **Dotyk** bez zbroje, štítu a přirozené zbroje; **zaskočený** bez kladné Obratnosti a dodge.
+- **Postih zbroje** (`armorCheckPenalty`): zbroj + štít se sčítají, postih zatížení se s nimi nesčítá – platí horší.
+  Odečte se od skillů Síly a Obratnosti.
+- **HP** (`maxHp`): 1. HD postavy naplno, další průměr (polovina + 1, jako PFS), rasové HD tvorů průměr (4,5 za d8);
+  + mod. Odolnosti za HD (min. 1 HP za HD u class), Toughness (+3, od 4. HD +1 za HD), `hpBonus`.
+  `hpOverride` (házené HP) přebije výpočet. Aktuální HP = max − `damage` (může být záporné).
+- Odpočinek (`AppState.rest`) vyléčí 1 HP za úroveň postavy. Export přenáší `hpBonus`, `hpOverride` a `acMisc`,
+  zranění ne (stejně jako seslaná kouzla).
+
+### Zvířecí společník (`AnimalCompanions.kt`)
+Tabulka „Animal Companion Base Statistics“ z Core Rulebooku (`CompanionProgression`, efektivní úroveň druida 1–20):
+HD, přirozená zbroj, bonus Str/Dex, triky navíc, zvláštní schopnosti (link, share spells, evasion, ability increase,
+devotion, multiattack, improved evasion). HD, BAB, záchrany, skill body a featy dává rasová „classa“ `animal`
+(`ClassCatalog.creatures`) – úroveň společníka jen nastaví její úroveň.
+
+- `SpeciesCatalog`: 17 zvířat CRB se startovními atributy, velikostí, rychlostí, útoky a vylepšením na 4. nebo 7. úrovni
+  (velikost, úpravy Str / Dex / Con, přirozená zbroj, útoky).
+- `companionMod` (bonus Str/Dex + vylepšení) jde do `scores`, `naturalArmor` do AC.
+- `suggestedCompanionLevel`: druid a hunter plně, ranger úroveň − 3; jezdecké zvíře i paladin a cavalier.
+
+### Metamagie (`Metamagic.kt`)
+Zvýšení slotu se čte z textu featu (AoN): „uses up a spell slot two levels higher“ → 2, „does not use up
+a higher-level spell slot“ / „same spell level“ → 0, jinak (Heighten Spell) neznámé. `ofCharacter` vrací
+metamagické featy postavy z databáze (bez opakování, vlastní featy ne) – detail kouzla ukáže výslednou úroveň slotu.
+
+### Přísný režim (`StrictMode.kt`)
+`AppState.strictMode` (Settings `strict_mode`). Před přidáním kontroluje `StrictRules`:
+- **kouzlo**: classa ho na své úrovni sesílá, atribut sesílání ≥ 10 + spell level a na spell levelu je místo
+  (připravené kopie = sloty + bonus z atributu + slot školy specialisty; spontánní / arcanist = známá / připravená kouzla),
+- **feat**: počet featů (`featSlots`) není vyčerpaný a žádná prerekvizita není ✗ („?“ projde).
+
+Ubírat jde vždy; import přísný režim nekontroluje.

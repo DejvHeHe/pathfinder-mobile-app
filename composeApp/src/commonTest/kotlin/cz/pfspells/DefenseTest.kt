@@ -11,7 +11,9 @@ import cz.pfspells.data.FeatPick
 import cz.pfspells.data.ItemBonus
 import cz.pfspells.data.Load
 import cz.pfspells.data.Metamagic
+import cz.pfspells.data.FeatDatabase
 import cz.pfspells.data.armorCheckPenalty
+import cz.pfspells.data.currentHp
 import cz.pfspells.data.defense
 import cz.pfspells.data.loadBonuses
 import cz.pfspells.data.maxHp
@@ -69,6 +71,9 @@ class DefenseTest {
         // zvíře 2 HD (d8, průměr 4,5), Con 15: 9 + 2 × 2
         val wolf = Character("w", "Wolf", listOf(ClassEntry("animal", 2)), abilities = Abilities(con = 15))
         assertEquals(13, wolf.maxHp())
+        // aktuální HP = max − zranění, může jít pod nulu
+        assertEquals(28 - 10, fighter(10).copy(damage = 10).currentHp())
+        assertEquals(-2, fighter(10).copy(damage = 30).currentHp())
     }
 
     @Test
@@ -79,6 +84,15 @@ class DefenseTest {
         assertEquals(0, Metamagic.levels(meta("Brackish Spell", "A brackish spell does not use up a higher-level spell slot than the spell’s actual level.")))
         assertNull(Metamagic.levels(meta("Heighten Spell", "A heightened spell has a higher spell level than normal (up to a maximum of 9th level).")))
         assertNull(Metamagic.levels(Feat("power-attack", "Power Attack")))
+        // featy postavy: jen metamagické z databáze, bez opakování, vlastní featy ne
+        val empower = meta("Empower Spell", "An empowered spell uses up a spell slot two levels higher than the spell's actual level.")
+        val db = FeatDatabase(listOf(empower, Feat("power-attack", "Power Attack")))
+        val c = fighter(10).copy(feats = listOf(
+            FeatPick("empower spell", "Empower Spell"), FeatPick("empower spell", "Empower Spell"),
+            FeatPick("power-attack", "Power Attack"), FeatPick(null, "Homebrew Metamagic"),
+        ))
+        assertEquals(listOf("Empower Spell" to 2), Metamagic.ofCharacter(c, db).map { it.first.name to it.second })
+        assertTrue(Metamagic.ofCharacter(c, null).isEmpty())
     }
 
     @Test
@@ -88,11 +102,11 @@ class DefenseTest {
             abilities = Abilities(wis = 14),
         )
         val names = cleric.resources().associate { it.name to it.max }
-        assertEquals(5, names["Fire domain power (1st level)"])
-        assertTrue(names.keys.none { it.startsWith("Sun") })
+        assertEquals(5, names["Fire Bolt (Fire)"])
+        assertTrue(names.keys.none { it.endsWith("(Sun)") }) // Sun's Blessing je pasivní, Nimbus of Light až od 8.
         val sorc = Character("s", "S", listOf(ClassEntry("sorcerer", 1, subclass = mapOf("bloodline" to "draconic"))), abilities = Abilities(cha = 16))
-        assertEquals(6, sorc.resources().first { it.name == "Draconic bloodline power (1st level)" }.max)
+        assertEquals(6, sorc.resources().first { it.name == "Draconic Claws (Draconic)" }.max)
         val arcane = sorc.copy(classes = listOf(ClassEntry("sorcerer", 1, subclass = mapOf("bloodline" to "arcane"))))
-        assertTrue(arcane.resources().none { it.name.contains("bloodline power") })
+        assertTrue(arcane.resources().none { it.name.endsWith("(Arcane)") }) // arcane bond, Metamagic Adept až od 3.
     }
 }

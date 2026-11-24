@@ -56,9 +56,15 @@ class CharacterTransferTest {
         confirmedPrereqs = setOf("stonecunning racial trait"),
         trackers = listOf(cz.pfspells.data.Tracker("t1", "Wand of CLW", 50, note = "charges")),
         hiddenPresets = setOf("fighter-bravery"),
+        hpBonus = 2, hpOverride = 61, damage = 12, acMisc = 1,
     )
     private val inv = Inventory("inv", "Thomas", strength = 14, gp = 50,
-        entries = listOf(InvEntry("e", null, "Holy symbol", "GEAR", 1, 1.0, 0.0)))
+        entries = listOf(
+            InvEntry("e", null, "Holy symbol", "GEAR", 1, 1.0, 0.0),
+            InvEntry("r", null, "Ring of Protection +1", "RING", 1, 2000.0, 0.0, equipped = true,
+                slot = cz.pfspells.data.ItemSlot.RING,
+                bonuses = listOf(cz.pfspells.data.ItemBonus(cz.pfspells.data.BonusTarget.AC, 1, cz.pfspells.data.BonusType.DEFLECTION))),
+        ))
 
     @Test
     fun roundTripWithInventory() {
@@ -84,9 +90,19 @@ class CharacterTransferTest {
         assertEquals(thomas.trackers.map { it.copy(id = "") }, c.trackers.map { it.copy(id = "") }) // počítadla dostanou nová id
         assertEquals(thomas.hiddenPresets, c.hiddenPresets)
         assertEquals(emptyMap(), c.castToday) // herní režim se neexportuje
+        // obrana a životy; zranění se (jako seslaná kouzla) neexportuje
+        assertEquals(2, c.hpBonus)
+        assertEquals(61, c.hpOverride)
+        assertEquals(1, c.acMisc)
+        assertEquals(0, c.damage)
         assertEquals("Thomas", ic.inventory!!.name)
         assertEquals(50, ic.inventory!!.gp)
-        assertEquals(listOf("Holy symbol"), ic.inventory!!.entries.map { it.name })
+        assertEquals(listOf("Holy symbol", "Ring of Protection +1"), ic.inventory!!.entries.map { it.name })
+        // nasazené vybavení (slot a bonusy) zůstane
+        val ring = ic.inventory!!.entries[1]
+        assertEquals(true, ring.equipped)
+        assertEquals(inv.entries[1].slot, ring.slot)
+        assertEquals(inv.entries[1].bonuses, ring.bonuses)
     }
 
     @Test
@@ -112,6 +128,16 @@ class CharacterTransferTest {
         assertEquals("Returns at the next full moon.", w.respawnRules)
         // mazlíček bez vlastníka v exportu se importuje jako samostatná postava
         assertNull(CharacterTransfer.parse(CharacterTransfer.export(listOf(wolf), db) { null }, db, featDb, null).single().ownerIndex)
+    }
+
+    @Test
+    fun classAbilitiesRoundTrip() {
+        val hex = cz.pfspells.data.AbilityPick("evil-eye", "Evil Eye", cz.pfspells.data.AbilityKind.HEX)
+        val boon = cz.pfspells.data.AbilityPick("abadar-s-boon", "Abadar's Boon", cz.pfspells.data.AbilityKind.REVELATION, "@class.unlevel", cz.pfspells.data.ResourceUnit.PER_DAY)
+        val witch = Character("w", "Hex", listOf(ClassEntry("witch", 4, abilities = listOf(hex)), ClassEntry("oracle", 1, abilities = listOf(boon, boon))))
+        val c = CharacterTransfer.parse(CharacterTransfer.export(listOf(witch), db) { null }, db, featDb, null).single().character
+        assertEquals(listOf(hex), c.classes[0].abilities)
+        assertEquals(listOf(boon), c.classes[1].abilities) // duplicita se zahodí
     }
 
     @Test

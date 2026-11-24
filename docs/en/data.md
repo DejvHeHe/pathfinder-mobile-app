@@ -16,6 +16,7 @@ so the app works offline. Part of it can be re-downloaded from the source with a
 | `CastingTable.kt` | spells per day / known of 27 casting classes | Archives of Nethys class pages – `tools/build_casting.py` | no |
 | `ClassTable.kt` | 49 classes: BAB, saves, HD, skill points, class skills, proficiencies | Foundry VTT PF1 `packs/classes` – `tools/build_classes.py` | no |
 | `RaceTable.kt` | 80 races: size, speed, ability and skill modifiers, vision | Foundry VTT PF1 `packs/races` – `tools/build_races.py` | no |
+| `ClassAbilityTable.kt`, `ClassAbilities.json` (0.3 MB) | 325 domain / bloodline / school powers; 420 hexes and revelations with text | Foundry VTT PF1 `packs/class-abilities` – `tools/build_class_abilities.py` | no |
 | `DeityTable.kt` | 463 deities: pantheon, alignment, areas, domains, subdomains, favored weapon | [Archives of Nethys](https://aonprd.com/DeitiesByGroup.aspx) – `tools/build_deities.py` | no |
 
 ## Spells
@@ -176,6 +177,34 @@ loosely, its alignment is unknown). A cleric with a deity from the list chooses 
 subdomains only from `DeityInfo.subdomains`; `subdomains = null` = page missing → all subdomains of the domain are offered.
 A mismatch (e.g. after changing the deity) is reported by `ClassEntry.deityConflicts`.
 
+### Class abilities (`ClassAbilityTable.kt`, `ClassAbilities.json`)
+`python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` (pyyaml) processes Foundry VTT PF1
+`packs/class-abilities` (~4,700 YAML files) and book names from `module/registry/sources.mjs` (code "PZO1115" →
+"Advanced Player's Guide"):
+
+- **`ClassAbilityTable.kt`** – subclass powers: the domain, subdomain, bloodline (11 from CRB / APG) and wizard school
+  (incl. elemental) containers link their powers in `system.links.supplements` with the level they are gained at;
+  `system.uses.maxFormula` comes from the power (per day only). Keys: `domain:fire`, `subdomain:ash`,
+  `subdomain:archon@good` (a subdomain under two domains), `bloodline:draconic`, `school:evocation`, `school:element:fire`.
+  325 powers of 136 subclasses, 240 with uses. Where Foundry has no formula but the text gives one ("number of rounds
+  per day equal to 3 + your Charisma modifier"), the script fills it in. Unit: "rounds per day" in the text → rounds.
+- **`ClassAbilities.json`** – hexes (tags Hex / Major Hex / Grand Hex, classes witch and shaman, no spirit hexes) and
+  revelations (tag Revelation, oracle, mysteries from "X Mystery" tags, no final revelations): text from HTML
+  (`@UUID[…]{Name}` links → name), uses formula, Ex / Su / Sp, source, minimum level (major hex 10, grand hex 18,
+  revelations from "must be at least 7th level"). 420 entries (117 hexes, 303 revelations), loaded lazily.
+
+In the app:
+- `SubclassPowers.keysOf(ClassEntry)` turns the character's subclass into keys (a subdomain wins over the domain it
+  replaces – its power list is complete), `Character.resources()` turns them into powers available at the class level.
+  Unknown domain / bloodline → generic 1st-level power (3 + Wis / Cha). A wizard whose school is in the table has no
+  generic "Arcane school power".
+- `FoundryFormula` evaluates the formula: `@class.unlevel` / `@class.level` = class level, `@attributes.hd.total` =
+  character HD, `@abilities.X.mod`; functions `floor`, `ceil`, `min`, `max`, `clamp`, `abs`, `if`, `gt`, `gte`, `lt`,
+  `lte`, `eq`; rounded down, never negative. Both the script and `BundledDataTest` check every formula evaluates.
+- Chosen hexes / revelations: `ClassEntry.abilities` (`AbilityPick` = id, name, kind, copy of the formula) – the counter
+  works without the database loaded. Count (`AbilityRules.slots`): witch 1 + level / 2, shaman at 2nd, 4th, 8th, 10th,
+  12th, 16th, 18th, 20th, oracle at 1st, 3rd, 7th, 11th, 15th, 19th level.
+
 ### Feats (`Feats.json`)
 `python tools/build_feats.py` downloads the overview at [aonprd.com/Feats.aspx](https://aonprd.com/Feats.aspx) (name,
 prerequisites, summary, PFS) and each feat's detail (types, source, flavor, Benefit / Normal / Special sections…). ~3,400
@@ -243,3 +272,57 @@ Multiplier by creature size (`CreatureSize`, stored in the inventory as `size` +
 
 Load penalties (`Load`): medium – max Dex +3, check penalty −3, run ×4; heavy – max Dex +1, check −6, run ×3;
 both speed 30 → 20 ft (20 → 15 ft). Overloaded – only 5 ft per round, no Dex bonus to AC.
+
+### Equipped gear (`Equipment.kt`)
+An inventory entry (`InvEntry`) has `equipped`, `slot` (`ItemSlot`: head, headband, eyes, shoulders, neck, chest, body,
+armor, belt, wrists, hands, 2× ring, feet, main hand, shield) and `bonuses` (`ItemBonus`: target, value, type, skill key).
+
+- Only equipped entries of the **linked inventory** count; a slot holds only as many as fit (first in inventory order),
+  the rest are conflicts (`slotConflicts` → red banner). Entries without a slot all count. `AppState.updateInventory`
+  and `linkInventory` copy the bonuses into `Character.gear`.
+- Stacking (`stackBonuses`): bonuses of the same type don't stack – the highest applies; dodge, untyped and circumstance
+  stack; penalties always stack.
+- Targets: abilities (`gearMod` → `scores`, so also bonus spells, skill points, prerequisites, carrying capacity),
+  saves (`gearSave`), AC, skill (`gearSkill`; a bonus to "knowledge" applies to every Knowledge), `MAX_DEX`
+  (the lowest applies) and `ARMOR_CHECK`.
+- Armor / shields from the database: `ItemBonusGuess.of(Item)` fills in AC (armor / shield type), max Dex and the
+  armor check penalty. Magic items by name: ability headbands and belts, Cloak of Resistance, Ring of Protection,
+  Amulet of Natural Armor, Bracers of Armor; anything else is entered by hand.
+- The inventory's load (`loadBonuses`) adds max Dex and the skill penalty to `gear` (untyped).
+
+### Defense and hit points (`Defense.kt`)
+- **AC** = 10 + armor + shield + Dex (capped by max Dex) + size (`sizeAcMod`: Small +1, Large −1, Tiny +2…)
+  + natural armor (gear, animal companion) + deflection + dodge + other types + manual `Character.acMisc`.
+  **Touch** without armor, shield and natural armor; **flat-footed** without positive Dex and dodge.
+- **Armor check penalty** (`armorCheckPenalty`): armor + shield add up, the load penalty doesn't stack with them –
+  the worse one applies. Subtracted from Str and Dex skills.
+- **HP** (`maxHp`): the character's 1st HD maximum, the rest average (half + 1, like PFS), creature racial HD average
+  (4.5 per d8); + Con modifier per HD (min. 1 HP per class HD), Toughness (+3, +1 per HD from 4th HD), `hpBonus`.
+  `hpOverride` (rolled HP) replaces the calculation. Current HP = max − `damage` (may be negative).
+- Rest (`AppState.rest`) heals 1 HP per character level. Export carries `hpBonus`, `hpOverride` and `acMisc`,
+  not damage (just like cast spells).
+
+### Animal companion (`AnimalCompanions.kt`)
+The "Animal Companion Base Statistics" table from the Core Rulebook (`CompanionProgression`, effective druid level 1–20):
+HD, natural armor, Str/Dex bonus, bonus tricks, special abilities (link, share spells, evasion, ability increase,
+devotion, multiattack, improved evasion). HD, BAB, saves, skill points and feats come from the racial "class" `animal`
+(`ClassCatalog.creatures`) – the companion level only sets its level.
+
+- `SpeciesCatalog`: 17 CRB animals with starting abilities, size, speed, attacks and the 4th- or 7th-level advancement
+  (size, Str / Dex / Con adjustments, natural armor, attacks).
+- `companionMod` (Str/Dex bonus + advancement) goes into `scores`, `naturalArmor` into AC.
+- `suggestedCompanionLevel`: druid and hunter full, ranger level − 3; mounts also paladin and cavalier.
+
+### Metamagic (`Metamagic.kt`)
+The slot increase is read from the feat text (AoN): "uses up a spell slot two levels higher" → 2, "does not use up
+a higher-level spell slot" / "same spell level" → 0, otherwise (Heighten Spell) unknown. `ofCharacter` returns the
+character's metamagic feats from the database (no repeats, custom feats excluded) – the spell detail shows the
+resulting slot level.
+
+### Strict mode (`StrictMode.kt`)
+`AppState.strictMode` (Settings `strict_mode`). Before adding, `StrictRules` checks:
+- **spell**: the class casts it at its level, casting ability ≥ 10 + spell level and the spell level has room
+  (prepared copies = slots + ability bonus + specialist school slot; spontaneous / arcanist = known / prepared spells),
+- **feat**: the feat count (`featSlots`) isn't used up and no prerequisite is ✗ ("?" passes).
+
+Removing always works; import isn't checked by strict mode.

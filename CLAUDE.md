@@ -27,13 +27,14 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ **Vydáno `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
   inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md`.
   Release a Docker zelené; CI testy padaly na kompilaci (`InventoryLinkTest` bez importu `scores`) – opraveno v `08289c8`,
-  **nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) zatím nikdy neběžely – ověřit výsledek CI**.
-- 🔜 **Rozpracováno – sekce „Schopnosti“ v `TODO.md`** (hexy, revelations, vyšší schopnosti domén / bloodline, alternativní rasové traity):
-  zatím nic v kódu. Plán: data z Foundry VTT PF1 jako u ras – nový `tools/build_class_abilities.py` po vzoru `tools/build_races.py`
-  (ZIP z GitLab API `.../repository/archive.zip?sha=master&path=packs/class-abilities`, YAML, `system.uses.maxFormula`,
-  přiřazení ke classe / doméně / bloodline / mystériu) → generovaná tabulka → presety v `ClassFeatures.kt` (dnes jen 1. úroveň
-  domén a bloodline ručně v `subclassPresets`). Hexy a revelations = výběr ze seznamu u classy (jako featy), ne automaticky.
-  Alternativní rasové traity: Foundry `packs/racial-traits` (ověřit, že existuje) → výběr u rasy, nahrazené traity → `PrereqRules`.
+  nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) lokálně zelené (24. 11.); CI po pushi ověřit.
+  Po vydání opraveno: export postavy nepřenášel `hpBonus` / `hpOverride` / `acMisc` (`CharacterDto`; zranění se záměrně neexportuje).
+- ✅ 24. 11. 2026 (v main, nevydáno – bez tagu): **schopnosti class z Foundry** – `tools/build_class_abilities.py` (packs/class-abilities
+  + názvy knih z `module/registry/sources.mjs`; Python cert → lokální ZIP stažený curlem) → `ClassAbilityTable.kt` (schopnosti domén,
+  subdomén, 11 bloodline, škol kouzelníka s úrovní a vzorcem) + `files/ClassAbilities.json` (117 hexů, 303 zjevení s textem, líně).
+  `FoundryFormula` vyhodnocuje vzorce Foundry; hexy / zjevení = `ClassEntry.abilities` (`AbilityPick`), panel `ClassAbilitiesPanel`,
+  přísný režim `StrictRules.classAbilityBlock`, export v `ClassDto.abilities`. Testy 108+ zelené.
+- 🔜 **Alternativní rasové traity**: Foundry je nemá (žádný `packs/racial-traits`) → jediný zdroj AoN (stránky ras) – čeká na rozhodnutí uživatele.
 - Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
 - Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
   a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
@@ -61,13 +62,13 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   Tag `1.0.0` (bez „v“) je starý ruční release s debug APK – workflow na něj nereaguje.
 - ✅ **Web běží na VPS uživatele** z image `ghcr.io/dejvhehe/pf-spellbook-web:edge` (`.env`: `TAG=edge` + `UMAMI_*`), za jeho nginx na `127.0.0.1:8888`.
   Image `:edge`, `:latest`, `:1.0.1` jsou veřejné.
-- ✅ Desktop: testy (`desktopTest`, 75 testů) zelené, appka běží.
+- ✅ Desktop: testy (`desktopTest`, 100 testů) zelené (ověřeno 24. 11. 2026 – i nové testy z v1.4), appka běží.
 - ✅ 18. 11. 2026: deck → **postava** (multiclass, podtřídy, sloty/known, herní režim, featy z AoN, schopnosti s počtem použití,
   propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy).
 - ✅ Android: release APK se staví, otestováno na skutečném zařízení.
 - ✅ iOS: Kotlin část ověřena v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru), Xcode build na Macu otestován
   (návod pro kamarády: `docs/ios-install.md`).
-- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\temurin-21.0.11` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
+- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\ms-21.0.10` (Microsoft OpenJDK; systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
   Docker ani `gh` nejsou nainstalované. Port 8080 drží služba NI Application Web Server (National Instruments) – pro lokální test webu jiný port.
 - 
 ## Stack
@@ -105,6 +106,11 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, SUBDOMAIN_DOMAINS (subdoména → doména, AoN), DRUID_DOMAINS, withSubclass, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
   data/CharacterTransfer.kt  export/import postav (`pf-spellbook-characters`) a featů (`pf-spellbook-feats`), import starých decků
   data/ClassFeatures.kt  FeaturePresets (Smite Evil, Rage, Ki Pool… – vzorce max použití), Resource, Character.resources()
+                         (+ schopnosti podtříd z `SubclassPowers`, vybrané hexy / zjevení s počtem použití)
+  data/ClassAbilities.kt SubclassPower / SubclassPowers.keysOf (podtřída → klíče `domain:fire`, `subdomain:archon@good`, `bloodline:x`,
+                         `school:element:fire`), FoundryFormula (vzorce Foundry), ClassAbility / AbilityPick / AbilityRules (počty hexů a zjevení),
+                         ClassAbilityRepository (ClassAbilities.json, líně – AppState.ensureClassAbilities)
+  data/ClassAbilityTable.kt  GENEROVANÉ `tools/build_class_abilities.py` (Foundry packs/class-abilities)
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
   data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
@@ -123,6 +129,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/RaceUi.kt           RacePickerDialog, raceDetail (velikost · rychlost · úpravy atributů)
   ui/SubclassUi.kt       souhrn podtřídy, `SubclassFields` (sdílí picker classy i `SubclassDialog`), sekce bonusových kouzel (doménový slot, mystérium, bloodline)
   ui/ResourcesUi.kt      sekce „Schopnosti s počtem použití“ (předvyplněné + vlastní počítadla `Tracker`)
+  ui/ClassAbilitiesUi.kt ClassAbilitiesPanel (hexy / zjevení u witch, shaman, oracle), ClassAbilityPickerDialog (hledání, mystéria, text)
   ui/FeatScreens.kt      FeatsPanel (sekce v detailu postavy), FeatPickerScreen, FeatDetailScreen, CustomFeatDialog
   ui/DefenseUi.kt        DefensePanel (AC, HP se stepperem zranění, nastavení)
   ui/EquipmentBoard.kt   inventář 2.0 (návrh „Inventory 2.0 – figurka a equip sloty“ v Claude Design): EquipmentBoard (sloty kolem siluety,
@@ -136,7 +143,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/DatabaseScreen.kt    stav a aktualizace databáze spellů i itemů
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
-  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
+  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
   font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
@@ -147,6 +154,7 @@ iosApp/                Xcode projekt (SwiftUI obal)
 tools/build_items.py   sestavení přibalených dat itemů (Python + pyyaml; jen pro vývojáře)
 tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/feat-cache – běh ~3 h, přerušitelný)
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
+tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml
 ```

@@ -17,7 +17,8 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Kouzla | sloty za den a známá kouzla podle tabulek AoN, bonus z atributu, herní režim s odškrtáváním a odpočinkem |
 | Dovednosti | 26 skillů, ranky, class skills, skill body, bonusy z atributů a rasy |
 | Featy | 3 442 featů (Archives of Nethys), automatické ověření prerekvizit (atributy, skilly, class features, rasa, přesvědčení, božstvo, proficience…) ✓ / ✗ / ?, ruční potvrzení, počet featů podle úrovně a rasy, vlastní featy |
-| Schopnosti | Smite Evil, Rage, Ki Pool… s počtem použití podle úrovně, vlastní počítadla |
+| Schopnosti | Smite Evil, Rage, Ki Pool, schopnosti domén / bloodline / škol všech úrovní… s počtem použití podle úrovně, vlastní počítadla |
+| Hexy a zjevení | ~120 hexů čarodějnice a šamana, ~300 zjevení orákula s plným textem, počet podle úrovně classy |
 | Inventář | ~6 060 itemů (d20pfsrd + Foundry VTT PF1), vlastní katalog, lektvary/svitky/hůlky ze spellů, měšec, nosnost, poznámky, export/import |
 | Aktualizace | spelly i itemy jdou tlačítkem stáhnout znovu ze zdroje |
 | Vzhled | design „Linkovaný zápisník“, mobil i třísloupcové široké okno |
@@ -47,7 +48,7 @@ docker compose pull && docker compose up -d   # 127.0.0.1:8888 pro vaši reverzn
 ## Rychlý start
 
 ```bash
-# JDK 17+ (na vývojovém PC: %USERPROFILE%\.jdks\temurin-21.0.11)
+# JDK 17+ (na vývojovém PC: %USERPROFILE%\.jdks\ms-21.0.10)
 ./gradlew :composeApp:run              # desktop
 ./gradlew :composeApp:installDebug     # Android na připojený telefon / emulátor
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # web na http://localhost:8080

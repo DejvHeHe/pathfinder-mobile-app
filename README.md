@@ -37,7 +37,9 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
 - **Skills** – ranks, class skills, skill points, totals with ability and racial bonuses.
 - **Feats** – 3,442 feats with **automatic prerequisite checks** (abilities, BAB, skills, class features, race, alignment,
   deity, proficiencies, spellcasting…) shown as ✓ / ✗ / ?; anything the app can't verify you confirm once by hand.
-- **Limited-use abilities** – Smite Evil, Rage, Ki Pool… with uses per day by level, plus custom counters.
+- **Limited-use abilities** – Smite Evil, Rage, Ki Pool, domain / bloodline / school powers of every level… with uses
+  per day by level, plus custom counters.
+- **Hexes and revelations** – ~120 witch / shaman hexes and ~300 oracle revelations with full text, counted by class level.
 - **Inventory** – ~6,060 items, your own item catalog, potions / scrolls / wands priced from spells, coins,
   carrying capacity with load penalties, and hidden prices for expensive loot (tap 10× to reveal).
 - **Export / import** of characters, feats and inventories as readable JSON – share them with your party.

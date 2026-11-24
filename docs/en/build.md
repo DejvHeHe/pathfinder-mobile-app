@@ -14,7 +14,7 @@
 If your system Java is older, point Gradle to a JDK 17+ first, e.g. on Windows:
 
 ```powershell
-$env:JAVA_HOME = "$env:USERPROFILE\.jdks\temurin-21.0.11"
+$env:JAVA_HOME = "$env:USERPROFILE\.jdks\ms-21.0.10"
 ```
 
 ## Desktop (Windows / macOS / Linux)
@@ -107,6 +107,7 @@ Output: `composeApp/build/previews/*.png`.
 | Class tables | `python tools/build_casting.py` (spells per day / known), `python tools/build_classes.py` (BAB, saves, class skills, proficiencies) |
 | Races | `python tools/build_races.py [races.zip]` |
 | Deities | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 deity pages, 1 per second) |
+| Class abilities, hexes, revelations | `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` |
 | App icon | edit `art/icon.svg` (viewBox 100×100) → `python tools/build_icons.py [--chrome PATH]` (Pillow + Chrome/Chromium; writes the Android, desktop, iOS and web icons) |
 
 If Python cannot verify a site's certificate, download the source with `curl` and pass the local file (see the script headers).

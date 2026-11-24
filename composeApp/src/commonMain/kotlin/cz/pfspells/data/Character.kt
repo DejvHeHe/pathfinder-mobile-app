@@ -54,6 +54,8 @@ data class ClassEntry(
     val spells: Map<String, Int> = emptyMap(),
     /** kouzla připravená do doménového slotu (cleric, druid): spellId → počet */
     val bonusSpells: Map<String, Int> = emptyMap(),
+    /** vybrané hexy (witch, shaman) / revelations (oracle) */
+    val abilities: List<AbilityPick> = emptyList(),
 )
 
 enum class ResourceUnit { PER_DAY, ROUNDS, POINTS }

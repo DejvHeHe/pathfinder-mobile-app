@@ -12,6 +12,10 @@ sealed interface StrictBlock {
     data class FeatSlotsFull(val total: Int) : StrictBlock
     /** některá prerekvizita featu je nesplněná (✗; neověřitelné „?“ se nepočítají) */
     data object FeatPrereqsUnmet : StrictBlock
+    /** všechny hexy / revelations podle úrovně classy jsou vybrané */
+    data class ClassAbilitySlotsFull(val total: Int) : StrictBlock
+    /** hex / revelation vyžaduje vyšší úroveň classy */
+    data class ClassAbilityLevel(val minLevel: Int) : StrictBlock
 }
 
 /**
@@ -47,6 +51,15 @@ object StrictRules {
         if (feat != null && feat.prereq.isNotBlank() &&
             FeatPrereqs.overall(FeatPrereqs.evaluate(c, featDb, feat.prereq, spells)) == PrereqStatus.UNMET
         ) return StrictBlock.FeatPrereqsUnmet
+        return null
+    }
+
+    /** Ještě jeden hex / revelation u classy [classId]. */
+    fun classAbilityBlock(c: Character, classId: String, a: ClassAbility): StrictBlock? {
+        val e = c.classEntry(classId) ?: return null
+        if (e.level < a.minLevel) return StrictBlock.ClassAbilityLevel(a.minLevel)
+        val total = AbilityRules.slots(classId, e.level)
+        if (e.abilities.size >= total) return StrictBlock.ClassAbilitySlotsFull(total)
         return null
     }
 }

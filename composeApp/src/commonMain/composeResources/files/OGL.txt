@@ -61,7 +61,7 @@ Pathfinder Roleplaying Game Ultimate Wilderness. © 2017, Paizo Inc.; Authors: A
 Pathfinder Roleplaying Game Adventurer's Guide. © 2017, Paizo Inc.; Authors: Benjamin Bruck, John Compton, Crystal Frasier, Tim Hitchcock, Jenny Jarzabski, Isabelle Lee, Joe Pasini, Jessica Price, David Schwartz, and Josh Vogt.
 Pathfinder Roleplaying Game Book of the Damned. © 2017, Paizo Inc.; Authors: John Compton, Adam Daigle, Amanda Hamon Kunz, James Jacobs, Isabelle Lee, F. Wesley Schneider, Todd Stewart, and Josh Vogt.
 Pathfinder Roleplaying Game Planar Adventures. © 2018, Paizo Inc.; Authors: Robert Brookes, John Compton, Paris Crenshaw, Eleanor Ferron, Thurston Hillman, James Jacobs, Isabelle Lee, Lyz Liddell, Ron Lundeen, Joe Pasini, Lacy Pellazar, Jessica Price, Mark Seifter, F. Wesley Schneider, Todd Stewart, James L. Sutter, and Linda Zayas-Palmer.
-Other Pathfinder Roleplaying Game, Pathfinder Campaign Setting, Pathfinder Player Companion and Pathfinder Adventure Path products © 2009-2019, Paizo Inc.; the source book of every spell, item and feat is shown in its detail ("Source"), and full author credits are in the Section 15 of that book.
+Other Pathfinder Roleplaying Game, Pathfinder Campaign Setting, Pathfinder Player Companion and Pathfinder Adventure Path products © 2009-2019, Paizo Inc.; the source book of every spell, item, feat, hex and revelation is shown in its detail ("Source"), and full author credits are in the Section 15 of that book.
 d20pfsrd.com. © Open Gaming LLC.
 Foundry Virtual Tabletop © 2019, Foundry Gaming LLC; Pathfinder 1e system for Foundry VTT (compendium data), its contributors.
 PF1 Spellbook. © 2026, David Sobíšek.

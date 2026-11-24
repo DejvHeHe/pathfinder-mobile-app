@@ -114,13 +114,29 @@ The old "decks" were converted to characters (with all their spells) on the firs
 - The **Limited-use abilities** section fills itself according to the character's classes: Smite Evil, Lay on Hands,
   Channel Energy, Rage, Bardic Performance, Ki Pool, Arcane Pool, Grit, Panache, Judgment, Challenge, Wild Shape, Fervor,
   Blessings, Bombs, Inspiration, Martial Flexibility, the wizard school power… The maximum is computed from class level and abilities.
-- Subclasses add the cleric's and druid's **domain powers** (3 + Wisdom per day; Animal and Liberation in rounds, Sun and
-  Knowledge are not counted) and the sorcerer's **bloodline power** (3 + Charisma, except Arcane). Add hexes and
-  revelations as your own counters.
+- Subclasses add their limited-use powers, **including higher levels** – cleric and druid domains and subdomains
+  (e.g. Fire Bolt 3 + Wisdom per day, Holy Lance from 8th level), sorcerer bloodlines (Draconic Claws, Breath Weapon
+  from 9th level…) and the wizard school (Force Missile, Elemental Wall from 8th level). A subdomain replaces the power
+  it changes. The name includes the subclass: "Fire Bolt (Fire)". The data comes from Foundry VTT; a subclass it does not
+  know (some later bloodlines, Jungle, Inevitable) gets a generic 1st-level power (3 + Wisdom / Charisma per day).
+- Chosen **hexes and revelations** with uses are added here automatically (see below).
 - Hide an ability you do not need with ×, "Show hidden" brings it back.
 - **Add counter** = your own entry (name, maximum, unit: per day / rounds per day / points, note) – racial abilities,
   magic items, wand charges…
 - In **game mode** uses are ticked off (dots, − / + for large numbers), **Rest** restores everything.
+
+### Hexes and revelations
+- The witch and the shaman have a **Hexes** section in the character detail, the oracle a **Revelations** section.
+  On the right is "chosen / available" by class level (witch 1 + 1 per even level, shaman at 2nd, 4th, 8th, 10th, 12th,
+  16th, 18th and 20th, oracle at 1st, 3rd, 7th, 11th, 15th and 19th). Patron / spirit hexes and the Extra Hex /
+  Extra Revelation feats are not counted.
+- **Add hex / Add revelation** opens the list from Foundry VTT (~120 hexes, ~300 revelations): search in name and text,
+  each with its kind (hex, major hex, grand hex), Ex / Su / Sp, uses and minimum level. Tap to expand the full text
+  and source. The oracle sees the revelations of their mystery, **All mysteries** shows the rest too.
+- Major hexes come at 10th level, grand hexes at 18th, revelations by their text ("must be at least 7th level").
+  Outside strict mode they can be chosen earlier (red "from level N"); strict mode allows neither more than available
+  nor picks above the level.
+- Tap a chosen hex to read its text, × removes it. Hexes and revelations are exported with the character.
 
 ### Defense and hit points
 - The **Defense & hit points** section: **AC**, **touch** and **flat-footed** – 10 + armor + shield + Dex (limited by the
@@ -247,8 +263,9 @@ Works for characters, feats and inventories. The result is readable text (JSON) 
 | Export / import feats only | **Export / Import** buttons in the character's Feats section |
 
 - A **character** is exported whole: race, alignment, deity, classes and levels, abilities, skills, spells, feats (custom ones and
-  notes too), confirmed prerequisites, "Extra". If it has a linked inventory, check **Include linked inventory** to bundle it –
-  after import it is created and linked. Spells cast in game mode are not exported.
+  notes too), confirmed prerequisites, "Extra", counters, defense settings (extra HP, rolled HP, AC – other) and companions.
+  If it has a linked inventory, check **Include linked inventory** to bundle it (equipped gear included) –
+  after import it is created and linked. Spells cast in game mode and damage taken are not exported.
 - **Feats** are imported into the open character (added to the existing ones); feats the character already has and cannot
   take more than once are skipped. Feat import also accepts a full character export (it takes the feats from it).
 - Old deck exports (from version 1.0) can still be imported – a deck becomes a character with one class.

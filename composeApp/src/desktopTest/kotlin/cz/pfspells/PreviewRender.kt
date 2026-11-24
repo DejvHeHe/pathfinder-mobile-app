@@ -111,6 +111,19 @@ class PreviewRender {
             state.saveCustomItem(cz.pfspells.data.CustomItem("p1", "Elven rope", ItemCategory.GEAR.name, 25.0, 3.0, "50 ft., DC 15 to break"))
             state.inventory(i.id)!!
         }
+        // čarodějnice s hexy a orákulum se zjeveními (Foundry)
+        withContext(Dispatchers.Main) { state.ensureClassAbilities() }
+        while (state.abilityDb == null) delay(50)
+        val morgana = withContext(Dispatchers.Main) {
+            val m = state.createCharacter("Morgana", "witch", 10)
+            state.setAbility(m.id, cz.pfspells.data.Ability.INT, 18)
+            listOf("evil-eye", "slumber", "cackle", "misfortune", "agony").forEach { id -> state.abilityDb!!.get(id)?.let { state.addClassAbility(m.id, "witch", it) } }
+            state.addClass(m.id, "oracle", 3)
+            state.setSubclass(m.id, "oracle", cz.pfspells.data.SubclassSlot.MYSTERY, "flame")
+            state.abilityDb!!.forClass("oracle").filter { "flame" in it.mysteries && it.uses != null }.take(1)
+                .forEach { state.addClassAbility(m.id, "oracle", it) }
+            state.character(m.id)!!
+        }
         val out = File("build/previews").apply { mkdirs() }
 
         suspend fun shot(name: String, w: Int, h: Int, overlay: (@Composable () -> Unit)? = null, nav: AppState.() -> Unit) {
@@ -192,6 +205,15 @@ class PreviewRender {
             openRoot(Screen.ItemPicker(inv.id)); itemFilter = ItemFilter(mine = true); showItem("my-p1", inv.id)
         }
         shot("cs-phone-deitypicker", 390, 844, overlay = { cz.pfspells.ui.DeityPickerDialog("Torag", onDismiss = {}, onCustom = {}) { } }) { openRoot(Screen.Decks) }
+        shot("cs-phone-hexes", 390, 2600) { gameMode = false; openRoot(Screen.CharacterDetail(morgana.id)) }
+        shot("cs-phone-hexpicker", 390, 844, overlay = {
+            cz.pfspells.ui.ClassAbilityPickerDialog(state, state.character(morgana.id)!!, state.character(morgana.id)!!.classes[0],
+                cz.pfspells.data.AbilityGroup.HEXES, onDismiss = {}) { }
+        }) { openRoot(Screen.Decks) }
+        shot("desktop-revelations", 1440, 1000, overlay = {
+            cz.pfspells.ui.ClassAbilityPickerDialog(state, state.character(morgana.id)!!, state.character(morgana.id)!!.classes[1],
+                cz.pfspells.data.AbilityGroup.REVELATIONS, onDismiss = {}) { }
+        }) { openRoot(Screen.CharacterDetail(morgana.id)) }
         shot("cs-phone-feat-prereqs", 390, 1000) { openRoot(Screen.CharacterDetail(thomasId)); showFeat("cloak-of-stone", thomasId) }
         shot("cs-phone-database", 390, 844) { openRoot(Screen.Decks); push(Screen.Database) }
         // výběr classy s podtřídou (nová postava – klerik)

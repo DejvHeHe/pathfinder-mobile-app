@@ -37,4 +37,29 @@ class BundledDataTest {
         // každá škola a subškola ze zdroje má český název
         spells.map { it.school }.distinct().forEach { assertTrue(CsStrings.school(it) != it.replaceFirstChar { c -> c.uppercase() }, it) }
     }
+
+    /** Hexy a zjevení z Foundry: soubor jde načíst, vzorce spočítat a zjevení pasují na mystéria appky. */
+    @Test
+    fun bundledClassAbilities() {
+        val db = cz.pfspells.data.ClassAbilityRepository.parse(File("src/commonMain/composeResources/files/ClassAbilities.json").readText())
+        assertTrue(db.all.size > 400)
+        assertEquals(db.all.size, db.all.map { it.id }.toSet().size)
+        assertTrue(db.forClass("witch").size > 80)
+        assertTrue(db.forClass("shaman").size > 50)
+        assertTrue(db.forClass("oracle").size > 250)
+        assertTrue(db.all.all { it.text.isNotBlank() && "@UUID" !in it.text && "<p>" !in it.text })
+        val c = cz.pfspells.data.Character("c", "C", listOf(cz.pfspells.data.ClassEntry("oracle", 20)))
+        val bad = db.all.filter { it.uses != null && cz.pfspells.data.FoundryFormula.uses(it.uses!!, 20, c) == null }
+        assertTrue(bad.isEmpty(), bad.joinToString { it.name })
+
+        // mystéria a domény appky (ze zdroje kouzel) mají data ve Foundry
+        val index = cz.pfspells.data.SubclassIndex(SpellParser.parse(File("src/commonMain/composeResources/files/SpellList.json").readText()))
+        val mysteries = db.all.flatMap { it.mysteries }.toSet()
+        val noRevelations = index.names(cz.pfspells.data.SubclassKind.MYSTERY).filter { it !in mysteries }
+        println("Mysteries without revelations: $noRevelations")
+        assertTrue(noRevelations.size <= 6, noRevelations.toString())
+        val noPowers = index.names(cz.pfspells.data.SubclassKind.DOMAIN).filter { cz.pfspells.data.SubclassPowers.of("domain:$it") == null }
+        println("Domains without Foundry powers: $noPowers")
+        assertTrue(noPowers.size <= 4, noPowers.toString())
+    }
 }

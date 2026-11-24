@@ -107,13 +107,27 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 - Sekce **Schopnosti s počtem použití** se sama naplní podle class postavy: Smite Evil, Lay on Hands, Channel Energy,
   Rage, Bardic Performance, Ki Pool, Arcane Pool, Grit, Panache, Judgment, Challenge, Wild Shape, Fervor, Blessings,
   Bombs, Inspiration, Martial Flexibility, schopnost školy kouzelníka… Maximum se počítá z úrovně classy a atributu.
-- Podle podtřídy přibudou **doménové schopnosti** klerika a druida (3 + Moudrost za den; Animal a Liberation v kolech,
-  Sun a Knowledge se nepočítají) a **schopnost bloodline** čaroděje (3 + Charisma, kromě Arcane). Hexy a revelations
-  si přidejte jako vlastní počítadla.
+- Podle podtřídy přibudou její schopnosti s počtem použití, **i vyšších úrovní** – domény a subdomény klerika a druida
+  (např. Fire Bolt 3 + Moudrost za den, od 8. úrovně Holy Lance), bloodline čaroděje (Draconic Claws, od 9. úrovně
+  Breath Weapon…) a škola kouzelníka (Force Missile, od 8. úrovně Elemental Wall). Subdoména nahradí schopnost, kterou
+  mění. Název je doplněný podtřídou: „Fire Bolt (Fire)“. Data jsou z Foundry VTT; podtřída, kterou nezná (některé
+  bloodline z pozdějších knih, Jungle, Inevitable), má obecnou schopnost 1. úrovně (3 + Moudrost / Charisma za den).
+- Vybrané **hexy a zjevení** s počtem použití se sem přidají samy (viz níže).
 - Nepotřebnou schopnost skryjete ×, „Zobrazit skryté“ je vrátí.
 - **Přidat počítadlo** = vlastní položka (název, maximum, jednotka: za den / kol za den / body, poznámka) – rasové
   schopnosti, magické předměty, náboje hůlky…
 - V **herním režimu** se použití odklikává (puntíky, u velkých čísel − / +), **Odpočinek** vše obnoví.
+
+### Hexy a zjevení (revelations)
+- Čarodějnice a šaman mají v detailu postavy sekci **Hexy**, orákulum sekci **Zjevení**. Vpravo je počet „vybrané / dostupné“
+  podle úrovně classy (čarodějnice 1 + 1 za každou sudou úroveň, šaman na 2., 4., 8., 10., 12., 16., 18. a 20. úrovni,
+  orákulum na 1., 3., 7., 11., 15. a 19.). Hexy z patrona či spiritu a featy Extra Hex / Extra Revelation se nepočítají.
+- **Přidat hex / Přidat zjevení** otevře seznam z Foundry VTT (~120 hexů, ~300 zjevení): hledání v názvu i textu,
+  u každého druh (hex, velký hex, nejvyšší hex), Ex / Su / Sp, počet použití a minimální úroveň. Klepnutím se rozbalí
+  celý text a zdroj. Orákulum vidí zjevení svého mystéria, **Všechna mystéria** ukáže i ostatní.
+- Velké hexy jsou od 10. úrovně, nejvyšší od 18., zjevení podle textu („must be at least 7th level“). Mimo přísný režim
+  jdou vybrat i dřív (červeně „od N. úrovně“); přísný režim nedovolí vybrat víc, než je dostupných, ani nad úroveň.
+- Klepnutím na vybraný hex se ukáže jeho text, × ho odebere. Hexy a zjevení se exportují s postavou.
 
 ### Obrana a životy
 - Sekce **Obrana a životy**: **AC**, **dotyk** a **zaskočený** – 10 + zbroj + štít + Obratnost (omezená max. Dex zbroje,
@@ -235,9 +249,10 @@ Funguje pro postavy, featy i inventáře. Výsledkem je čitelný text (JSON), k
 | Import | menu **⋮ → Importovat postavu / inventář** |
 | Export / import jen featů | tlačítka **Export / Import** v sekci Featy postavy |
 
-- **Postava** se exportuje celá: rasa, classy a úrovně, atributy, dovednosti, kouzla, featy (i vlastní a poznámky), „Navíc“.
-  Má-li propojený inventář, jde ho zaškrtnutím **Včetně propojeného inventáře** přibalit – po importu se založí a propojí.
-  Seslaná kouzla z herního režimu se neexportují.
+- **Postava** se exportuje celá: rasa, přesvědčení, božstvo, classy a úrovně, atributy, dovednosti, kouzla, featy (i vlastní
+  a poznámky), „Navíc“, počítadla, nastavení obrany (HP navíc, házené HP, AC – ostatní) a mazlíčci.
+  Má-li propojený inventář, jde ho zaškrtnutím **Včetně propojeného inventáře** přibalit (i s nasazeným vybavením) –
+  po importu se založí a propojí. Seslaná kouzla z herního režimu a utržené zranění se neexportují.
 - **Featy** se importují do otevřené postavy (přidají se k existujícím); featy, které postava už má a nejdou vzít víckrát,
   se přeskočí. Import featů přijme i export celé postavy (vezme z něj featy).
 - Staré exporty decků (z verze 1.0) jdou dál importovat – z decku vznikne postava s jednou classou.

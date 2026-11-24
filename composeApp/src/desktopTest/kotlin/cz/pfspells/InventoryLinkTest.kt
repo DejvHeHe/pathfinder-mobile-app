@@ -139,4 +139,26 @@ class InventoryLinkTest {
         state.linkInventory(c.id, null)
         assertEquals(18, state.character(c.id)!!.scores.str)
     }
+
+    @Test
+    fun damageAndRest() = onMain {
+        val state = AppState(inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings), settings = settings)
+        val c = state.createCharacter("Kyra", "cleric", 3)
+        state.setDamage(c.id, 7)
+        assertEquals(7, state.character(c.id)!!.damage)
+        state.setDamage(c.id, -5) // záporné zranění = 0
+        assertEquals(0, state.character(c.id)!!.damage)
+        // odpočinek vyléčí 1 HP za úroveň postavy (ne pod nulu) a vymaže seslaná kouzla
+        state.setDamage(c.id, 7)
+        state.rest(c.id)
+        assertEquals(4, state.character(c.id)!!.damage)
+        state.rest(c.id); state.rest(c.id)
+        assertEquals(0, state.character(c.id)!!.damage)
+        // nastavení obrany se ořízne na rozumné meze
+        state.setDefenseSettings(c.id, hpBonus = 5000, hpOverride = 0, acMisc = -99)
+        val d = state.character(c.id)!!
+        assertEquals(999, d.hpBonus)
+        assertEquals(1, d.hpOverride)
+        assertEquals(-50, d.acMisc)
+    }
 }

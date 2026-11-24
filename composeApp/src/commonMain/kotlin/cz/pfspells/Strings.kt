@@ -1,6 +1,8 @@
 package cz.pfspells
 
 import cz.pfspells.data.ResourceUnit
+import cz.pfspells.data.AbilityGroup
+import cz.pfspells.data.AbilityKind
 import cz.pfspells.data.SubclassType
 import cz.pfspells.data.PrereqStatus
 import cz.pfspells.data.ClassGroup
@@ -141,6 +143,20 @@ interface Strings {
     /** „5+1 per day“ */
     fun slotsPerDay(slots: String): String
     val atWill: String
+
+    // hexy a revelations
+    fun abilityGroupName(g: AbilityGroup): String
+    fun addClassAbility(g: AbilityGroup): String
+    fun noClassAbilities(g: AbilityGroup): String
+    fun abilityKind(k: AbilityKind): String
+    /** „od 7. úrovně“ */
+    fun fromClassLevel(n: Int): String
+    val allMysteries: String
+    val removeAbility: String
+    val searchAbilities: String
+    val loadingAbilities: String
+    fun abilitiesHint(g: AbilityGroup): String
+    val sourceClassAbilities: String
 
     // featy
     val featsHeader: String
@@ -705,6 +721,34 @@ object EnStrings : Strings {
     override fun slotsKnown(chosen: Int, limit: String) = "$chosen / $limit known"
     override fun slotsPerDay(slots: String) = "$slots per day"
     override val atWill = "at will"
+    override fun abilityGroupName(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Hexes"
+        AbilityGroup.REVELATIONS -> "Revelations"
+    }
+    override fun addClassAbility(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Add hex"
+        AbilityGroup.REVELATIONS -> "Add revelation"
+    }
+    override fun noClassAbilities(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "No hexes chosen yet."
+        AbilityGroup.REVELATIONS -> "No revelations chosen yet."
+    }
+    override fun abilityKind(k: AbilityKind) = when (k) {
+        AbilityKind.HEX -> "Hex"
+        AbilityKind.MAJOR_HEX -> "Major hex"
+        AbilityKind.GRAND_HEX -> "Grand hex"
+        AbilityKind.REVELATION -> "Revelation"
+    }
+    override fun fromClassLevel(n: Int) = "from level $n"
+    override val allMysteries = "All mysteries"
+    override val removeAbility = "Remove"
+    override val searchAbilities = "Search by name or text"
+    override val loadingAbilities = "Loading…"
+    override fun abilitiesHint(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "The count follows the class level – hexes from a patron, spirit or Extra Hex aren't included."
+        AbilityGroup.REVELATIONS -> "The count follows the class level – Extra Revelation isn't included; the final revelation comes at level 20."
+    }
+    override val sourceClassAbilities = "Domain, bloodline and school powers, hexes, revelations"
     override val featsHeader = "Feats"
     override fun featCount(have: Int, total: Int) = "$have / $total"
     override fun featSlotsGeneral(n: Int) = "Levels $n"
@@ -1058,6 +1102,8 @@ object EnStrings : Strings {
         StrictBlock.SpellNotAvailable -> "the class can't cast this spell yet"
         is StrictBlock.FeatSlotsFull -> "all ${b.total} feats are taken"
         StrictBlock.FeatPrereqsUnmet -> "prerequisites are not met"
+        is StrictBlock.ClassAbilitySlotsFull -> "all ${b.total} choices at this level are taken"
+        is StrictBlock.ClassAbilityLevel -> "requires class level ${b.minLevel}"
     }
     override val companionsHeader = "Companions"
     override val companionsHint = "Animal companion, mount, familiar, eidolon or a pet – each with its own sheet, feats, skills and inventory."
@@ -1476,6 +1522,34 @@ object CsStrings : Strings {
     override fun slotsKnown(chosen: Int, limit: String) = "$chosen / $limit známých"
     override fun slotsPerDay(slots: String) = "$slots za den"
     override val atWill = "libovolně"
+    override fun abilityGroupName(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Hexy"
+        AbilityGroup.REVELATIONS -> "Zjevení (revelations)"
+    }
+    override fun addClassAbility(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Přidat hex"
+        AbilityGroup.REVELATIONS -> "Přidat zjevení"
+    }
+    override fun noClassAbilities(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Zatím žádné hexy."
+        AbilityGroup.REVELATIONS -> "Zatím žádná zjevení."
+    }
+    override fun abilityKind(k: AbilityKind) = when (k) {
+        AbilityKind.HEX -> "Hex"
+        AbilityKind.MAJOR_HEX -> "Velký hex"
+        AbilityKind.GRAND_HEX -> "Nejvyšší hex"
+        AbilityKind.REVELATION -> "Zjevení"
+    }
+    override fun fromClassLevel(n: Int) = "od $n. úrovně"
+    override val allMysteries = "Všechna mystéria"
+    override val removeAbility = "Odebrat"
+    override val searchAbilities = "Hledat v názvu nebo textu"
+    override val loadingAbilities = "Načítám…"
+    override fun abilitiesHint(g: AbilityGroup) = when (g) {
+        AbilityGroup.HEXES -> "Počet podle úrovně classy – hexy z patrona, spiritu nebo featu Extra Hex v něm nejsou."
+        AbilityGroup.REVELATIONS -> "Počet podle úrovně classy – feat Extra Revelation v něm není; finální zjevení přijde na 20. úrovni."
+    }
+    override val sourceClassAbilities = "Schopnosti domén, bloodline a škol, hexy, zjevení"
     override val featsHeader = "Featy"
     override fun featCount(have: Int, total: Int) = "$have / $total"
     override fun featSlotsGeneral(n: Int) = "Za úrovně $n"
@@ -1881,6 +1955,8 @@ object CsStrings : Strings {
         StrictBlock.SpellNotAvailable -> "tohle kouzlo classa zatím nesesílá"
         is StrictBlock.FeatSlotsFull -> "všech ${b.total} featů je vybráno"
         StrictBlock.FeatPrereqsUnmet -> "prerekvizity nejsou splněné"
+        is StrictBlock.ClassAbilitySlotsFull -> "na této úrovni je vybráno všech ${b.total}"
+        is StrictBlock.ClassAbilityLevel -> "vyžaduje ${b.minLevel}. úroveň classy"
     }
     override val companionsHeader = "Mazlíčci a společníci"
     override val companionsHint = "Zvířecí společník, jezdecké zvíře, familiár, eidolon nebo mazlíček – každý má vlastní list, featy, skills i inventář."

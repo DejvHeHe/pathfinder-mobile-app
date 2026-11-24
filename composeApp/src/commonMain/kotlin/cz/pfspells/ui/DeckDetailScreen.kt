@@ -164,6 +164,7 @@ fun DeckDetailScreen(
             // mazlíček nemá vlastní mazlíčky (familiár familiára…)
             if (!c.isCompanion) item(key = "companions") { CompanionsPanel(state, c, wide) }
             item(key = "feats") { FeatsPanel(state, c, wide, selectedFeatPick) }
+            item(key = "class-abilities") { ClassAbilitiesPanel(state, c) }
             item(key = "skills") { SkillsPanel(state, c) }
             item(key = "resources") { ResourcesPanel(state, c, wide) }
             if (casters.isNotEmpty() || c.resources().isNotEmpty()) {

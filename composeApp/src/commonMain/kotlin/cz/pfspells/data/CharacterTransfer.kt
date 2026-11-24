@@ -45,6 +45,10 @@ data class CharacterDto(
     val companionLevel: Int? = null,
     val rarity: CompanionRarity? = null,
     val respawnRules: String? = null,
+    /** obrana a životy (zranění se jako seslaná kouzla neexportuje) */
+    val hpBonus: Int = 0,
+    val hpOverride: Int? = null,
+    val acMisc: Int = 0,
 )
 
 @Serializable
@@ -55,6 +59,8 @@ data class ClassDto(
     val spells: List<DeckSpellDto> = emptyList(),
     /** doménový slot */
     val bonusSpells: List<DeckSpellDto> = emptyList(),
+    /** hexy / revelations */
+    val abilities: List<AbilityPick> = emptyList(),
 )
 
 @Serializable
@@ -102,12 +108,16 @@ object CharacterTransfer {
                 companionLevel = c.companionLevel,
                 rarity = c.rarity,
                 respawnRules = c.respawnRules,
+                hpBonus = c.hpBonus,
+                hpOverride = c.hpOverride,
+                acMisc = c.acMisc,
                 name = c.name,
                 classes = c.classes.map { e ->
                     ClassDto(
                         classId = e.classId, level = e.level, subclass = e.subclass,
                         spells = spellDtos(e.spells, db),
                         bonusSpells = spellDtos(e.bonusSpells, db),
+                        abilities = e.abilities,
                     )
                 },
                 abilities = c.abilities,
@@ -177,7 +187,10 @@ object CharacterTransfer {
                     }
                     return out
                 }
-                ClassEntry(cd.classId, cd.level.coerceIn(1, 20), cd.subclass, match(cd.spells), match(cd.bonusSpells))
+                ClassEntry(
+                    cd.classId, cd.level.coerceIn(1, 20), cd.subclass, match(cd.spells), match(cd.bonusSpells),
+                    abilities = cd.abilities.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
+                )
             }.distinctBy { it.classId }
             if (classes.isEmpty()) throw DeckImportException(ImportError.Invalid(inventory = false, "no classes"))
             ImportedCharacter(
@@ -204,6 +217,9 @@ object CharacterTransfer {
                     companionLevel = dto.companionLevel?.coerceIn(1, 20),
                     rarity = dto.rarity,
                     respawnRules = dto.respawnRules?.takeIf { it.isNotBlank() },
+                    hpBonus = dto.hpBonus.coerceIn(-999, 999),
+                    hpOverride = dto.hpOverride?.coerceIn(1, 9999),
+                    acMisc = dto.acMisc.coerceIn(-50, 50),
                 ),
                 dto.inventory?.let { InventoryTransfer.fromDto(it, itemDb) },
                 missing,
