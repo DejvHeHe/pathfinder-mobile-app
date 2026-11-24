@@ -61,7 +61,12 @@ val Character.raceInfo: RaceInfo? get() = RaceCatalog.get(race)
 val Character.creatureSize: CreatureSize? get() = size ?: raceInfo?.size
 
 /** Rasová úprava atributu postavy (0 bez rasy). */
-fun Character.raceMod(a: Ability): Int = raceInfo?.mod(a, raceBonus) ?: 0
+fun Character.raceMod(a: Ability): Int {
+    val r = raceInfo ?: return 0
+    // alternativní trait (Dual Talent…) může nahradit „+2 k jednomu atributu“ nebo změnit úpravy rasy
+    val bonus = raceBonus.takeIf { !RacialTraits.replacesRaceBonus(this) }
+    return r.mod(a, bonus) + RacialTraits.abilityMod(this, a)
+}
 
 /** Úprava atributu oproti základu: rasa + zvířecí společník + nasazené vybavení. */
 fun Character.abilityBonus(a: Ability): Int = raceMod(a) + companionMod(a) + gearMod(a)

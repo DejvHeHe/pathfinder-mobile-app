@@ -118,6 +118,8 @@ data class Character(
     val deity: String = "",
     /** ručně potvrzené prerekvizity featů (text malými písmeny) – platí jako splněné */
     val confirmedPrereqs: Set<String> = emptySet(),
+    /** vybrané alternativní rasové traity (nahrazují výchozí traity rasy) */
+    val racialTraits: List<RacialTraitPick> = emptyList(),
     /** mazlíček / společník: id postavy, které patří (null = samostatná postava) */
     val ownerId: String? = null,
     /** druh mazlíčka (jen u [ownerId] != null) */

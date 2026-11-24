@@ -49,6 +49,8 @@ data class CharacterDto(
     val hpBonus: Int = 0,
     val hpOverride: Int? = null,
     val acMisc: Int = 0,
+    /** alternativní rasové traity */
+    val racialTraits: List<RacialTraitPick> = emptyList(),
 )
 
 @Serializable
@@ -111,6 +113,7 @@ object CharacterTransfer {
                 hpBonus = c.hpBonus,
                 hpOverride = c.hpOverride,
                 acMisc = c.acMisc,
+                racialTraits = c.racialTraits,
                 name = c.name,
                 classes = c.classes.map { e ->
                     ClassDto(
@@ -220,6 +223,9 @@ object CharacterTransfer {
                     hpBonus = dto.hpBonus.coerceIn(-999, 999),
                     hpOverride = dto.hpOverride?.coerceIn(1, 9999),
                     acMisc = dto.acMisc.coerceIn(-50, 50),
+                    // traity jen k rase, která se importovala
+                    racialTraits = if (dto.race?.let { RaceCatalog.get(it) } != null)
+                        dto.racialTraits.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id } else emptyList(),
                 ),
                 dto.inventory?.let { InventoryTransfer.fromDto(it, itemDb) },
                 missing,

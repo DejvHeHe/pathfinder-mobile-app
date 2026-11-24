@@ -1,6 +1,10 @@
 package cz.pfspells
 
 import cz.pfspells.data.ClassAbility
+import cz.pfspells.data.RacialTrait
+import cz.pfspells.data.RacialTraitDatabase
+import cz.pfspells.data.RacialTraitRepository
+import cz.pfspells.data.RacialTraits
 import cz.pfspells.data.ClassAbilityDatabase
 import cz.pfspells.data.ClassAbilityRepository
 import cz.pfspells.data.toPick
@@ -116,6 +120,14 @@ data class FeatFilter(
     /** prohledávat i shrnutí a text */
     val fullText: Boolean = false,
 )
+
+/** Stav databáze alternativních rasových traitů (`RacialTraits.json`, líně). */
+sealed interface TraitDbState {
+    data object NotLoaded : TraitDbState
+    data object Loading : TraitDbState
+    data class Ready(val db: RacialTraitDatabase) : TraitDbState
+    data class Failed(val message: String) : TraitDbState
+}
 
 /** Stav databáze hexů a revelations (`ClassAbilities.json`, líně). */
 sealed interface AbilityDbState {
@@ -906,8 +918,60 @@ class AppState(
         updateCharacter(charId) { c ->
             val r = RaceCatalog.get(raceId)
             // volba „+2 k jednomu atributu“ platí jen pro rasy, které ji mají
-            c.copy(race = r?.id, raceBonus = c.raceBonus.takeIf { r?.anyBonus == true })
+            c.copy(
+                race = r?.id, raceBonus = c.raceBonus.takeIf { r?.anyBonus == true },
+                // alternativní traity patří k rase
+                racialTraits = if (r?.id == c.race) c.racialTraits else emptyList(),
+            )
         }
+        syncInventory(charId)
+    }
+
+    // ---- alternativní rasové traity (databáze se načítá líně) ----
+    var traitDbState: TraitDbState by mutableStateOf(TraitDbState.NotLoaded)
+        private set
+    val traitDb: RacialTraitDatabase? get() = (traitDbState as? TraitDbState.Ready)?.db
+
+    fun ensureRacialTraits() {
+        if (traitDbState != TraitDbState.NotLoaded && traitDbState !is TraitDbState.Failed) return
+        traitDbState = TraitDbState.Loading
+        scope.launch {
+            traitDbState = try {
+                TraitDbState.Ready(RacialTraitRepository.load())
+            } catch (e: Exception) {
+                TraitDbState.Failed(e.message ?: e.toString())
+            }
+        }
+    }
+
+    /** Přidá alternativní rasový trait (každý jednou); přísný režim nedovolí nahradit už nahrazený trait. */
+    fun addRacialTrait(charId: String, t: RacialTrait) {
+        val ch = character(charId) ?: return
+        if (ch.racialTraits.any { it.id == t.id }) return
+        if (strictBlocked(RacialTraits.blockedBy(ch, t)?.let { StrictBlock.RacialTraitReplaced(it) })) return
+        updateCharacter(charId) { it.copy(racialTraits = it.racialTraits + t.toPick()) }
+        syncInventory(charId)
+    }
+
+    /** Atribut zvolený u alternativního traitu (Dual Talent: dva různé atributy). */
+    fun setRacialTraitAbility(charId: String, traitId: String, index: Int, ability: Ability?) {
+        updateCharacter(charId) { c ->
+            c.copy(racialTraits = c.racialTraits.map { p ->
+                if (p.id != traitId) p
+                else {
+                    val list = (p.abilities + List(maxOf(0, index + 1 - p.abilities.size)) { null }).toMutableList()
+                    list[index] = ability
+                    // stejný atribut nejde zvolit dvakrát
+                    if (ability != null) list.indices.filter { it != index && list[it] == ability }.forEach { list[it] = null }
+                    p.copy(abilities = list)
+                }
+            })
+        }
+        syncInventory(charId)
+    }
+
+    fun removeRacialTrait(charId: String, traitId: String) {
+        updateCharacter(charId) { it.copy(racialTraits = it.racialTraits.filterNot { p -> p.id == traitId }) }
         syncInventory(charId)
     }
 

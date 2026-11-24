@@ -140,7 +140,7 @@ fun DeckDetailScreen(
                     SectionHeader(s.abilitiesHeader)
                     AbilityRow(s, c) { editAbility = it }
                     c.raceInfo?.let { r ->
-                        val mods = raceModsText(s, r, c.raceBonus)
+                        val mods = characterRaceModsText(s, c)
                         if (Ability.entries.any { c.raceMod(it) != 0 }) {
                             Text(s.raceIncludedHint(mods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 6.dp))
                         }
@@ -309,7 +309,7 @@ private fun ClassesPanel(
         Column(Modifier.padding(top = 4.dp, bottom = 10.dp).clip(Nb.shape).clickable(onClick = onRace).padding(vertical = 2.dp)) {
             if (race != null) {
                 Text(s.raceNameOf(race), fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Nb.ink)
-                Text(raceDetail(s, race, c.raceBonus), fontSize = 12.5.sp, color = Nb.rust)
+                Text(characterRaceDetail(s, c), fontSize = 12.5.sp, color = Nb.rust)
             } else {
                 Text(
                     "${s.raceLabel}: ${s.chooseSubclass}",
@@ -317,7 +317,11 @@ private fun ClassesPanel(
                 )
             }
         }
-        if (race?.anyBonus == true) RaceBonusDropdown(c.raceBonus, Modifier.padding(bottom = 10.dp)) { state.setRaceBonus(c.id, it) }
+        if (race?.anyBonus == true && !cz.pfspells.data.RacialTraits.replacesRaceBonus(c)) RaceBonusDropdown(c.raceBonus, Modifier.padding(bottom = 10.dp)) { state.setRaceBonus(c.id, it) }
+        // alternativní rasové traity (Archives of Nethys)
+        var traitsOpen by remember { mutableStateOf(false) }
+        RacialTraitsLink(c) { traitsOpen = true }
+        if (traitsOpen) RacialTraitsDialog(state, c) { traitsOpen = false }
         // přesvědčení a božstvo (prerekvizity featů „good alignment“, „worshiper of Iomedae“)
         FlowRow(
             Modifier.padding(bottom = 10.dp),

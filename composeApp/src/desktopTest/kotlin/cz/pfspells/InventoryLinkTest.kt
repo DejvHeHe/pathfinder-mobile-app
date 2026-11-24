@@ -80,6 +80,19 @@ class InventoryLinkTest {
         // jiná rasa volbu zahodí
         state.setRace(c.id, "elf")
         assertNull(state.character(c.id)!!.raceBonus)
+        // alternativní rasové traity patří k rase – změna rasy je zahodí
+        state.updateCharacter(c.id) { it.copy(racialTraits = listOf(cz.pfspells.data.RacialTraitPick("elf:x", "X", listOf("keen senses")))) }
+        state.setRace(c.id, "elf")
+        assertEquals(1, state.character(c.id)!!.racialTraits.size)
+        state.setRace(c.id, "gnome")
+        assertEquals(emptyList(), state.character(c.id)!!.racialTraits)
+        // Dual Talent: zvolený atribut se promítne do síly v inventáři, stejný atribut nejde zvolit dvakrát
+        state.setRace(c.id, "human")
+        state.updateCharacter(c.id) { it.copy(racialTraits = listOf(cz.pfspells.data.RacialTraitPick("human:dual-talent", "Dual Talent", listOf("bonus feat")))) }
+        state.setRacialTraitAbility(c.id, "human:dual-talent", 1, Ability.STR)
+        assertEquals(state.character(c.id)!!.abilities.str + 2, state.inventory(other.id)!!.strength)
+        state.setRacialTraitAbility(c.id, "human:dual-talent", 0, Ability.STR)
+        assertEquals(listOf(Ability.STR, null), state.character(c.id)!!.racialTraits.single().abilities)
     }
 
     @Test

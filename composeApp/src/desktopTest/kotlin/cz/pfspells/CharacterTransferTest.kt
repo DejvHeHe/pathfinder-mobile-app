@@ -141,6 +141,17 @@ class CharacterTransferTest {
     }
 
     @Test
+    fun racialTraitsRoundTrip() {
+        val jinx = cz.pfspells.data.RacialTraitPick("halfling:halfling-jinx", "Halfling Jinx", listOf("halfling luck"))
+        val pip = Character("p", "Pip", listOf(ClassEntry("rogue", 2)), race = "halfling", racialTraits = listOf(jinx))
+        val c = CharacterTransfer.parse(CharacterTransfer.export(listOf(pip), db) { null }, db, featDb, null).single().character
+        assertEquals(listOf(jinx), c.racialTraits)
+        // bez (známé) rasy se traity zahodí
+        val noRace = CharacterTransfer.parse(CharacterTransfer.export(listOf(pip.copy(race = "nonsense")), db) { null }, db, featDb, null).single().character
+        assertEquals(emptyList(), noRace.racialTraits)
+    }
+
+    @Test
     fun withoutInventory() {
         val text = CharacterTransfer.export(listOf(thomas), db) { null }
         assertNull(CharacterTransfer.parse(text, db, featDb, null).single().inventory)

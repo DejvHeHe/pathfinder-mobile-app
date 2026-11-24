@@ -354,5 +354,6 @@ fun Character.featSlots(): FeatSlots = FeatSlots(
         if (n > 0) e.classId to n else null
     }.toMap(),
     extra = extraFeats,
-    race = raceInfo?.bonusFeats ?: 0,
+    // human Bonus Feat / half-elf Adaptability – alternativní trait je může nahradit
+    race = (raceInfo?.bonusFeats ?: 0).takeIf { keepsRacialTrait("bonus feat") && keepsRacialTrait("adaptability") } ?: 0,
 )

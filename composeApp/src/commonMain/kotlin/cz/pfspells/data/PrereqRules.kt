@@ -453,21 +453,32 @@ internal object PrereqRules {
 
     /** „Stonecunning racial trait“, „defensive training and hatred racial traits“, „darkvision or low-light vision racial trait“. */
     fun racialTrait(c: Character, t: String): PrereqStatus? {
+        val picked = c.racialTraits.map { it.name.lowercase() }.toSet()
+        val defaults = RacialTraits.defaults(c.race)?.map { it.lowercase() }?.toSet().orEmpty()
         val m = Regex("""^(.+?)\s+(?:alternate\s+)?racial\s+(?:traits?|abilit(?:y|ies))$""").find(t)
-            ?: Regex("""^(.+?)\s+traits?$""").find(t)?.takeIf { RACIAL_TRAITS.containsKey(it.groupValues[1].trim()) }
+            ?: Regex("""^(.+?)\s+traits?$""").find(t)?.takeIf { val n = it.groupValues[1].trim(); RACIAL_TRAITS.containsKey(n) || n in picked }
             ?: return null
         val body = m.groupValues[1].replace(Regex("""(?<=[a-z]{3})(arg|apg|acg|uc)\b"""), "").trim()
         val race = c.raceInfo ?: return PrereqStatus.UNKNOWN
+        val replaced = RacialTraits.replaced(c)
         fun has(trait: String): Boolean? = when (val tr = trait.trim()) {
+            in picked -> true
+            // výchozí trait nahrazený vybraným alternativním traitem
+            in replaced -> false
             "darkvision" -> race.darkvision > 0
             "low-light vision" -> race.lowLightVision
+            in defaults -> true
             else -> RACIAL_TRAITS[tr]?.contains(race.id)
         }
         val anyOf = " or " in body
-        val known = body.split(" or ", " and ").map { has(it) }
+        val parts = body.split(" or ", " and ").map { it.trim() }
+        val known = parts.map { has(it) }
         return when {
             anyOf && known.any { it == true } -> PrereqStatus.MET
             !anyOf && known.all { it == true } -> PrereqStatus.MET
+            // nahrazený trait postava jistě nemá
+            anyOf && parts.all { it in replaced } -> PrereqStatus.UNMET
+            !anyOf && parts.any { it in replaced } -> PrereqStatus.UNMET
             // výchozí trait rasa nemá – mohla ho získat alternativním traitem, appka to neví
             else -> PrereqStatus.UNKNOWN
         }

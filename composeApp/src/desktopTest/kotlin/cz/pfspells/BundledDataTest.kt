@@ -62,4 +62,22 @@ class BundledDataTest {
         println("Domains without Foundry powers: $noPowers")
         assertTrue(noPowers.size <= 4, noPowers.toString())
     }
+
+    /** Alternativní rasové traity z AoN: soubor jde načíst, rasy existují v appce, nahrazované traity sedí na výchozí. */
+    @Test
+    fun bundledRacialTraits() {
+        val db = cz.pfspells.data.RacialTraitRepository.parse(File("src/commonMain/composeResources/files/RacialTraits.json").readText())
+        assertTrue(db.all.size > 500)
+        assertEquals(db.all.size, db.all.map { it.id }.toSet().size)
+        assertTrue(db.all.all { it.races.all { r -> cz.pfspells.data.RaceCatalog.get(r) != null } })
+        assertTrue(db.all.all { it.text.isNotBlank() && "<" !in it.text })
+        val jinx = db.forRace("halfling").first { it.name == "Halfling Jinx" }
+        assertEquals(listOf("halfling luck"), jinx.replaces)
+        assertTrue(db.forRace("human").size > 30)
+        // většina nahrazovaných traitů je mezi výchozími traity rasy (zbytek: úpravy atributů, typ, překlepy AoN)
+        val all = db.all.flatMap { t -> t.replaces.map { t.races.first() to it } }
+        val known = all.count { (r, n) -> cz.pfspells.data.RacialTraits.defaults(r).orEmpty().any { it.equals(n, ignoreCase = true) } }
+        println("Replaced traits matching defaults: $known / ${all.size}")
+        assertTrue(known > all.size * 0.85)
+    }
 }

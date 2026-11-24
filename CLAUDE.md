@@ -34,7 +34,13 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   subdomén, 11 bloodline, škol kouzelníka s úrovní a vzorcem) + `files/ClassAbilities.json` (117 hexů, 303 zjevení s textem, líně).
   `FoundryFormula` vyhodnocuje vzorce Foundry; hexy / zjevení = `ClassEntry.abilities` (`AbilityPick`), panel `ClassAbilitiesPanel`,
   přísný režim `StrictRules.classAbilityBlock`, export v `ClassDto.abilities`. Testy 108+ zelené.
-- 🔜 **Alternativní rasové traity**: Foundry je nemá (žádný `packs/racial-traits`) → jediný zdroj AoN (stránky ras) – čeká na rozhodnutí uživatele.
+- ✅ 24. 11. 2026 (v main, nevydáno – bez tagu): **alternativní rasové traity z AoN** – `tools/build_racial_traits.py` (stránky ras, cache `build/race-cache`,
+  Python AoN ověří) → `RacialTraitTable.kt` (výchozí traity 77 ras) + `files/RacialTraits.json` (632 alternativních, líně). `Character.racialTraits`
+  (`RacialTraitPick`), dialog `RacialTraitsDialog` pod rasou, `PrereqRules.racialTrait` (vybraný ✓, nahrazený ✗), human Bonus Feat / Skilled,
+  přísný režim `StrictBlock.RacialTraitReplaced`, export `CharacterDto.racialTraits`; úpravy atributů z traitů (`ABILITY_VARIANTS`,
+  volba v `RacialTraitPick.abilities`, `Character.raceMod`; +2 k jednomu atributu se pak skryje – `RacialTraits.replacesRaceBonus`).
+  Testy 115 zelené, náhledy Pip / Aria v `PreviewRender`. Další traity měnící atributy → doplnit ručně do `ABILITY_VARIANTS` (text AoN nejde spolehlivě číst).
+  Desktop appku při nedostatku paměti systém zabíjí – znovu ji spouštět jen na požádání.
 - Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
 - Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
   a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
@@ -103,6 +109,8 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/PrereqRules.kt    odvozené prerekvizity featů (class features z class a úrovní, přesvědčení, božstvo, velikost/typ, HD, záchrany, proficience, kouzla, domény, rasové traity)
   data/Skills.kt         SkillInfo, Skills (26 skillů, id jako Foundry, Craft/Perform/Profession „craft:alchemy“), isClassSkill, skillTotal, skillPoints
   data/Races.kt          RaceInfo, RaceGroup, RaceCatalog, `Character.raceInfo`; data/RaceTable.kt GENEROVANÉ `tools/build_races.py` (Foundry packs/races, 80 ras)
+  data/RacialTraits.kt   alternativní rasové traity: RacialTrait, RacialTraitPick, RacialTraits (defaults, replaced, conflicts), keepsRacialTrait;
+                         data/RacialTraitTable.kt GENEROVANÉ `tools/build_racial_traits.py` (AoN); ui/RacialTraitsUi.kt RacialTraitsLink + RacialTraitsDialog
   data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, SUBDOMAIN_DOMAINS (subdoména → doména, AoN), DRUID_DOMAINS, withSubclass, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
   data/CharacterTransfer.kt  export/import postav (`pf-spellbook-characters`) a featů (`pf-spellbook-feats`), import starých decků
   data/ClassFeatures.kt  FeaturePresets (Smite Evil, Rage, Ki Pool… – vzorce max použití), Resource, Character.resources()
@@ -143,7 +151,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/DatabaseScreen.kt    stav a aktualizace databáze spellů i itemů
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
-  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
+  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
   font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
@@ -155,6 +163,7 @@ tools/build_items.py   sestavení přibalených dat itemů (Python + pyyaml; jen
 tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/feat-cache – běh ~3 h, přerušitelný)
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
+tools/build_racial_traits.py [--cache DIR]   RacialTraitTable.kt + RacialTraits.json (AoN stránky ras, ~80 req po 1 s)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml
 ```

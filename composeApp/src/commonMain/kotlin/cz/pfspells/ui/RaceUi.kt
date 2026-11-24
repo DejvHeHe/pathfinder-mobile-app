@@ -36,6 +36,8 @@ import cz.pfspells.data.Ability
 import cz.pfspells.data.RaceCatalog
 import cz.pfspells.data.RaceGroup
 import cz.pfspells.data.RaceInfo
+import cz.pfspells.data.raceInfo
+import cz.pfspells.data.raceMod
 import cz.pfspells.str
 
 /** Název rasy v jazyce rozhraní. */
@@ -47,6 +49,21 @@ fun raceModsText(s: Strings, r: RaceInfo, bonus: Ability? = null): String = when
     else -> Ability.entries.mapNotNull { a ->
         r.mod(a, bonus).takeIf { it != 0 }?.let { v -> (if (v < 0) "−${-v}" else "+$v") + " " + s.abilityShort(a) }
     }.joinToString(", ")
+}
+
+/** Úpravy atributů rasy postavy včetně alternativních traitů (Dual Talent, Keen Kitsune…). */
+fun characterRaceModsText(s: Strings, c: cz.pfspells.data.Character): String {
+    val r = c.raceInfo ?: return ""
+    if (r.anyBonus && c.raceBonus == null && !cz.pfspells.data.RacialTraits.replacesRaceBonus(c)) return s.anyAbilityBonus
+    return Ability.entries.mapNotNull { a ->
+        c.raceMod(a).takeIf { it != 0 }?.let { v -> (if (v < 0) "−${-v}" else "+$v") + " " + s.abilityShort(a) }
+    }.joinToString(", ")
+}
+
+/** „Střední · 30 ft · +2 SÍL, …“ pro rasu postavy (včetně alternativních traitů). */
+fun characterRaceDetail(s: Strings, c: cz.pfspells.data.Character): String {
+    val r = c.raceInfo ?: return ""
+    return listOf(s.creatureSize(r.size), "${r.speed} ft", characterRaceModsText(s, c)).filter { it.isNotEmpty() }.joinToString(" · ")
 }
 
 /** „Malá · 20 ft · +2 CON, +2 CHA, −2 SÍL“ */

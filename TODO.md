@@ -71,9 +71,9 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
   - [x] počet featů podle úrovně postavy (1 + každá lichá úroveň) + bonusové featy classy (fighter, wizard…)
 - [x] **Rasa postavy** (80 ras z Foundry `packs/races`) – ověření rasových prerekvizit featů, velikost → nosnost inventáře, export
   - [x] výchozí rasové traity (tabulka v `PrereqRules`), darkvision / low-light vision z Foundry
-  - [ ] alternativní rasové traity (Halfling Jinx…) – teď jen ruční potvrzení. Foundry VTT PF1 rasové traity **nemá**
-    (žádný `packs/racial-traits`, ani ve `feats` / `races`) → zdroj jen Archives of Nethys (stránky ras, sekce Alternate Racial Traits);
-    výběr u rasy, nahrazené výchozí traity se odeberou z prerekvizit (`PrereqRules`)
+  - [x] alternativní rasové traity (Halfling Jinx…) z Archives of Nethys (`tools/build_racial_traits.py` – Foundry je nemá):
+    výběr u rasy, nahrazené výchozí traity ✗ v prerekvizitách, bonusový feat / Skilled člověka, konflikty
+  - [x] úpravy atributů z alternativních traitů (Dual Talent, Kindred-Raised, Orc Atavism, Keen Kitsune, Witchborn, Agile, Tree-Born)
   - [x] výběr rasy rovnou v dialogu nové postavy, úpravy atributů (+2 podle volby), bonusový feat (human, half-elf)
   - [x] přesvědčení / božstvo
 - [x] **Skills** u postavy (ranky, class skills z Foundry, bonusy z atributů a rasy, skill body) – ověření prerekvizit

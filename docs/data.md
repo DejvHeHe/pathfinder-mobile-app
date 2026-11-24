@@ -10,6 +10,7 @@ Všechna data jsou **přibalená v appce** (`composeApp/src/commonMain/composeRe
 | `SpellList.json` (6 MB) | 3 040 záznamů → 3 030 spellů s class listem | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) `data/SpellList.json` (MIT, data z Archives of Nethys) | ano |
 | `ItemsBase.json` (0,7 MB) | 1 541 položek: výstroj, oblečení, nástroje, jídlo, alchymie, byliny, zvířata, zbroje a štíty | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/items`, `packs/armors-and-shields` (OGL) | ne (jen přibalené) |
 | `ClassAbilities.json` (0,3 MB) | 420 hexů a zjevení s textem; schopnosti podtříd v `ClassAbilityTable.kt` | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/class-abilities` (OGL) – `tools/build_class_abilities.py` | ne (jen přibalené) |
+| `RacialTraits.json` (0,4 MB) | 632 alternativních rasových traitů; výchozí traity v `RacialTraitTable.kt` | [Archives of Nethys](https://aonprd.com/Races.aspx) – `tools/build_racial_traits.py` | ne (jen přibalené) |
 | `Weapons.csv` | 243 zbraní | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) `data/weapons.csv` (d20pfsrd/AoN) | ano |
 | `Ammunition.csv` | 36 druhů munice | tamtéž `data/ammunition.csv` | ano |
 | `MagicItems.csv` (4 MB) | 4 241 magických itemů | tamtéž `data/magic_items_full - Updated 19Jan2020.csv` (d20pfsrd „magic_items_full“) | ano |
@@ -142,7 +143,30 @@ neobvyklé (14), ostatní (zbytek – Bestiary, Alien…), seznamy jsou ve skrip
 - Rasa jako prerekvizita featu: text, který je jménem / id rasy nebo podtypem (elf, human, orc, dwarf, gnome, halfling),
   případně s „subtype“ nebo upřesněním v závorce. Rasa splňuje, když se jménem shoduje nebo má daný podtyp
   (`RaceInfo.countsAs`): half-elf platí jako elf i člověk, half-orc jako orc, drow jako elf, svirfneblin jako gnóm.
-  „Human (Varisian)“ s rasou human = ověř ručně, s jinou rasou = nesplněno. Rasové traity („halfling jinx trait“) se neověřují.
+  „Human (Varisian)“ s rasou human = ověř ručně, s jinou rasou = nesplněno. Rasové traity viz níže.
+
+### Rasové traity (`RacialTraitTable.kt`, `RacialTraits.json`)
+`python tools/build_racial_traits.py [--cache DIR]` stáhne seznam ras z Archives of Nethys
+([Races.aspx?Category=Core / NonCore](https://aonprd.com/Races.aspx)) a stránky ras (~80 požadavků po 1 s, cache
+`build/race-cache`). Id ras jako v appce (slug jména; Lashunta → `lashunta-female` i `lashunta-male`); Boggard appka nemá,
+Gnoll, Lizardfolk a Ogre na AoN stránku rasy nemají.
+
+- **`RacialTraitTable.kt`** – výchozí traity rasy ze sekce „X Racial Traits“ (tučná jména; bez řádku atributů).
+  AoN má u některých ras neuzavřené `<b>`, proto se tučný blok dělí po řádcích a jméno je před „:“ nebo „(Ex/Su/Sp)“.
+- **`RacialTraits.json`** – 632 alternativních traitů ze sekce „X Alternate Racial Traits“: skupina „Replaces A, B“ →
+  `replaces`, jméno, PFS (ikona Pathfinder Society), zdroj, text. Načítá se líně.
+
+V appce: `Character.racialTraits` (`RacialTraitPick` = id, jméno, kopie `replaces`), výběr u rasy (změna rasy výběr zahodí).
+- Prerekvizita „X racial trait“: vybraný alternativní trait ✓, nahrazený výchozí ✗, výchozí trait rasy podle AoN ✓,
+  jinak dál ruční tabulka a „?“.
+- Nahrazený **Bonus Feat** (human) / **Adaptability** (half-elf) → bez rasového bonusového featu; nahrazený **Skilled**
+  (human) → bez skill bodu navíc za úroveň.
+- **Úpravy atributů** z alternativních traitů (`ABILITY_VARIANTS` v `RacialTraits.kt`, zadané ručně podle textu AoN):
+  Witchborn (changeling: +2 INT místo WIS), Keen Kitsune (+2 INT místo CHA), Agile (vine leshy: +2 DEX místo CON),
+  Tree-Born (gathlain: bez −2 CON); s volbou atributu (`RacialTraitPick.abilities`) a místo „+2 k jednomu atributu“:
+  Dual Talent (human: +2 ke dvěma různým), Kindred-Raised (half-elf: +2 CHA a +2 k jinému), Orc Atavism (half-orc:
+  +2 STR, −2 k jednomu mentálnímu). Počítá je `Character.raceMod`, takže platí pro `scores`, nosnost i prerekvizity.
+- Dva alternativní traity nesmí nahradit stejný výchozí trait – appka varuje, přísný režim to nedovolí.
 
 ### Skilly (`Skills.kt`)
 26 skillů Core Rulebooku (Knowledge rozdělená na 10 specializací), id jako ve Foundry VTT PF1 (`disableDevice`,
@@ -223,7 +247,7 @@ Odvozená pravidla (`PrereqRules.kt`):
   konkrétní kouzlo („ability to cast dispel magic“ – je na spell listu sesílající classy a úroveň stačí),
 - **domény** klerika / druida (i přes subdoménu), **typ featu** („any teamwork feat“),
 - **rasové traity** – výchozí traity ras (stonecunning, keen senses…), darkvision / low-light vision z Foundry;
-  když je rasa nemá, zůstane „?“ (mohla je získat alternativním traitem).
+  výchozí traity všech ras a alternativní traity z AoN (viz Rasové traity výše) – vybraný ✓, nahrazený ✗, jinak „?“.
 
 **Ruční potvrzení** (`Character.confirmedPrereqs`): co appka neověří nebo považuje za nesplněné, potvrdí uživatel
 v detailu featu tlačítkem „Mám“ – platí pro všechny featy se stejným textem prerekvizity (export ho přenáší).

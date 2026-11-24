@@ -110,7 +110,8 @@ fun Character.skillPoints(): Int {
         val base = ClassCatalog.get(e.classId)?.skills ?: 2
         e.level * maxOf(1, base + intMod)
     }
-    val skilled = if (raceInfo?.id == "human") level else 0
+    // human Skilled (nahradit ho může alternativní trait)
+    val skilled = if (raceInfo?.id == "human" && keepsRacialTrait("skilled")) level else 0
     return perClass + skilled + extraSkillPoints
 }
 

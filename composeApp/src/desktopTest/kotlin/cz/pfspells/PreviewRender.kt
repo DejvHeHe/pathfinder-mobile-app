@@ -124,6 +124,22 @@ class PreviewRender {
                 .forEach { state.addClassAbility(m.id, "oracle", it) }
             state.character(m.id)!!
         }
+        // půlčík s alternativními rasovými traity (AoN)
+        withContext(Dispatchers.Main) { state.ensureRacialTraits() }
+        while (state.traitDb == null) delay(50)
+        val pip = withContext(Dispatchers.Main) {
+            val p = state.createCharacter("Pip", "rogue", 3)
+            state.setRace(p.id, "halfling")
+            state.traitDb!!.forRace("halfling").filter { it.name in setOf("Halfling Jinx", "Underfoot Dodger") }.forEach { state.addRacialTrait(p.id, it) }
+            state.character(p.id)!!
+        }
+        val aria = withContext(Dispatchers.Main) {
+            val h = state.createCharacter("Aria", "sorcerer", 3)
+            state.setRace(h.id, "human")
+            state.traitDb!!.get("human:dual-talent")?.let { state.addRacialTrait(h.id, it) }
+            state.setRacialTraitAbility(h.id, "human:dual-talent", 0, cz.pfspells.data.Ability.CHA)
+            state.character(h.id)!!
+        }
         val out = File("build/previews").apply { mkdirs() }
 
         suspend fun shot(name: String, w: Int, h: Int, overlay: (@Composable () -> Unit)? = null, nav: AppState.() -> Unit) {
@@ -205,6 +221,17 @@ class PreviewRender {
             openRoot(Screen.ItemPicker(inv.id)); itemFilter = ItemFilter(mine = true); showItem("my-p1", inv.id)
         }
         shot("cs-phone-deitypicker", 390, 844, overlay = { cz.pfspells.ui.DeityPickerDialog("Torag", onDismiss = {}, onCustom = {}) { } }) { openRoot(Screen.Decks) }
+        shot("cs-phone-racial-traits", 390, 844, overlay = {
+            cz.pfspells.ui.RacialTraitsDialog(state, state.character(pip.id)!!) { }
+        }) { openRoot(Screen.Decks) }
+        shot("desktop-racial-traits", 1440, 1000, overlay = {
+            cz.pfspells.ui.RacialTraitsDialog(state, state.character(pip.id)!!) { }
+        }) { openRoot(Screen.CharacterDetail(pip.id)) }
+        shot("cs-phone-race-panel", 390, 1000) { openRoot(Screen.CharacterDetail(pip.id)) }
+        shot("cs-phone-dual-talent", 390, 844, overlay = {
+            cz.pfspells.ui.RacialTraitsDialog(state, state.character(aria.id)!!) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-race-dual-talent", 390, 900) { openRoot(Screen.CharacterDetail(aria.id)) }
         shot("cs-phone-hexes", 390, 2600) { gameMode = false; openRoot(Screen.CharacterDetail(morgana.id)) }
         shot("cs-phone-hexpicker", 390, 844, overlay = {
             cz.pfspells.ui.ClassAbilityPickerDialog(state, state.character(morgana.id)!!, state.character(morgana.id)!!.classes[0],

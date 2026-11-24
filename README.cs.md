@@ -18,6 +18,7 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Dovednosti | 26 skillů, ranky, class skills, skill body, bonusy z atributů a rasy |
 | Featy | 3 442 featů (Archives of Nethys), automatické ověření prerekvizit (atributy, skilly, class features, rasa, přesvědčení, božstvo, proficience…) ✓ / ✗ / ?, ruční potvrzení, počet featů podle úrovně a rasy, vlastní featy |
 | Schopnosti | Smite Evil, Rage, Ki Pool, schopnosti domén / bloodline / škol všech úrovní… s počtem použití podle úrovně, vlastní počítadla |
+| Rasové traity | ~630 alternativních traitů z Archives of Nethys; nahrazené výchozí traity přestanou platit pro prerekvizity |
 | Hexy a zjevení | ~120 hexů čarodějnice a šamana, ~300 zjevení orákula s plným textem, počet podle úrovně classy |
 | Inventář | ~6 060 itemů (d20pfsrd + Foundry VTT PF1), vlastní katalog, lektvary/svitky/hůlky ze spellů, měšec, nosnost, poznámky, export/import |
 | Aktualizace | spelly i itemy jdou tlačítkem stáhnout znovu ze zdroje |

@@ -17,6 +17,7 @@ so the app works offline. Part of it can be re-downloaded from the source with a
 | `ClassTable.kt` | 49 classes: BAB, saves, HD, skill points, class skills, proficiencies | Foundry VTT PF1 `packs/classes` – `tools/build_classes.py` | no |
 | `RaceTable.kt` | 80 races: size, speed, ability and skill modifiers, vision | Foundry VTT PF1 `packs/races` – `tools/build_races.py` | no |
 | `ClassAbilityTable.kt`, `ClassAbilities.json` (0.3 MB) | 325 domain / bloodline / school powers; 420 hexes and revelations with text | Foundry VTT PF1 `packs/class-abilities` – `tools/build_class_abilities.py` | no |
+| `RacialTraitTable.kt`, `RacialTraits.json` (0.4 MB) | default traits of 77 races; 632 alternate racial traits | Archives of Nethys race pages – `tools/build_racial_traits.py` | no |
 | `DeityTable.kt` | 463 deities: pantheon, alignment, areas, domains, subdomains, favored weapon | [Archives of Nethys](https://aonprd.com/DeitiesByGroup.aspx) – `tools/build_deities.py` | no |
 
 ## Spells
@@ -153,6 +154,31 @@ lists are in the script.
   (`RaceInfo.countsAs`): a half-elf counts as an elf and a human, a half-orc as an orc, a drow as an elf, a svirfneblin as a gnome.
   "Human (Varisian)" with race human = check yourself, with another race = not met.
 
+### Racial traits (`RacialTraitTable.kt`, `RacialTraits.json`)
+`python tools/build_racial_traits.py [--cache DIR]` downloads the race list from Archives of Nethys
+([Races.aspx?Category=Core / NonCore](https://aonprd.com/Races.aspx)) and the race pages (~80 requests, 1 per second,
+cache `build/race-cache`). Race ids as in the app (slug of the name; Lashunta → both `lashunta-female` and
+`lashunta-male`); the app has no Boggard, Gnoll, Lizardfolk and Ogre have no race page on AoN.
+
+- **`RacialTraitTable.kt`** – default traits from the "X Racial Traits" section (bold names; without the ability line).
+  Some AoN pages have unclosed `<b>`, so a bold block is split into lines and the name is before ":" or "(Ex/Su/Sp)".
+- **`RacialTraits.json`** – 632 alternate traits from the "X Alternate Racial Traits" section: group "Replaces A, B" →
+  `replaces`, name, PFS (Pathfinder Society icon), source, text. Loaded lazily.
+
+In the app: `Character.racialTraits` (`RacialTraitPick` = id, name, copy of `replaces`), chosen at the race (changing
+the race drops them).
+- Prerequisite "X racial trait": a chosen alternate trait ✓, a replaced default ✗, a default trait of the race per AoN ✓,
+  otherwise the hand-made table and "?" as before.
+- Replaced **Bonus Feat** (human) / **Adaptability** (half-elf) → no racial bonus feat; replaced **Skilled** (human) →
+  no extra skill point per level.
+- **Ability adjustments** from alternate traits (`ABILITY_VARIANTS` in `RacialTraits.kt`, entered by hand from the AoN
+  text): Witchborn (changeling: +2 INT instead of WIS), Keen Kitsune (+2 INT instead of CHA), Agile (vine leshy: +2 DEX
+  instead of CON), Tree-Born (gathlain: no −2 CON); with an ability choice (`RacialTraitPick.abilities`) and instead of
+  "+2 to one ability score": Dual Talent (human: +2 to two different ones), Kindred-Raised (half-elf: +2 CHA and +2 to
+  another), Orc Atavism (half-orc: +2 STR, −2 to one mental score). `Character.raceMod` applies them, so they count for
+  `scores`, carrying capacity and prerequisites.
+- Two alternate traits may not replace the same default trait – the app warns, strict mode does not allow it.
+
 ### Skills (`Skills.kt`)
 The 26 Core Rulebook skills (Knowledge split into 10 specialties), ids as in Foundry VTT PF1 (`disableDevice`,
 `knowledge.arcana`); Craft / Perform / Profession have kinds – rank key `craft:alchemy`. Class skills are in `ClassTable.kt`
@@ -235,7 +261,7 @@ Derived rules (`PrereqRules.kt`):
   a specific spell ("ability to cast dispel magic" – it is on the spell list of a casting class and the level is high enough),
 - **domains** of a cleric / druid (also through a subdomain), **feat type** ("any teamwork feat"),
 - **racial traits** – the races' default traits (stonecunning, keen senses…), darkvision / low-light vision from Foundry;
-  when the race lacks them it stays "?" (it might have gained them through an alternate trait).
+  default traits of all races and alternate traits from AoN (see Racial traits above) – chosen ✓, replaced ✗, otherwise "?".
 
 **Manual confirmation** (`Character.confirmedPrereqs`): what the app cannot check or considers unmet, the user confirms in
 the feat detail with "I have it" – it applies to every feat with the same prerequisite text (included in exports).

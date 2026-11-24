@@ -36,6 +36,12 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
      (pod nimi je rozpis); člověk, půlelf a půlork si vyberou, ke kterému atributu dostanou +2,
    - dá člověku a půlelfovi **bonusový feat** (u půlelfa Skill Focus),
    - ověří rasové prerekvizity featů a její velikost se propíše do nosnosti propojeného inventáře.
+   **Alternativní rasové traity** (pod rasou, ~630 z Archives of Nethys): dialog ukáže výchozí traity rasy, vybrané
+   alternativní (× odebere) a seznam k přidání – hledání, „Nahrazuje: …“, PFS, klepnutím text a zdroj. Nahrazený výchozí
+   trait je přeškrtnutý a přestane platit pro prerekvizity featů (Halfling Jinx → bez „halfling luck“), člověk bez
+   Bonus Feat / Skilled přijde o bonusový feat / skill body navíc. Traity, které mění atributy (Dual Talent, Keen Kitsune,
+   Orc Atavism…), se přičtou k atributům; kde se atribut volí, je u traitu výběr a dokud chybí, panel rasy na to upozorní. Dva traity nahrazující stejný trait appka ohlásí
+   (přísný režim nedovolí). Změna rasy výběr zruší; export ho přenáší.
 4. Pod classami je souhrn – úroveň postavy, **BAB** a záchrany (součet za všechny classy) – a **atributy** STR–CHA
    (klepnutím upravíte hodnotu, vedle je modifikátor).
 5. Každá sesílací classa má vlastní sekci kouzel s tlačítkem **Add spells**.
@@ -152,7 +158,7 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   (nastavíte nahoře v panelu postavy pod rasou; božstvo ze seznamu ~460 božstev s přesvědčením, panteonem a oblíbenou
   zbraní – hledání i podle oblasti, např. „healing“; **Vlastní…** = homebrew božstvo jako text), velikost a typ tvora podle rasy, Hit Dice, základní záchrany,
   proficience se zbrojí a zbraněmi, sesílání kouzel (arcane / divine, konkrétní kouzlo), domény a výchozí rasové traity.
-- Co appka ověřit nemůže (archetypy, alternativní rasové traity, zvláštní podmínky), potvrdíte v detailu featu
+- Co appka ověřit nemůže (archetypy, zvláštní podmínky), potvrdíte v detailu featu
   tlačítkem **Mám** u dané prerekvizity – potvrzení platí pro všechny featy se stejnou prerekvizitou, **Zrušit** ho vrátí.
 - Klepnutím se otevře detail s plným textem a prerekvizitami po jedné. U featu postavy lze doplnit **poznámku**
   (např. zvolenou zbraň u Weapon Focus).

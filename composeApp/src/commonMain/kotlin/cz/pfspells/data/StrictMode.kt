@@ -16,6 +16,8 @@ sealed interface StrictBlock {
     data class ClassAbilitySlotsFull(val total: Int) : StrictBlock
     /** hex / revelation vyžaduje vyšší úroveň classy */
     data class ClassAbilityLevel(val minLevel: Int) : StrictBlock
+    /** výchozí rasový trait už nahrazuje jiný vybraný alternativní trait */
+    data class RacialTraitReplaced(val trait: String) : StrictBlock
 }
 
 /**

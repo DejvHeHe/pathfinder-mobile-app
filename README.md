@@ -39,6 +39,7 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
   deity, proficiencies, spellcasting…) shown as ✓ / ✗ / ?; anything the app can't verify you confirm once by hand.
 - **Limited-use abilities** – Smite Evil, Rage, Ki Pool, domain / bloodline / school powers of every level… with uses
   per day by level, plus custom counters.
+- **Alternate racial traits** – ~630 from Archives of Nethys; replaced default traits stop counting for prerequisites.
 - **Hexes and revelations** – ~120 witch / shaman hexes and ~300 oracle revelations with full text, counted by class level.
 - **Inventory** – ~6,060 items, your own item catalog, potions / scrolls / wands priced from spells, coins,
   carrying capacity with load penalties, and hidden prices for expensive loot (tap 10× to reveal).

@@ -37,6 +37,13 @@ are shown in Czech (the class list also shows the English original, e.g. "Kouzel
      (with a breakdown below); human, half-elf and half-orc choose which ability gets +2,
    - gives humans and half-elves a **bonus feat** (Skill Focus for half-elves),
    - checks racial feat prerequisites and its size is copied to the carrying capacity of the linked inventory.
+   **Alternate racial traits** (below the race, ~630 from Archives of Nethys): the dialog shows the race's default traits,
+   the chosen alternate ones (× removes) and a list to add from – search, "Replaces: …", PFS, tap for text and source.
+   A replaced default trait is struck through and stops counting for feat prerequisites (Halfling Jinx → no
+   "halfling luck"); a human without Bonus Feat / Skilled loses the bonus feat / extra skill points. Two traits replacing
+   the same trait are reported (strict mode does not allow it). Traits that change ability scores (Dual Talent, Keen
+   Kitsune, Orc Atavism…) are applied to the abilities; where an ability is chosen, the trait has a picker and the race
+   panel warns until it is set. Changing the race clears the choice; export carries it.
 4. Below the classes is a summary – character level, **BAB** and saves (summed over all classes) – and the
    **abilities** STR–CHA (tap to edit, the modifier is shown next to the score).
 5. Each spellcasting class has its own spell section with an **Add spells** button.
@@ -164,7 +171,7 @@ The old "decks" were converted to characters (with all their spells) on the firs
   pantheon and favored weapon – search also by area, e.g. "healing"; **Custom…** = homebrew deity as text), size and creature
   type from the race, Hit Dice, base saves, armor and weapon proficiencies, spellcasting (arcane / divine, a specific
   spell), domains and default racial traits.
-- What the app cannot check (archetypes, alternate racial traits, special conditions) you confirm in the feat detail with
+- What the app cannot check (archetypes, special conditions) you confirm in the feat detail with
   **I have it** next to the prerequisite – the confirmation counts for every feat with the same prerequisite, **Undo** removes it.
 - Tap a feat to open its detail with the full text and the prerequisites one by one. A character's feat can have a
   **note** (e.g. the chosen weapon for Weapon Focus).

@@ -144,6 +144,20 @@ interface Strings {
     fun slotsPerDay(slots: String): String
     val atWill: String
 
+    // alternativní rasové traity
+    fun racialTraitsButton(n: Int): String
+    fun racialTraitsTitle(race: String): String
+    val defaultTraitsLabel: String
+    val chosenTraitsLabel: String
+    fun replacesTraits(list: String): String
+    fun traitConflict(list: String): String
+    val noAlternateTraits: String
+    val racialTraitsHint: String
+    val sourceRacialTraits: String
+    /** „+2 k:“ / „−2 k:“ – volba atributu u alternativního traitu */
+    fun abilityChoiceLabel(amount: Int): String
+    fun missingAbilityChoice(trait: String): String
+
     // hexy a revelations
     fun abilityGroupName(g: AbilityGroup): String
     fun addClassAbility(g: AbilityGroup): String
@@ -721,6 +735,17 @@ object EnStrings : Strings {
     override fun slotsKnown(chosen: Int, limit: String) = "$chosen / $limit known"
     override fun slotsPerDay(slots: String) = "$slots per day"
     override val atWill = "at will"
+    override fun racialTraitsButton(n: Int) = if (n == 0) "Alternate racial traits" else "Alternate racial traits ($n)"
+    override fun racialTraitsTitle(race: String) = "$race – racial traits"
+    override val defaultTraitsLabel = "Default traits"
+    override val chosenTraitsLabel = "Alternate traits"
+    override fun replacesTraits(list: String) = "Replaces: $list"
+    override fun traitConflict(list: String) = "Two alternate traits replace the same trait: $list"
+    override val noAlternateTraits = "This race has no alternate racial traits."
+    override val racialTraitsHint = "Replaced default traits stop counting for feat prerequisites, the human bonus feat and skill points."
+    override val sourceRacialTraits = "Default and alternate racial traits"
+    override fun abilityChoiceLabel(amount: Int) = (if (amount < 0) "−${-amount}" else "+$amount") + " to"
+    override fun missingAbilityChoice(trait: String) = "Choose an ability score for $trait"
     override fun abilityGroupName(g: AbilityGroup) = when (g) {
         AbilityGroup.HEXES -> "Hexes"
         AbilityGroup.REVELATIONS -> "Revelations"
@@ -1104,6 +1129,7 @@ object EnStrings : Strings {
         StrictBlock.FeatPrereqsUnmet -> "prerequisites are not met"
         is StrictBlock.ClassAbilitySlotsFull -> "all ${b.total} choices at this level are taken"
         is StrictBlock.ClassAbilityLevel -> "requires class level ${b.minLevel}"
+        is StrictBlock.RacialTraitReplaced -> "\"${b.trait}\" is already replaced by another alternate trait"
     }
     override val companionsHeader = "Companions"
     override val companionsHint = "Animal companion, mount, familiar, eidolon or a pet – each with its own sheet, feats, skills and inventory."
@@ -1522,6 +1548,17 @@ object CsStrings : Strings {
     override fun slotsKnown(chosen: Int, limit: String) = "$chosen / $limit známých"
     override fun slotsPerDay(slots: String) = "$slots za den"
     override val atWill = "libovolně"
+    override fun racialTraitsButton(n: Int) = if (n == 0) "Alternativní rasové traity" else "Alternativní rasové traity ($n)"
+    override fun racialTraitsTitle(race: String) = "$race – rasové traity"
+    override val defaultTraitsLabel = "Výchozí traity"
+    override val chosenTraitsLabel = "Alternativní traity"
+    override fun replacesTraits(list: String) = "Nahrazuje: $list"
+    override fun traitConflict(list: String) = "Dva alternativní traity nahrazují stejný trait: $list"
+    override val noAlternateTraits = "Tahle rasa nemá alternativní rasové traity."
+    override val racialTraitsHint = "Nahrazené výchozí traity se přestanou počítat do prerekvizit featů, bonusového featu člověka a skill bodů."
+    override val sourceRacialTraits = "Výchozí a alternativní rasové traity"
+    override fun abilityChoiceLabel(amount: Int) = (if (amount < 0) "−${-amount}" else "+$amount") + " k"
+    override fun missingAbilityChoice(trait: String) = "Vyberte atribut u traitu $trait"
     override fun abilityGroupName(g: AbilityGroup) = when (g) {
         AbilityGroup.HEXES -> "Hexy"
         AbilityGroup.REVELATIONS -> "Zjevení (revelations)"
@@ -1957,6 +1994,7 @@ object CsStrings : Strings {
         StrictBlock.FeatPrereqsUnmet -> "prerekvizity nejsou splněné"
         is StrictBlock.ClassAbilitySlotsFull -> "na této úrovni je vybráno všech ${b.total}"
         is StrictBlock.ClassAbilityLevel -> "vyžaduje ${b.minLevel}. úroveň classy"
+        is StrictBlock.RacialTraitReplaced -> "„${b.trait}“ už nahrazuje jiný alternativní trait"
     }
     override val companionsHeader = "Mazlíčci a společníci"
     override val companionsHint = "Zvířecí společník, jezdecké zvíře, familiár, eidolon nebo mazlíček – každý má vlastní list, featy, skills i inventář."

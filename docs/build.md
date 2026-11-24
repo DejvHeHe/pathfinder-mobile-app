@@ -106,6 +106,7 @@ Výstup: `composeApp/build/previews/*.png`.
 | Tabulky class | `python tools/build_casting.py` (kouzla za den / známá), `python tools/build_classes.py` (BAB, záchrany, class skills, proficience) |
 | Rasy | `python tools/build_races.py [races.zip]` |
 | Božstva | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 stránek božstev po 1 s) |
+| Rasové traity | `python tools/build_racial_traits.py [--cache DIR]` (~80 stránek ras po 1 s) |
 | Schopnosti class, hexy, zjevení | `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` |
 | Ikona appky | upravit `art/icon.svg` (viewBox 100×100) → `python tools/build_icons.py [--chrome PATH]` (Pillow + Chrome/Chromium; vytvoří ikony Androidu, desktopu, iOS i webu) |
 
