@@ -38,6 +38,7 @@ import cz.pfspells.data.Inventory
 import cz.pfspells.data.InventoryTransfer
 import cz.pfspells.data.SpellDatabase
 import cz.pfspells.data.deckFileIo
+import cz.pfspells.data.trackEvent
 import kotlinx.coroutines.launch
 
 // ---------- konkrétní použití ----------
@@ -56,6 +57,7 @@ fun ExportDialog(state: AppState, characters: List<Character>, db: SpellDatabase
         hint = s.exportCharactersHint,
         text = text,
         fileName = CharacterTransfer.fileName(characters.singleOrNull()?.name ?: "pf-characters"),
+        kind = "characters",
         onDismiss = onDismiss,
         options = if (linked) ({ NbCheck(withInventory, s.includeInventory) { withInventory = it } }) else null,
     )
@@ -99,6 +101,7 @@ fun FeatExportDialog(c: Character, onDismiss: () -> Unit) {
         hint = s.exportFeatsHint,
         text = text,
         fileName = CharacterTransfer.featsFileName(c.name + "-feats"),
+        kind = "feats",
         onDismiss = onDismiss,
     )
 }
@@ -134,6 +137,7 @@ fun InventoryExportDialog(list: List<Inventory>, onDismiss: () -> Unit) {
         hint = str.exportInventoriesHint,
         text = text,
         fileName = InventoryTransfer.fileName(list.singleOrNull()?.name ?: "pf-inventories"),
+        kind = "inventories",
         onDismiss = onDismiss,
     )
 }
@@ -169,6 +173,8 @@ fun TextExportDialog(
     text: String,
     fileName: String,
     onDismiss: () -> Unit,
+    /** druh exportu pro anonymní analytiku (`characters`, `feats`, `inventories`) */
+    kind: String,
     /** volby exportu pod nápovědou (např. „včetně inventáře“) */
     options: (@Composable () -> Unit)? = null,
 ) {
@@ -195,12 +201,16 @@ fun TextExportDialog(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     NbDashedButton(s.copy, {
                         clipboard.setText(AnnotatedString(text))
+                        trackEvent("export", mapOf("kind" to kind, "method" to "copy"))
                         message = s.copiedToClipboard
                     })
                     NbDashedButton(s.saveAction(deckFileIo.saveAction), {
                         scope.launch {
                             message = try {
-                                if (deckFileIo.saveText(fileName, text)) s.done else null
+                                if (deckFileIo.saveText(fileName, text)) {
+                                    trackEvent("export", mapOf("kind" to kind, "method" to "file"))
+                                    s.done
+                                } else null
                             } catch (e: Exception) {
                                 s.failed(e.message)
                             }

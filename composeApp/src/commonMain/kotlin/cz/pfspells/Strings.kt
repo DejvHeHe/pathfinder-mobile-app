@@ -1007,8 +1007,9 @@ object EnStrings : Strings {
     override val privacyText = "The app collects no personal data. There is no account, no tracking and no ads. Characters, inventories " +
         "and settings are stored only on your device (in the web version in your browser) and never leave it unless you export them yourself. " +
         "The app works fully offline – it connects to the internet only when you tap to download an updated spell or item database " +
-        "(from GitHub). A website hosting the web version may count anonymous visits with cookie-less analytics (Umami); " +
-        "no personal data is collected there either."
+        "(from GitHub). A website hosting the web version may count anonymous visits and app actions (e.g. opening the inventory, " +
+        "creating a character, export) with cookie-less analytics (Umami). Only the kind of action is sent – never names, notes " +
+        "or the content of your characters; no personal data is collected there either."
     override val licenseHeader = "License"
     override val sourceWeapons = "Weapons, ammunition, magic items"
     override val sourceGear = "Gear, armor, alchemical items, mounts"
@@ -1637,7 +1638,8 @@ object CsStrings : Strings {
         "jsou uložené jen ve vašem zařízení (u webové verze ve vašem prohlížeči) a nikam se neposílají, dokud je sami neexportujete. " +
         "Appka funguje úplně offline – na internet se připojí jen tehdy, když klepnete na stažení aktualizované databáze kouzel " +
         "nebo předmětů (z GitHubu). Web, na kterém běží webová verze, může počítat anonymní návštěvy analytikou bez cookies " +
-        "(Umami); ani tam se osobní údaje nesbírají."
+        "(Umami), včetně anonymních akcí v appce (např. otevření inventáře, vytvoření postavy, export). Posílá se jen druh akce – " +
+        "nikdy jména, poznámky ani obsah postav; ani tam se osobní údaje nesbírají."
     override val licenseHeader = "Licence"
     override val sourceWeapons = "Zbraně, střelivo, magické předměty"
     override val sourceGear = "Výbava, zbroje, alchymie, zvířata"

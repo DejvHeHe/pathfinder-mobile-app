@@ -33,3 +33,9 @@ expect fun nowDisplayText(): String
 
 /** Zpět tažením od levého okraje obrazovky (iOS – nemá systémové tlačítko Zpět). */
 expect val edgeSwipeBack: Boolean
+
+/**
+ * Anonymní událost pro analytiku webu (Umami, jen když ji provozovatel webu nastavil – jinak i na ostatních
+ * platformách nic). Posílat jen název akce a obecné údaje (druh, classa, počet) – nikdy jména, texty ani id.
+ */
+expect fun trackEvent(name: String, data: Map<String, String> = emptyMap())

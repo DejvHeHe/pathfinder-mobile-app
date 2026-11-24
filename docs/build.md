@@ -106,6 +106,7 @@ Výstup: `composeApp/build/previews/*.png`.
 | Tabulky class | `python tools/build_casting.py` (kouzla za den / známá), `python tools/build_classes.py` (BAB, záchrany, class skills, proficience) |
 | Rasy | `python tools/build_races.py [races.zip]` |
 | Božstva | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 stránek božstev po 1 s) |
+| Ikona appky | upravit `art/icon.svg` (viewBox 100×100) → `python tools/build_icons.py [--chrome PATH]` (Pillow + Chrome/Chromium; vytvoří ikony Androidu, desktopu, iOS i webu) |
 
 Když Python neověří certifikát webu, stáhněte zdroj přes `curl` a předejte lokální soubor (viz hlavička skriptů).
 Pak spustit testy (`BundledDataTest`, `ItemDataTest`… ověří, že data jdou načíst).

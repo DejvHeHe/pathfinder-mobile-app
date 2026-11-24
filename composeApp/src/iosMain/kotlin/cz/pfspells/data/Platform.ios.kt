@@ -48,3 +48,6 @@ actual fun nowDisplayText(): String {
 }
 
 actual val edgeSwipeBack: Boolean = true
+
+/** Analytika jen na webu. */
+actual fun trackEvent(name: String, data: Map<String, String>) {}

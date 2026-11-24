@@ -97,7 +97,7 @@ location / {
 }
 ```
 
-The container already sends gzip and cache headers. Updating: `docker compose pull && docker compose up -d`.
+The container already sends gzip and cache headers (`no-cache` with ETag revalidation – a new version shows up as soon as the page is reloaded). Updating: `docker compose pull && docker compose up -d`.
 
 ### B) Plain build without a container
 Docker is used only for compiling; your nginx serves the resulting files directly (no extra process on the server):
@@ -141,7 +141,20 @@ Then `docker compose up -d` (the container is recreated with the new settings). 
 One Umami instance can track several sites – in Umami use *Settings → Websites → Add website* and the new Website ID.
 
 The app is a single page (the URL does not change), so Umami records one page view per visit
-(visitors, countries, devices); actions inside the app could be added as custom `umami.track(...)` events.
+(visitors, countries, devices). In addition the app sends anonymous **events** (`trackEvent` → `umami.track`, only when the
+Umami script is on the page; see *Events* in Umami). Only the kind of action and generic values are sent – never names, notes or ids:
+
+| Event | Data |
+|---|---|
+| `section` | `section` = `spellbook` / `inventory` (tab switch) |
+| `character-create` | `class`, `level`, `race` |
+| `inventory-create` | – |
+| `import` | `kind` = `characters` / `inventories` / `feats`, `count` |
+| `export` | `kind` = `characters` / `inventories` / `feats`, `method` = `copy` / `file` |
+| `database-download` | `db` = `spells` / `items`, `ok` = `true` / `false` |
+| `database-reset` | `db` = `spells` / `items` |
+| `compendium-open`, `game-mode`, `rest`, `prices-revealed` | – |
+| `language` | `lang` = `en` / `cs` |
 
 ### User data
 The server **stores nothing**. Characters and inventories live in each user's browser (localStorage/IndexedDB, tied to the

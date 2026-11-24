@@ -1,3 +1,5 @@
+<img src="art/icon.svg" width="96" align="right" alt="PF1 Spellbook icon">
+
 # PF1 Spellbook
 
 **English** | [Čeština](README.cs.md)
@@ -51,7 +53,8 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
 
 The app collects **no personal data** – no account, no tracking, no ads. Your characters and inventories stay on your
 device (or in your browser) and leave it only when you export them. It works fully offline and goes online only when you
-tap to download an updated spell or item database. Details in the app under menu → **About & licenses**.
+tap to download an updated spell or item database. The hosted web version may count anonymous visits and
+app actions (cookie-less Umami – only the kind of action, never your data). Details in the app under menu → **About & licenses**.
 
 ## Download
 

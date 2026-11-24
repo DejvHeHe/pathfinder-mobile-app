@@ -1,6 +1,7 @@
 package cz.pfspells
 
 import cz.pfspells.data.Tracker
+import cz.pfspells.data.trackEvent
 import cz.pfspells.data.ResourceUnit
 import cz.pfspells.data.withSubclass
 import cz.pfspells.data.RaceCatalog
@@ -184,6 +185,7 @@ class AppState(
     val strings: Strings get() = lang.strings
 
     fun changeLang(l: Lang) {
+        if (l != lang) trackEvent("language", mapOf("lang" to l.code))
         lang = l
         settings.putString(LANG_KEY, l.code)
     }
@@ -192,6 +194,7 @@ class AppState(
     var section by mutableStateOf(Section.SPELLBOOK)
 
     fun switchSection(s: Section) {
+        if (s != section) trackEvent("section", mapOf("section" to s.name.lowercase()))
         section = s
         openRoot(Screen.Decks)
         if (s == Section.INVENTORY) ensureItems()
@@ -229,7 +232,9 @@ class AppState(
                 items = ItemDbState.Ready(fresh)
                 val n = fresh.items.size
                 itemsMessage = UiMessage { it.downloadedItems(n) }
+                trackEvent("database-download", mapOf("db" to "items", "ok" to "true"))
             } catch (e: Exception) {
+                trackEvent("database-download", mapOf("db" to "items", "ok" to "false"))
                 val msg = e.message ?: e::class.simpleName
                 itemsMessage = UiMessage(isError = true) { it.downloadFailed(msg) }
             } finally {
@@ -240,6 +245,7 @@ class AppState(
 
     fun resetItems() {
         scope.launch {
+            trackEvent("database-reset", mapOf("db" to "items"))
             items = ItemDbState.Ready(itemRepo.resetToBundled())
             itemsMessage = UiMessage { it.bundledItemsRestored }
         }
@@ -272,6 +278,7 @@ class AppState(
             tapCount = 0
             pricesRevealed = !pricesRevealed
             val revealed = pricesRevealed
+            if (revealed) trackEvent("prices-revealed")
             showToast(UiMessage { if (revealed) it.pricesRevealed else it.pricesHidden })
         }
     }
@@ -284,6 +291,7 @@ class AppState(
     fun createInventory(name: String): Inventory {
         val inv = Inventory(newId(), name.ifBlank { strings.defaultInventoryName })
         inventories.add(inv)
+        trackEvent("inventory-create")
         persistInventories()
         return inv
     }
@@ -340,6 +348,7 @@ class AppState(
     }
 
     fun importInventories(list: List<Inventory>) {
+        trackEvent("import", mapOf("kind" to "inventories", "count" to list.size.toString()))
         for (inv in list) {
             var name = inv.name
             while (inventories.any { it.name == name }) name = "$name ${strings.importedSuffix}"
@@ -406,6 +415,7 @@ class AppState(
         if (screen is Screen.Picker) preparePicker(screen.charId, screen.classId)
         if (screen is Screen.FeatPicker || screen is Screen.FeatDetail) ensureFeats()
         if (screen is Screen.ItemPicker) prepareItemPicker(screen.invId)
+        if (screen == Screen.Compendium) trackEvent("compendium-open")
         stack.add(screen)
     }
 
@@ -428,6 +438,7 @@ class AppState(
         if (screen is Screen.Picker) preparePicker(screen.charId, screen.classId)
         if (screen is Screen.FeatPicker) ensureFeats()
         if (screen is Screen.ItemPicker) prepareItemPicker(screen.invId)
+        if (screen == Screen.Compendium && current != Screen.Compendium) trackEvent("compendium-open")
         when (screen) {
             is Screen.InventoryDetail, is Screen.ItemPicker -> section = Section.INVENTORY
             is Screen.CharacterDetail, is Screen.Picker, is Screen.FeatPicker, Screen.Compendium -> section = Section.SPELLBOOK
@@ -482,7 +493,9 @@ class AppState(
                 db = DbState.Ready(fresh)
                 val n = fresh.spells.size
                 downloadMessage = UiMessage { it.downloadedSpells(n) }
+                trackEvent("database-download", mapOf("db" to "spells", "ok" to "true"))
             } catch (e: Exception) {
+                trackEvent("database-download", mapOf("db" to "spells", "ok" to "false"))
                 val msg = e.message ?: e::class.simpleName
                 downloadMessage = UiMessage(isError = true) { it.downloadFailed(msg) }
             } finally {
@@ -493,6 +506,7 @@ class AppState(
 
     fun resetSpells() {
         scope.launch {
+            trackEvent("database-reset", mapOf("db" to "spells"))
             db = DbState.Ready(spellRepo.resetToBundled())
             downloadMessage = UiMessage { it.bundledSpellsRestored }
         }
@@ -531,6 +545,7 @@ class AppState(
     /** Přidá importované postavy s novými id; při shodě jména připojí „(import)“. */
     /** Přidá importované postavy jako nové (jména se nepřepisují); přibalený inventář se přidá a propojí. */
     fun importCharacters(imported: List<ImportedCharacter>): Int {
+        trackEvent("import", mapOf("kind" to "characters", "count" to imported.size.toString()))
         for (ic in imported) {
             var name = ic.character.name
             while (characters.any { it.name == name }) name = "$name ${strings.importedSuffix}"
@@ -563,6 +578,7 @@ class AppState(
 
     fun importFeats(charId: String, picks: List<FeatPick>) {
         val add = featsToImport(charId, picks)
+        trackEvent("import", mapOf("kind" to "feats", "count" to add.size.toString()))
         updateCharacter(charId) { it.copy(feats = it.feats + add) }
     }
 
@@ -579,6 +595,7 @@ class AppState(
         )
         characters.add(c)
         persist()
+        trackEvent("character-create", mapOf("class" to classId, "level" to c.classes.first().level.toString(), "race" to (r?.id ?: "none")))
         return c
     }
 
@@ -686,13 +703,20 @@ class AppState(
     }
 
     /** Herní režim (odškrtávání seslaných kouzel) – jen stav UI, seslaná kouzla se ukládají u postavy. */
-    var gameMode by mutableStateOf(false)
+    private var gameModeOn by mutableStateOf(false)
+    var gameMode: Boolean
+        get() = gameModeOn
+        set(v) {
+            if (v && !gameModeOn) trackEvent("game-mode")
+            gameModeOn = v
+        }
 
     fun setCast(charId: String, key: String, n: Int) = updateCharacter(charId) { it.withCast(key, n) }
 
     /** Odpočinek: obnoví všechna kouzla a sloty postavy. */
     fun rest(charId: String) {
         updateCharacter(charId) { it.copy(castToday = emptyMap()) }
+        trackEvent("rest")
         showToast(UiMessage { it.restedToast })
     }
 

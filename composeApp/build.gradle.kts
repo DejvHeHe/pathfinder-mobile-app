@@ -154,9 +154,16 @@ compose.desktop {
                 shortcut = true
                 dirChooser = true
                 upgradeUuid = "4f6b2c1e-8d3a-4b7e-9a51-2c0d6e9f1a73" // neměnit – umožňuje aktualizaci přes nový .msi
+                iconFile.set(project.file("icons/icon.ico")) // ikony generuje tools/build_icons.py z art/icon.svg
             }
-            macOS { bundleID = "cz.pfspells" }
-            linux { packageName = "pf-spellbook" }
+            macOS {
+                bundleID = "cz.pfspells"
+                iconFile.set(project.file("icons/icon.icns"))
+            }
+            linux {
+                packageName = "pf-spellbook"
+                iconFile.set(project.file("icons/icon.png"))
+            }
         }
     }
 }

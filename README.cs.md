@@ -1,3 +1,5 @@
+<img src="art/icon.svg" width="96" align="right" alt="Ikona PF1 Spellbook">
+
 # PF1 Spellbook
 
 [English](README.md) | **Čeština**
@@ -30,7 +32,8 @@ v Kotlin Multiplatform + Compose Multiplatform.
 
 Appka **nesbírá žádné osobní údaje** – žádný účet, sledování ani reklamy. Postavy a inventáře zůstávají ve vašem
 zařízení (nebo prohlížeči) a opustí ho jen při exportu. Funguje úplně offline, na internet jde jen při stažení
-aktualizované databáze kouzel nebo předmětů. Podrobnosti v appce v menu → **About & licenses**.
+aktualizované databáze kouzel nebo předmětů. Hostovaná webová verze může počítat anonymní návštěvy a akce
+v appce (Umami bez cookies – jen druh akce, nikdy vaše data). Podrobnosti v appce v menu → **About & licenses**.
 
 ## Stažení
 

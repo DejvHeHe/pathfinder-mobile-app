@@ -95,7 +95,7 @@ location / {
 }
 ```
 
-Kontejner už posílá gzip a cache hlavičky. Aktualizace: `docker compose pull && docker compose up -d`.
+Kontejner už posílá gzip a cache hlavičky (`no-cache` s revalidací přes ETag – nová verze se v prohlížeči projeví hned po obnovení stránky). Aktualizace: `docker compose pull && docker compose up -d`.
 
 ### B) Čisté sestavení bez kontejneru
 Docker se použije jen ke kompilaci, výsledné soubory servíruje vaše nginx přímo (žádný další proces na serveru):
@@ -139,7 +139,20 @@ Pak `docker compose up -d` (kontejner se vytvoří znovu s novým nastavením). 
 Jedna instance Umami zvládne víc webů – v Umami stačí *Settings → Websites → Add website* a použít nové Website ID.
 
 Appka je jednostránková (URL se nemění), Umami proto zaznamená jedno zobrazení stránky na návštěvu
-(návštěvníci, země, zařízení); akce uvnitř appky by šly doplnit vlastními událostmi `umami.track(...)`.
+(návštěvníci, země, zařízení). Navíc appka posílá anonymní **události** (`trackEvent` → `umami.track`, jen když je skript
+Umami na stránce; v Umami *Events*). Posílá se jen druh akce a obecné údaje, nikdy jména, poznámky ani id:
+
+| Událost | Data |
+|---|---|
+| `section` | `section` = `spellbook` / `inventory` (přepnutí záložky) |
+| `character-create` | `class`, `level`, `race` |
+| `inventory-create` | – |
+| `import` | `kind` = `characters` / `inventories` / `feats`, `count` |
+| `export` | `kind` = `characters` / `inventories` / `feats`, `method` = `copy` / `file` |
+| `database-download` | `db` = `spells` / `items`, `ok` = `true` / `false` |
+| `database-reset` | `db` = `spells` / `items` |
+| `compendium-open`, `game-mode`, `rest`, `prices-revealed` | – |
+| `language` | `lang` = `en` / `cs` |
 
 ### Data uživatelů
 Server **nic neukládá**. Postavy a inventáře jsou v prohlížeči každého uživatele (localStorage/IndexedDB, vázané na adresu webu).

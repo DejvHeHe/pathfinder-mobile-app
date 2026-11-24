@@ -5,7 +5,7 @@
 Apple does not allow distributing a ready-made installer without a paid developer account, but anyone with a **Mac**
 can build the app and put it on their own iPhone – a **free Apple ID** is enough.
 
-> Note: the iOS project has not been tried on a real Mac yet. If something fails, send the error message from Xcode
+> Note: the build has been tested on a Mac. If something still fails, send the error message from Xcode
 > (Report navigator – the speech bubble icon on the left) and we will fix it.
 >
 > Alternative without a Mac: the **web version** in Safari (iOS 18.2+) → Share → *Add to Home Screen*.

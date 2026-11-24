@@ -84,17 +84,17 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Oblíbené spelly (hvězdička v detailu, filtr „favorites only“)
 - [x] Vlastní katalog custom itemů sdílený mezi inventáři („Moje předměty“)
 - [x] Generování lektvarů / svitků / hůlek ze spellů (cena podle pravidel PF1)
-- [ ] Ikona appky (Android, iOS, desktop, favicon webu)
+- [x] Ikona appky (Android, iOS, desktop, favicon webu) – `art/icon.svg` → `tools/build_icons.py`
 - [x] Web: tlačítko Zpět v prohlížeči propojit s navigací appky
-- [ ] Web: Umami události z appky (`umami.track(...)` – otevření inventáře, vytvoření decku…)
-- [x] iOS: gesto swipe-back (na Macu zatím nevyzkoušeno)
+- [x] Web: Umami události z appky (`umami.track(...)` – otevření inventáře, vytvoření decku…)
+- [x] iOS: gesto swipe-back
 
 ## Vydání / infrastruktura
 
 - [ ] Stabilní podpisový klíč pro Android APK (secrets v GitHubu – postup v `docs/deploy.md`)
-- [ ] Vyzkoušet appku na skutečném Android zařízení
-- [ ] Vyzkoušet iOS build na Macu (`docs/ios-install.md`)
-- [ ] Web: v `docker/nginx.conf` dát `.js` / `.wasm` místo `max-age=3600` `no-cache` (revalidace přes ETag) – po nové verzi
+- [x] Vyzkoušet appku na skutečném Android zařízení
+- [x] Vyzkoušet iOS build na Macu (`docs/ios-install.md`)
+- [x] Web: v `docker/nginx.conf` dát `.js` / `.wasm` místo `max-age=3600` `no-cache` (revalidace přes ETag) – po nové verzi
   teď prohlížeč až hodinu ukazuje starou appku, dokud uživatel nedá Ctrl+F5
-- [ ] CI: job `ios` (macOS runner) u commitu `d10f495` skončil jako cancelled – prověřit (timeout?)
+- [x] CI: job `ios` (macOS runner) – pipeline znovu zelená
 - [x] Rozšířit Section 15 v OGL o další použité knihy (21 hlavních knih s autory z Paizo PRD a d20pfsrd)

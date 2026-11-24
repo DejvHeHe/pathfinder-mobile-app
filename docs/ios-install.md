@@ -5,7 +5,7 @@
 Apple neumožňuje šířit hotový instalační soubor bez placeného vývojářského účtu, ale každý s **Macem**
 si appku může sestavit a nahrát na svůj iPhone sám – stačí **bezplatné Apple ID**.
 
-> Pozn.: iOS projekt zatím nebyl na skutečném Macu vyzkoušený. Když něco selže, pošlete chybovou hlášku z Xcode
+> Pozn.: build na Macu je vyzkoušený. Když přesto něco selže, pošlete chybovou hlášku z Xcode
 > (Report navigator – ikona bubliny vlevo) a opravíme to.
 >
 > Alternativa bez Macu: **webová verze** v Safari (iOS 18.2+) → Sdílet → *Přidat na plochu*.

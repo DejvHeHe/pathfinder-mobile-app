@@ -3,6 +3,8 @@ package cz.pfspells.data
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.js.Js
 import kotlinx.coroutines.await
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.Promise
 
 /*
@@ -104,3 +106,22 @@ actual val deckFileIo: DeckFileIo = object : DeckFileIo {
 
 /** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
 actual val edgeSwipeBack: Boolean = false
+
+// ---------- analytika (Umami) ----------
+
+/** `umami.track` jen když skript Umami na stránce je (vkládá ho `docker/40-umami.sh`); chyby se ignorují. */
+private fun umamiTrack(name: String, json: String?): Unit = js(
+    """{
+        try {
+            const u = window.umami;
+            if (u && typeof u.track === 'function') {
+                if (json === null) u.track(name); else u.track(name, JSON.parse(json));
+            }
+        } catch (e) { }
+    }"""
+)
+
+actual fun trackEvent(name: String, data: Map<String, String>) {
+    val json = if (data.isEmpty()) null else JsonObject(data.mapValues { JsonPrimitive(it.value) }).toString()
+    umamiTrack(name, json)
+}

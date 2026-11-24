@@ -14,8 +14,9 @@ covered by the GPL – it remains under its own licenses listed below.
 
 The app collects no personal data: no account, no tracking, no ads. All user data (characters, inventories, settings) is
 stored only on the device / in the browser. The app connects to the internet only when the user asks it to download an
-updated spell or item database (GitHub). A website hosting the web version may use cookie-less, anonymous visit analytics
-(Umami) configured by its operator.
+updated spell or item database (GitHub). A website hosting the web version may use cookie-less, anonymous analytics
+(Umami) configured by its operator – page visits and anonymous app events (only the kind of action, e.g. "inventory opened",
+"character created"; never names, notes or character contents).
 
 ## Paizo Community Use
 

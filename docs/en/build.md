@@ -107,6 +107,7 @@ Output: `composeApp/build/previews/*.png`.
 | Class tables | `python tools/build_casting.py` (spells per day / known), `python tools/build_classes.py` (BAB, saves, class skills, proficiencies) |
 | Races | `python tools/build_races.py [races.zip]` |
 | Deities | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 deity pages, 1 per second) |
+| App icon | edit `art/icon.svg` (viewBox 100×100) → `python tools/build_icons.py [--chrome PATH]` (Pillow + Chrome/Chromium; writes the Android, desktop, iOS and web icons) |
 
 If Python cannot verify a site's certificate, download the source with `curl` and pass the local file (see the script headers).
 Then run the tests (`BundledDataTest`, `ItemDataTest`… check that the data loads).

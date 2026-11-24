@@ -40,3 +40,6 @@ actual fun nowDisplayText(): String = SimpleDateFormat("d. M. yyyy HH:mm", Local
 
 /** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
 actual val edgeSwipeBack: Boolean = false
+
+/** Analytika jen na webu. */
+actual fun trackEvent(name: String, data: Map<String, String>) {}

@@ -23,8 +23,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (19. 11. 2026)
-- 🟡 **Tag `v1.2.0`** pushnutý (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release a Docker zatím neověřeny.
+## Stav (24. 11. 2026)
+- ✅ **Vydáno `v1.2.0`** (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release, Docker i CI zelené (ověřeno 24. 11. 2026).
 - ✅ **Vydáno `v1.1.0`** (postavy, featy, podtřídy…) – uživatel otestoval, vše v pořádku.
 - ✅ 19. 11. 2026: výběr podtřídy rovnou v `ClassPickerDialog` (nová postava i přidání classy; vlastní `Dialog` – na širokém okně
   dva sloupce, max 620 dp), subdomény jen ke zvolené doméně, druid jen domény Nature Bond; docs po přechodu decky → postavy aktualizované.
@@ -47,9 +47,9 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ Desktop: testy (`desktopTest`, 75 testů) zelené, appka běží.
 - ✅ 18. 11. 2026: deck → **postava** (multiclass, podtřídy, sloty/known, herní režim, featy z AoN, schopnosti s počtem použití,
   propojení s inventářem, export/import postav a featů). Další kroky v `TODO.md` (rasy, skills, archetypy, prestižní classy).
-- ✅ Android: release APK se staví (na zařízení zatím nezkoušeno).
-- 🟡 iOS: Kotlin část ověřena cross-kompilací na Windows a v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru);
-  Xcode build na skutečném Macu zatím nikdo nezkoušel (návod pro kamarády: `docs/ios-install.md`).
+- ✅ Android: release APK se staví, otestováno na skutečném zařízení.
+- ✅ iOS: Kotlin část ověřena v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru), Xcode build na Macu otestován
+  (návod pro kamarády: `docs/ios-install.md`).
 - Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\temurin-21.0.11` (systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
   Docker ani `gh` nejsou nainstalované. Port 8080 drží služba NI Application Web Server (National Instruments) – pro lokální test webu jiný port.
 - 
@@ -88,7 +88,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/Items.kt           Item, ItemCategory, ItemDatabase, Inventory, InvEntry, CarryingCapacity
   data/ItemParser.kt      ItemsBase.json + CSV → Item; Csv parser; decodeText (UTF-8 / cp1252)
   data/ItemRepository.kt  ItemRepository, InventoryStore, InventoryTransfer
-  data/Platform.kt        expect: AppFiles (suspend), createHttpClient, deckFileIo, nowDisplayText
+  data/Platform.kt        expect: AppFiles (suspend), createHttpClient, deckFileIo, nowDisplayText, trackEvent (Umami, jen web)
   ui/Theme.kt             tokeny Nb.*, fonty, PfTheme, modifikátory (ruledPaper, dashedBorder…), NbIcons
   ui/Common.kt            NbScreen (kostra obrazovky) + společné komponenty
   ui/WideLayout.kt        třísloupcové rozložení (hlavička se záložkami | sidebar · hlavní · detail)
@@ -194,11 +194,13 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 - `ci.yml`: push do main / PR → testy, Android, web, iOS framework (macOS runner).
 - `release.yml`: tag `v*.*.*` → APK, MSI, DMG, DEB, web zip do GitHub Release. Ruční spuštění = jen artifacts, bez Release.
 - `docker.yml`: push do main → `ghcr.io/dejvhehe/pf-spellbook-web:edge`; tag → `:X.Y.Z` + `:latest`.
-- `Dockerfile`: temurin 21 build (prázdný `ANDROID_HOME` stačí) → stage `export` (jen soubory) / `runtime` (nginx 1.27 + `docker/nginx.conf`).
+- `Dockerfile`: temurin 21 build (prázdný `ANDROID_HOME` stačí) → stage `export` (jen soubory) / `runtime` (nginx 1.27 + `docker/nginx.conf` – gzip, index.html, .js/.wasm a composeResources `Cache-Control: no-cache` s revalidací přes ETag).
 - `compose.yaml`: jen pull (žádný `build:`, žádný `pull_policy`), `127.0.0.1:${PORT:-8888}`, env `TAG`, `UMAMI_*`.
   Build na serveru jen vědomě přes `compose.build.yaml`. Ukázka pro hostitelskou nginx: `docker/proxy-nginx.example.conf`.
 - Umami: `docker/40-umami.sh` (nginx entrypoint) nahradí `<!--UMAMI-->` v index.html podle `UMAMI_SCRIPT_URL/WEBSITE_ID/DOMAINS`
-  (hodnoty jen v `.env` na serveru, ne v repu). `.gitattributes` drží LF u `*.sh` a `gradlew`; `gradlew` má exec bit.
+  (hodnoty jen v `.env` na serveru, ne v repu). Události z appky: `trackEvent(name, data)` (no-op mimo web) → `umami.track`;
+  posílat jen druh akce a obecné údaje (nikdy jména, texty, id), seznam událostí v `docs/deploy.md` – nová událost → doplnit tam.
+  `.gitattributes` drží LF u `*.sh` a `gradlew`; `gradlew` má exec bit.
 - Podpis APK: env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (v CI ze secrets) – zatím nenastaveno.
 - iOS se do Release nedává (nutný Apple Developer účet) – kamarádi s Macem staví přes Xcode (`docs/ios-install.md`;
   bundle ID = `$(BUNDLE_ID)$(TEAM_ID)`, bez Android SDK si build fáze vytvoří prázdnou složku).
