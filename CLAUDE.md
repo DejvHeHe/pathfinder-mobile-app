@@ -24,11 +24,23 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (24. 11. 2026)
-- 🟡 **Tag `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
-  inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md` – workflowy zatím neověřeny.
+- ✅ **Vydáno `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
+  inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md`.
+  Release a Docker zelené; CI testy padaly na kompilaci (`InventoryLinkTest` bez importu `scores`) – opraveno v `08289c8`,
+  **nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) zatím nikdy neběžely – ověřit výsledek CI**.
+- 🔜 **Rozpracováno – sekce „Schopnosti“ v `TODO.md`** (hexy, revelations, vyšší schopnosti domén / bloodline, alternativní rasové traity):
+  zatím nic v kódu. Plán: data z Foundry VTT PF1 jako u ras – nový `tools/build_class_abilities.py` po vzoru `tools/build_races.py`
+  (ZIP z GitLab API `.../repository/archive.zip?sha=master&path=packs/class-abilities`, YAML, `system.uses.maxFormula`,
+  přiřazení ke classe / doméně / bloodline / mystériu) → generovaná tabulka → presety v `ClassFeatures.kt` (dnes jen 1. úroveň
+  domén a bloodline ručně v `subclassPresets`). Hexy a revelations = výběr ze seznamu u classy (jako featy), ne automaticky.
+  Alternativní rasové traity: Foundry `packs/racial-traits` (ověřit, že existuje) → výběr u rasy, nahrazené traity → `PrereqRules`.
+- Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
+- Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
+  a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
 - 🟡 **Tag `v1.3.0`** (24. 11. 2026): ikona appky, Umami události, no-cache pro web, štítky druhu magie na kartách class, přísný režim,
   mazlíčci a zvířecí společníci (17 zvířat CRB, progrese, rarita, pravidla návratu), nasazené vybavení s bonusy – workflowy Release a Docker zatím neověřeny.
   Na Linux PC uživatele (`/home/davids/…`) se Gradle nespouští bez požádání; push přes SSH (`git@github.com:DejvHeHe/pathfinder-mobile-app.git`), HTTPS nemá přihlášení.
+  Spuštění appky na požádání: `JAVA_HOME=~/.jdks/temurin-21.0.10 ./gradlew :composeApp:run` (na pozadí; hláška „Cannot create Linux GL context“ = jen softwarové vykreslování).
 - ✅ **Vydáno `v1.2.0`** (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release, Docker i CI zelené (ověřeno 24. 11. 2026).
 - ✅ **Vydáno `v1.1.0`** (postavy, featy, podtřídy…) – uživatel otestoval, vše v pořádku.
 - ✅ 19. 11. 2026: výběr podtřídy rovnou v `ClassPickerDialog` (nová postava i přidání classy; vlastní `Dialog` – na širokém okně

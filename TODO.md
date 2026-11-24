@@ -41,7 +41,12 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 - [x] Vlastní počítadla u postavy (název, maximum, jednotka, poznámka), v herním režimu odklikávání, Odpočinek
 - [x] Předvyplněné schopnosti běžných class se vzorci (Smite Evil, Lay on Hands, Channel, Rage, Ki, Arcane Pool, Grit…)
 - [x] Doménové schopnosti klerika / druida (3 + Wis) a bloodline čaroděje (3 + Cha) podle podtřídy
-- [ ] Hexy, revelations, schopnosti vyšších úrovní domén a bloodline – případně z Foundry `class-abilities` (vzorce `uses`)
+- [ ] Hexy, revelations, schopnosti vyšších úrovní domén a bloodline – **další na řadě**
+  - [ ] `tools/build_class_abilities.py` (vzor `tools/build_races.py`): Foundry `packs/class-abilities` → generovaná tabulka
+    (název, classa, podtřída – doména / bloodline / mystérium / škola, úroveň, `system.uses.maxFormula` → vzorec max použití)
+  - [ ] vyšší schopnosti domén (6./8. úr.) a bloodline (3./9./15./20. úr.) jako presety v `ClassFeatures.kt` (nahradí ruční `subclassPresets`)
+  - [ ] hexy (witch, shaman) a revelations (oracle): výběr ze seznamu u classy postavy (jako featy) + počet použití, kde ho mají
+  - [ ] nový zdroj dat → `NOTICE.md`, OGL Section 15, About
 
 ### 4. Zvýraznění aktuálního zatížení (load) v inventáři
 - [x] Výrazný štítek aktuálního stavu: **Light / Medium / Heavy / Overloaded** s barvou (např. olivová → okrová → rezavá → červená)
@@ -64,7 +69,8 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
   - [x] počet featů podle úrovně postavy (1 + každá lichá úroveň) + bonusové featy classy (fighter, wizard…)
 - [x] **Rasa postavy** (80 ras z Foundry `packs/races`) – ověření rasových prerekvizit featů, velikost → nosnost inventáře, export
   - [x] výchozí rasové traity (tabulka v `PrereqRules`), darkvision / low-light vision z Foundry
-  - [ ] alternativní rasové traity (Halfling Jinx…) – teď jen ruční potvrzení
+  - [ ] alternativní rasové traity (Halfling Jinx…) – teď jen ruční potvrzení; plán: Foundry `packs/racial-traits` (ověřit) → výběr u rasy,
+    nahrazené výchozí traity se odeberou z prerekvizit (`PrereqRules`)
   - [x] výběr rasy rovnou v dialogu nové postavy, úpravy atributů (+2 podle volby), bonusový feat (human, half-elf)
   - [x] přesvědčení / božstvo
 - [x] **Skills** u postavy (ranky, class skills z Foundry, bonusy z atributů a rasy, skill body) – ověření prerekvizit
@@ -96,7 +102,7 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 
 - [x] **Nasazené vybavení**: položka inventáře nasazeno / slot / bonusy (atributy, záchrany, AC, skills; sčítání typů PF1), odhad bonusu podle jména magického předmětu
   - [x] AC (dotyk, zaskočený), max Dex, postih zbroje ke skillům, HP (1. HD max, průměr, Toughness, házené HP), zranění a léčení odpočinkem
-  - [ ] CMB / CMD, útoky zbraní
+  - [ ] (odloženo – appka zatím nemá útoky) CMB / CMD, útoky zbraní
 
 ## Vydání / infrastruktura
 
