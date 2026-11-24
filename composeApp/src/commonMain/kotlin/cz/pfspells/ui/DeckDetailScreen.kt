@@ -63,6 +63,8 @@ import cz.pfspells.data.raceInfo
 import cz.pfspells.data.deityInfo
 import cz.pfspells.data.deityConflicts
 import cz.pfspells.data.raceMod
+import cz.pfspells.data.companionMod
+import cz.pfspells.data.abilityBonus
 import cz.pfspells.data.scores
 import cz.pfspells.str
 
@@ -121,6 +123,7 @@ fun DeckDetailScreen(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = if (wide) 0.dp else 16.dp, end = if (wide) 0.dp else 16.dp, top = 6.dp, bottom = 96.dp),
         ) {
+            if (c.isCompanion) item(key = "companion") { CompanionHeader(state, c, wide) }
             item(key = "classes") {
                 ClassesPanel(
                     state, c, wide,
@@ -142,9 +145,23 @@ fun DeckDetailScreen(
                             Text(s.raceIncludedHint(mods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 6.dp))
                         }
                     }
+                    // zvířecí společník: Str/Dex bonus z tabulky a vylepšení druhu
+                    val companionMods = Ability.entries.mapNotNull { a ->
+                        c.companionMod(a).takeIf { it != 0 }?.let { v -> (if (v < 0) "−${-v}" else "+$v") + " " + s.abilityShort(a) }
+                    }
+                    if (companionMods.isNotEmpty()) {
+                        Text(s.companionIncludedHint(companionMods.joinToString(", ")), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    // nasazené vybavení z propojeného inventáře (Headband of Vast Intelligence…)
+                    val gearMods = gearAbilityText(s, c)
+                    if (gearMods.isNotEmpty()) {
+                        Text(s.gearIncludedHint(gearMods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
             item(key = "inventory") { InventoryLink(state, c, wide) }
+            // mazlíček nemá vlastní mazlíčky (familiár familiára…)
+            if (!c.isCompanion) item(key = "companions") { CompanionsPanel(state, c, wide) }
             item(key = "feats") { FeatsPanel(state, c, wide, selectedFeatPick) }
             item(key = "skills") { SkillsPanel(state, c) }
             item(key = "resources") { ResourcesPanel(state, c, wide) }
@@ -227,7 +244,7 @@ fun DeckDetailScreen(
         c.classEntry(classId)?.let { e -> SubclassDialog(state, db, c, e) { subclassFor = null } }
     }
     editAbility?.let { a ->
-        NumberDialog(s.abilityBaseTitle(s.abilityLong(a), c.raceMod(a)), c.abilities[a], onDismiss = { editAbility = null }) { v ->
+        NumberDialog(s.abilityBaseTitle(s.abilityLong(a), c.abilityBonus(a)), c.abilities[a], onDismiss = { editAbility = null }) { v ->
             state.setAbility(charId, a, v)
             editAbility = null
         }
@@ -378,6 +395,9 @@ private fun InventoryLink(state: AppState, c: Character, wide: Boolean) {
                 NbDashedButton(s.openInventory, { open(inv.id) })
                 NbIconButton(NbIcons.Close, s.unlinkInventory, { state.linkInventory(c.id, null) }, Nb.inkMuted, 16.dp)
             }
+            // záchrany a AC z nasazeného vybavení (atributy a skills už bonusy obsahují)
+            val gear = gearSummaryText(s, c)
+            if (gear.isNotEmpty()) Text(gear, fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (state.inventories.isNotEmpty()) {

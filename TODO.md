@@ -11,7 +11,7 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 ### 1. Hezčí výběr classy
 - [x] Karty class seskupené podle počtu spell levelů (9 / 6 / 4 / bez kouzel / NPC), hledání, náhled spell levelů pro úroveň
 - [x] Stejný výběr pro novou postavu i přidání classy (`ui/ClassPicker.kt`), design „Linkovaný zápisník“
-- [ ] Štítky *arcane / divine / psychic* a *prepared / spontaneous* na kartách
+- [x] Štítky *arcane / divine / psychic* (+ *extracts* u alchemisty a investigatora) a *prepared / spontaneous* na kartách
 - [x] Výběr podtřídy rovnou v pickeru podle vybrané classy (nová postava i přidání classy; změna dál odkazem pod classou)
 
 ### 2. Podtřídy a spelly podle nich
@@ -71,11 +71,15 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Ruční potvrzení „?“ / ✗ prerekvizit (uložené u postavy, tlačítko „Mám“ v detailu featu)
 - [x] Odvozené prerekvizity: class features, velikost / typ, HD, záchrany, proficience, druh kouzel, konkrétní kouzla, domény
   (featů s „?“ 2 475 → 974 u vyplněné postavy)
-- [ ] přísný režim (nesplněné featy nejde přidat)
+- [x] přísný režim (menu ⋮ / zaškrtávátko v pickerech): featy jen do počtu a bez ✗ prerekvizit, kouzla jen do limitu spell levelu
 - [ ] Metamagické featy propojit se spelly (např. u spellu ukázat, o kolik levelů ho metamagie zvýší)
 - [x] Export/import featů spolu s postavou (i samostatně); nový zdroj dat v `NOTICE.md`, OGL Section 15 a About
 
 ## Další nápady
+
+- [x] **Mazlíčci a společníci** (zvířecí společník, jezdecké zvíře, familiár, eidolon) jako postava s vlastníkem – rasové HD Animal / Magical Beast, velikost → nosnost
+  - [x] progrese zvířecího společníka podle úrovně druida (bonus Str/Dex, přirozená zbroj, triky) a 17 zvířat z Core Rulebooku
+  - [ ] další zvířata (APG, Ultimate Magic…), familiáři (bonusy pánovi, přirozená zbroj a Int podle úrovně) a eidolon
 
 - [x] Spell sloty za den podle classy/úrovně + bonusové sloty z atributu; režim „hra“ s odškrtáváním seslaných spellů a resetem po odpočinku
 - [x] Spontánní sesilatelé: „spells known“ místo počtu kopií (limit „x / y známých“ z `CastingTable`)
@@ -88,6 +92,9 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Web: tlačítko Zpět v prohlížeči propojit s navigací appky
 - [x] Web: Umami události z appky (`umami.track(...)` – otevření inventáře, vytvoření decku…)
 - [x] iOS: gesto swipe-back
+
+- [x] **Nasazené vybavení**: položka inventáře nasazeno / slot / bonusy (atributy, záchrany, AC, skills; sčítání typů PF1), odhad bonusu podle jména magického předmětu
+  - [ ] AC a HP postavy (zbroj, Dex, velikost) – teď jen souhrn bonusů k AC
 
 ## Vydání / infrastruktura
 

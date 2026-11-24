@@ -96,6 +96,12 @@ data class InvEntry(
     val note: String = "",
     /** krátké herní údaje (zbraň/zbroj) */
     val info: String? = null,
+    /** nasazeno – bonusy platí pro propojenou postavu */
+    val equipped: Boolean = false,
+    /** slot magického předmětu (null = bez slotu – zbraň, svitek…) */
+    val slot: ItemSlot? = null,
+    /** bonusy předmětu (atribut, záchrany, AC, skill) – platí jen nasazené */
+    val bonuses: List<ItemBonus> = emptyList(),
 ) {
     val cat: ItemCategory get() = ItemCategory.of(category)
 }

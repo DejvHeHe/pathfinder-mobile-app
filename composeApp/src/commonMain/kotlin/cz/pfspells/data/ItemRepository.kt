@@ -135,6 +135,9 @@ data class InvEntryDto(
     val weight: Double? = null,
     val note: String = "",
     val info: String? = null,
+    val equipped: Boolean = false,
+    val slot: ItemSlot? = null,
+    val bonuses: List<ItemBonus> = emptyList(),
 )
 
 object InventoryTransfer {
@@ -150,7 +153,7 @@ object InventoryTransfer {
     fun toDto(inv: Inventory) = InventoryDto(
         name = inv.name, strength = inv.strength, coins = Coins(inv.pp, inv.gp, inv.sp, inv.cp), notes = inv.notes,
         size = inv.size, quadruped = inv.quadruped,
-        items = inv.entries.map { InvEntryDto(it.name, it.itemId, it.category, it.qty, it.priceGp, it.weightLb, it.note, it.info) },
+        items = inv.entries.map { InvEntryDto(it.name, it.itemId, it.category, it.qty, it.priceGp, it.weightLb, it.note, it.info, it.equipped, it.slot, it.bonuses) },
     )
 
     /** Inventář z exportu (bez id); itemy se párují s databází podle id, pak jména. */
@@ -168,6 +171,7 @@ object InventoryTransfer {
             InvEntry(
                 id = newEntryId(), itemId = linked?.id ?: e.itemId, name = e.name, category = e.category,
                 qty = e.qty.coerceAtMost(9999), priceGp = e.price, weightLb = e.weight, note = e.note, info = e.info,
+                equipped = e.equipped, slot = e.slot, bonuses = e.bonuses,
             )
         },
     )

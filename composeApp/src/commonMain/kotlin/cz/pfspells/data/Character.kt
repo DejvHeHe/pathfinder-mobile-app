@@ -77,6 +77,12 @@ data class FeatPick(
     val text: String? = null,
 )
 
+/** Druh mazlíčka / společníka – postava s [Character.ownerId]. */
+enum class CompanionKind { ANIMAL_COMPANION, MOUNT, FAMILIAR, EIDOLON, PET }
+
+/** Rarita mazlíčka – jen štítek (v PF1 pravidla raritu nemají; pro vlastní kampaň). */
+enum class CompanionRarity { COMMON, UNCOMMON, RARE, UNIQUE }
+
 @Serializable
 data class Character(
     val id: String,
@@ -110,7 +116,27 @@ data class Character(
     val deity: String = "",
     /** ručně potvrzené prerekvizity featů (text malými písmeny) – platí jako splněné */
     val confirmedPrereqs: Set<String> = emptySet(),
+    /** mazlíček / společník: id postavy, které patří (null = samostatná postava) */
+    val ownerId: String? = null,
+    /** druh mazlíčka (jen u [ownerId] != null) */
+    val companion: CompanionKind? = null,
+    /** velikost tvora (mazlíček bez rasy) – přebije velikost rasy; nosnost propojeného inventáře */
+    val size: CreatureSize? = null,
+    /** čtyřnohý tvor (nosnost; jen s [size]) */
+    val quadruped: Boolean = false,
+    /** druh zvířete ([SpeciesCatalog] id) – startovní atributy, velikost, útoky */
+    val species: String? = null,
+    /** efektivní úroveň druida zvířecího společníka (null = bez progrese) – HD, Str/Dex bonus, přirozená zbroj, triky */
+    val companionLevel: Int? = null,
+    /** rarita mazlíčka (štítek, null = nezadaná) */
+    val rarity: CompanionRarity? = null,
+    /** vlastní pravidla pro návrat / náhradu po smrti (null = výchozí text podle druhu – `Strings.defaultRespawn`) */
+    val respawnRules: String? = null,
+    /** bonusy nasazeného vybavení z propojeného inventáře (kopie – drží ji AppState při změně inventáře / propojení) */
+    val gear: List<ItemBonus> = emptyList(),
 ) {
+    val isCompanion: Boolean get() = ownerId != null
+
     val level: Int get() = classes.sumOf { it.level }
     val primary: ClassEntry? get() = classes.firstOrNull()
 

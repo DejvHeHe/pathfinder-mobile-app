@@ -45,8 +45,13 @@ import kotlinx.coroutines.launch
 
 /** Export postav (`pf-spellbook-characters` v1), volitelně i s propojenými inventáři. */
 @Composable
-fun ExportDialog(state: AppState, characters: List<Character>, db: SpellDatabase, onDismiss: () -> Unit) {
+fun ExportDialog(state: AppState, selected: List<Character>, db: SpellDatabase, onDismiss: () -> Unit) {
     val s = str
+    // s postavou jdou i její mazlíčci (v exportu odkazují na vlastníka pořadím)
+    val characters = remember(selected) {
+        val ids = selected.map { it.id }.toSet()
+        selected + selected.flatMap { state.companionsOf(it.id) }.filter { it.id !in ids }
+    }
     val linked = characters.any { c -> c.inventoryId?.let { state.inventory(it) } != null }
     var withInventory by remember { mutableStateOf(true) }
     val text = remember(characters, db, withInventory) {

@@ -31,6 +31,8 @@ data class ClassInfo(
     val armorProf: Set<String> = emptySet(),
     /** proficience se zbraněmi: simple, martial nebo jednotlivé zbraně („club“, „favored weapon“…) */
     val weaponProf: Set<String> = emptySet(),
+    /** rasové HD tvora (zvíře, magická bestie) – pro mazlíčky a společníky */
+    val creature: Boolean = false,
 ) {
     val caster: CasterClass? get() = CasterClasses.get(id)
 
@@ -41,18 +43,32 @@ data class ClassInfo(
 }
 
 /** Skupina class ve výběru (podle počtu úrovní kouzel). */
-enum class ClassGroup { FULL, SIX, FOUR, NONE, NPC }
+enum class ClassGroup { FULL, SIX, FOUR, NONE, NPC, CREATURE }
 
 val ClassInfo.group: ClassGroup
     get() = when (caster?.progression) {
         Progression.PREPARED_9, Progression.SPONTANEOUS_9 -> ClassGroup.FULL
         Progression.SIX -> ClassGroup.SIX
         Progression.FOUR, Progression.FOUR_KNACKS -> ClassGroup.FOUR
-        null -> if (npc) ClassGroup.NPC else ClassGroup.NONE
+        null -> when {
+            creature -> ClassGroup.CREATURE
+            npc -> ClassGroup.NPC
+            else -> ClassGroup.NONE
+        }
     }
 
 object ClassCatalog {
-    val all: List<ClassInfo> = CLASS_TABLE
+    /**
+     * Rasové HD tvorů (Bestiary – Creature Types) pro mazlíčky: animal companion, kůň, familiár…
+     * Feat za každé liché HD a skill body 2 + Int za HD platí stejně jako u class.
+     */
+    private val CREATURE_SKILLS = setOf("acrobatics", "climb", "fly", "perception", "stealth", "swim")
+    val creatures: List<ClassInfo> = listOf(
+        ClassInfo("animal", "Animal", Bab.MED, fort = true, ref = true, will = false, hd = 8, skills = 2, classSkills = CREATURE_SKILLS, creature = true),
+        ClassInfo("magical_beast", "Magical Beast", Bab.HIGH, fort = true, ref = true, will = false, hd = 10, skills = 2, classSkills = CREATURE_SKILLS, creature = true),
+    )
+
+    val all: List<ClassInfo> = CLASS_TABLE + creatures
     private val byId = all.associateBy { it.id }
 
     fun get(id: String): ClassInfo? = byId[id]

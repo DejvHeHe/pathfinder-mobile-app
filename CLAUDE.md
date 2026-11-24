@@ -24,6 +24,9 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (24. 11. 2026)
+- 🟡 **Tag `v1.3.0`** (24. 11. 2026): ikona appky, Umami události, no-cache pro web, štítky druhu magie na kartách class, přísný režim,
+  mazlíčci a zvířecí společníci (17 zvířat CRB, progrese, rarita, pravidla návratu), nasazené vybavení s bonusy – workflowy Release a Docker zatím neověřeny.
+  Na Linux PC uživatele (`/home/davids/…`) se Gradle nespouští bez požádání; push přes SSH (`git@github.com:DejvHeHe/pathfinder-mobile-app.git`), HTTPS nemá přihlášení.
 - ✅ **Vydáno `v1.2.0`** (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release, Docker i CI zelené (ověřeno 24. 11. 2026).
 - ✅ **Vydáno `v1.1.0`** (postavy, featy, podtřídy…) – uživatel otestoval, vše v pořádku.
 - ✅ 19. 11. 2026: výběr podtřídy rovnou v `ClassPickerDialog` (nová postava i přidání classy; vlastní `Dialog` – na širokém okně
@@ -67,8 +70,13 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   AppState.kt             jediný stav appky: back stack Screen, Section, decky, inventáře, filtry, DbState/ItemDbState, skryté ceny, jazyk
   Strings.kt              texty UI: interface Strings, EnStrings, CsStrings, Lang, LocalStrings / `str`
   data/Model.kt           Spell, Deck (jen migrace a starý exportní formát)
-  data/Character.kt       Character, ClassEntry, Abilities, FeatPick, Spellbook (pohled postava + classa), CharacterStore + migrace
-  data/CasterClasses.kt   27 sesílajících class, progrese spell levelů, canCast, CastingKind (prepared/spontánní/arcanist), atribut sesílání, sloty (LevelSlots, bonusSpells)
+  data/Character.kt       Character (+ mazlíček: ownerId, CompanionKind, size, quadruped), ClassEntry, Abilities, FeatPick, Spellbook (pohled postava + classa), CharacterStore + migrace
+  data/AnimalCompanions.kt  CompanionProgression (tabulka CRB podle efektivní úrovně druida), SpeciesCatalog (17 zvířat CRB, vylepšení na 4./7. úrovni),
+                          `Character.withCompanion`, companionMod (do `scores`), naturalArmor, suggestedCompanionLevel
+  data/Equipment.kt       nasazené vybavení: ItemSlot, ItemBonus (BonusTarget/BonusType), stackBonuses (pravidla PF1), ItemBonusGuess (podle jména),
+                          `InvEntry.equipped/slot/bonuses` → `Character.gear` (AppState.updateInventory/linkInventory) → gearMod (do `scores`), gearSkill, gearSave, gearAc
+  data/StrictMode.kt      přísný režim: StrictRules.spellBlock / featBlock → StrictBlock (AppState.strictMode, Settings `strict_mode`)
+  data/CasterClasses.kt   27 sesílajících class, progrese spell levelů, canCast, CastingKind (prepared/spontánní/arcanist), MagicTradition (arcane/divine/psychic/extrakty – štítky v pickeru), atribut sesílání, sloty (LevelSlots, bonusSpells)
   data/CastingTable.kt    GENEROVANÉ `tools/build_casting.py` z tabulek class na AoN (spells per day, spells known / arcanist prepared)
   data/ClassInfo.kt       ClassInfo (BAB, záchrany, HD), ClassCatalog, ClassGroup, Character.stats(), abilityMod
   data/ClassTable.kt      GENEROVANÉ `tools/build_classes.py` z Foundry packs/classes (49 class vč. nesesílacích a NPC)
@@ -99,6 +107,8 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/SubclassUi.kt       souhrn podtřídy, `SubclassFields` (sdílí picker classy i `SubclassDialog`), sekce bonusových kouzel (doménový slot, mystérium, bloodline)
   ui/ResourcesUi.kt      sekce „Schopnosti s počtem použití“ (předvyplněné + vlastní počítadla `Tracker`)
   ui/FeatScreens.kt      FeatsPanel (sekce v detailu postavy), FeatPickerScreen, FeatDetailScreen, CustomFeatDialog
+  ui/EquipmentUi.kt      EquipmentSection (detail položky inventáře), BonusDialog, souhrn vybavení postavy
+  ui/CompanionUi.kt      CompanionsPanel (mazlíčci v detailu postavy), CompanionHeader (list mazlíčka), CompanionDialog
   ui/InventoryCommon.kt   formát ceny/váhy, skryté ceny, mince, LoadBar, SectionTabs, dialogy čísla/textu
   ui/InventoryScreen.kt   seznam inventářů, InventorySidebar, detail inventáře
   ui/ItemScreens.kt       ItemPicker (mobil: bottom sheet), ItemDetail (item z DB / položka inventáře), CustomItemDialog
@@ -160,6 +170,9 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 | FOUR_KNACKS | medium | `L<4 → 0` (jen knacky), jinak `min(4, (L-1)/3)` |
 
 - Ve výběru je 49 class (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany).
+  Navíc `ClassCatalog.creatures` = rasové HD tvorů pro mazlíčky (`animal`, `magical_beast`, skupina CREATURE) – ručně, ne z Foundry.
+- Mazlíček = `Character` s `ownerId` (`AppState.createCompanion`, `companionsOf`, `rootCharacters`); smazání vlastníka ho osamostatní,
+  export ho přibalí s `owner` = pořadí vlastníka v souboru. Velikost: `Character.creatureSize` (mazlíček `size`, jinak rasa).
   Adept (NPC classa) nemá spell list. Cantripy nemají FOUR, alchemist, investigator. Víc spell listů → nižší level.
 - Nosnost `CarryingCapacity`: tabulka PF1, +10 STR = ×4, mince 50 ks = 1 lb; násobitel podle `CreatureSize`
   (dvounohý / čtyřnohý, uložen v `Inventory.size` + `quadruped`). `Load` nese postihy (max Dex, ACP, běh).

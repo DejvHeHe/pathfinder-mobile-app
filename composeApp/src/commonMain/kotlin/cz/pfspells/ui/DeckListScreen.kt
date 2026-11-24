@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
@@ -85,8 +88,13 @@ fun DeckListScreen(state: AppState, db: SpellDatabase) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item { SectionHeader(str.myCharacters, size = 20.sp) }
-                    items(state.characters, key = { it.id }) { c ->
-                        CharacterItem(c, selected = false, onClick = { state.push(Screen.CharacterDetail(c.id)) }, card = true)
+                    items(state.rootCharacters, key = { it.id }) { c ->
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CharacterItem(c, selected = false, onClick = { state.push(Screen.CharacterDetail(c.id)) }, card = true)
+                            state.companionsOf(c.id).forEach { p ->
+                                CompanionItem(p, selected = false) { state.push(Screen.CharacterDetail(p.id)) }
+                            }
+                        }
                     }
                 }
             }
@@ -130,8 +138,13 @@ fun DeckSidebar(state: AppState, selectedDeckId: String?, modifier: Modifier = M
         if (state.characters.isEmpty()) {
             item { Text(str.noCharactersYet, color = Nb.inkMuted, fontSize = 14.sp) }
         }
-        items(state.characters, key = { it.id }) { c ->
-            CharacterItem(c, selected = c.id == selectedDeckId, onClick = { state.openRoot(Screen.CharacterDetail(c.id)) })
+        items(state.rootCharacters, key = { it.id }) { c ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CharacterItem(c, selected = c.id == selectedDeckId, onClick = { state.openRoot(Screen.CharacterDetail(c.id)) })
+                state.companionsOf(c.id).forEach { p ->
+                    CompanionItem(p, selected = p.id == selectedDeckId) { state.openRoot(Screen.CharacterDetail(p.id)) }
+                }
+            }
         }
         item {
             NbDashedButton(str.newCharacter, { showNew = true }, Modifier.padding(top = 8.dp), icon = NbIcons.Plus)
@@ -180,6 +193,31 @@ private fun CharacterItem(character: Character, selected: Boolean, onClick: () -
     }
 }
 
+/** Mazlíček pod vlastníkem v seznamu postav: odsazený, menší, s druhem (zvířecí společník, familiár…). */
+@Composable
+private fun CompanionItem(c: Character, selected: Boolean, onClick: () -> Unit) {
+    val s = str
+    val base = Modifier.padding(start = 22.dp).fillMaxWidth().clip(Nb.shape)
+    Column(
+        (if (selected) base.background(Nb.inset).dashedBorder() else base.background(Nb.panel.copy(alpha = 0.6f)))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                c.name, Modifier.weight(1f),
+                fontFamily = LocalNbFonts.current.serif, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            if (selected) MonoLabel(s.open, color = Nb.rust, size = 11.sp)
+        }
+        Text(
+            listOfNotNull(c.companion?.let(s::companionKind), classesSummary(s, c)).joinToString(" · "),
+            fontSize = 12.5.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @Composable
 private fun EmptyDecks(db: SpellDatabase, modifier: Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -216,6 +254,22 @@ fun AppMenu(
             if (state.inventories.isNotEmpty()) {
                 DropdownMenuItem(text = { Text(str.exportAllInventories, color = Nb.ink) }, onClick = { open = false; showInvExport = true })
             }
+            // přísný režim: platí pro všechny postavy (menu zůstane otevřené, ať je vidět změna)
+            DropdownMenuItem(
+                text = {
+                    Column {
+                        Text(str.strictMode, color = Nb.ink)
+                        Text(str.strictModeHint, color = Nb.inkMuted, fontSize = 12.sp, modifier = Modifier.widthIn(max = 260.dp))
+                    }
+                },
+                trailingIcon = {
+                    Checkbox(
+                        state.strictMode, { state.changeStrictMode(it) },
+                        colors = CheckboxDefaults.colors(checkedColor = Nb.accent, uncheckedColor = Nb.dash, checkmarkColor = Color.White),
+                    )
+                },
+                onClick = { state.changeStrictMode(!state.strictMode) },
+            )
             DropdownMenuItem(text = { Text(str.menuDatabase, color = Nb.ink) }, onClick = { open = false; onDatabase() })
             DropdownMenuItem(text = { Text(str.menuAbout, color = Nb.ink) }, onClick = { open = false; onAbout() })
         }

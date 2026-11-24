@@ -253,9 +253,9 @@ internal object PrereqRules {
 
     fun size(c: Character, t: String): PrereqStatus? {
         val m = SIZE_RE.find(t.replace(Regex("""\s+"""), " ")) ?: return null
-        val race = c.raceInfo ?: return PrereqStatus.UNKNOWN
+        val size = c.creatureSize ?: return PrereqStatus.UNKNOWN
         val want = SIZES.indexOf(m.groupValues[1])
-        val have = race.size.ordinal
+        val have = size.ordinal
         val ok = when (m.groupValues[2]) {
             "smaller" -> have <= want
             "larger" -> have >= want

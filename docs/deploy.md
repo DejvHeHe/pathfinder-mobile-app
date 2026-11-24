@@ -152,6 +152,8 @@ Umami na stránce; v Umami *Events*). Posílá se jen druh akce a obecné údaje
 | `database-download` | `db` = `spells` / `items`, `ok` = `true` / `false` |
 | `database-reset` | `db` = `spells` / `items` |
 | `compendium-open`, `game-mode`, `rest`, `prices-revealed` | – |
+| `strict-mode` | `on` = `true` / `false` |
+| `companion-create` | `kind` (např. `animal_companion`, `mount`), `class`, `species` (např. `wolf`, `none`) |
 | `language` | `lang` = `en` / `cs` |
 
 ### Data uživatelů

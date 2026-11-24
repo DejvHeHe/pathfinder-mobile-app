@@ -101,6 +101,7 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                 Source(s.sourceClasses, "Archives of Nethys class tables; Foundry VTT PF1 packs/classes (GPL-3.0, content OGL)")
                 Source(s.sourceRaces, "Foundry VTT PF1 packs/races (GPL-3.0, content OGL)")
                 Source(s.sourceDeities, "Archives of Nethys (aonprd.com) – Paizo Community Use Policy (deity names are Paizo Product Identity)")
+                Source(s.sourceCompanions, "Core Rulebook – Animal Companions (d20pfsrd.com, OGL)")
                 // MIT vyžaduje přiložit copyright a text licence (SpellList.json)
                 Text(MIT_SPELLTABLE, fontFamily = fonts.mono, fontSize = 11.sp, lineHeight = 15.sp, color = Nb.inkMuted)
 

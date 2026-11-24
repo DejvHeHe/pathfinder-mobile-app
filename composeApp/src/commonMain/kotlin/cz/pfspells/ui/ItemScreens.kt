@@ -450,6 +450,7 @@ fun ItemDetailContent(
                 placeholder = { Text(s.notePlaceholder) },
                 modifier = Modifier.fillMaxWidth(),
             )
+            EquipmentSection(state, inv, entry)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (item == null) NbDashedButton(s.editItem, { editCustom = true }, icon = NbIcons.Pencil)
                 if (item == null && state.customItems.none { it.name == entry.name }) {
@@ -492,7 +493,9 @@ fun ItemDetailContent(
     if (editCustom && entry != null && inv != null) {
         CustomItemDialog(entry, onDismiss = { editCustom = false }) { updated, _ ->
             editCustom = false
-            state.updateEntry(inv.id, entry.id) { updated.copy(id = entry.id, qty = entry.qty, note = entry.note) }
+            state.updateEntry(inv.id, entry.id) {
+                updated.copy(id = entry.id, qty = entry.qty, note = entry.note, equipped = entry.equipped, slot = entry.slot, bonuses = entry.bonuses)
+            }
         }
     }
 }

@@ -24,6 +24,8 @@ are shown in Czech (the class list also shows the English original, e.g. "Kouzel
 ### Character
 1. **New character** → name, race and deity (optional), class and level. The class picker has a search box, classes are
    grouped by spell levels (9 / 6 / 4 / no spells / NPC) and a preview of spell levels for the chosen level is shown below.
+   Spellcasting classes carry tags for the kind of magic (*arcane / divine / psychic / extracts*) and the casting style
+   (*prepared / spontaneous*, the arcanist both).
    If the chosen class has a subclass (cleric, druid, oracle, sorcerer, wizard), its choice appears right under the level –
    domains, mystery, bloodline or school. It is optional and can be set later.
 2. **Multiclass:** in the character detail, panel **Classes** → **Add class** (non-casters too – fighter, rogue,
@@ -48,6 +50,40 @@ The old "decks" were converted to characters (with all their spells) on the firs
   inventory, × unlinks it.
 - An inventory belongs to at most one character (linking it to another character unlinks it from the first one);
   a shared "Party stash" can stay unlinked.
+- **Equipped gear**: an inventory item's detail has an **Equipment** section – **Equipped**, a slot (head, headband, neck,
+  belt, ring…) and **bonuses** (ability, save, AC or skill with a bonus type). Known magic items get the bonus prefilled from
+  their name (Headband of Vast Intelligence, Belt of Giant Strength, Cloak of Resistance, Ring of Protection, Amulet of
+  Natural Armor, Bracers of Armor…); add others with **Add bonus**.
+- Bonuses of **equipped** items in the linked inventory apply to the character: abilities (and with them bonus spells,
+  skill points, prerequisites, carrying capacity) and skill totals; saves and AC are shown as an "Equipment: …" summary
+  under the character's inventory. Bonuses of the same type don't stack (the highest applies); dodge, untyped and
+  circumstance do. Two items in one slot (three rings) are flagged in the inventory.
+
+### Companions
+- **Companions** section in the character detail: **Add companion** – name, kind (animal companion, mount, familiar,
+  eidolon, pet), creature type and hit dice (**Animal** – d8, ¾ BAB, good Fortitude and Reflex; **Magical Beast** – d10,
+  full BAB), size and "four legs".
+- A companion has **its own sheet** like a character: abilities, feats (one per odd HD), skills (2 + Int per HD), trackers,
+  its own inventory (size and four legs → carrying capacity – a horse's saddlebags) and it can take classes too
+  (eidolon, NPC classes…).
+- In the character list it sits indented under its owner; its sheet starts with a link to the owner and **Companion
+  settings** (kind, size). Deleting a character keeps its companions – they become standalone characters.
+- **Rarity** (common / uncommon / rare / unique) is just a tag for your own campaign – PF1 rules have none.
+- **If it dies (return / replacement)**: text on the companion's sheet, prefilled with the official rule for its kind
+  (animal companion 24 h of prayer, paladin's mount 30 days, familiar 1 week + ritual, eidolon the next day); write your
+  own instead, **Default text** restores it.
+- **Custom companion**: animal *Custom* with progression off = abilities, size, creature type and HD by hand.
+- Exporting a character includes its companions (they stay linked after import).
+- An **animal** from the list (17 Core Rulebook animal companions – wolf, horse, pony, dog, big cat, bear…) fills in the
+  starting abilities, size, four legs, speed, attacks and special qualities. **Custom** = everything by hand.
+- **Animal companion progression** (default for animal companions and mounts): from the **effective druid level**
+  (suggested from the owner's classes – druid and hunter in full, ranger −3, for a mount also paladin and cavalier) the app
+  derives HD, BAB, saves, feats, skill points, the **Str/Dex bonus**, **natural armor**, **bonus tricks** and special
+  abilities (link, share spells, evasion, devotion, multiattack…). At 4th or 7th level the animal **advances** (e.g. a wolf
+  at 7th level: Large, Str +8, Dex −2, Con +4, a stronger bite).
+- Change the level with the stepper at the top of the companion's sheet; the bonuses are shown with the abilities
+  ("Includes companion bonuses"). Add the **ability score increase** (+1 at 4th, 9th, 14th and 20th level) to the base
+  score of your choice yourself.
 
 ### Subclasses (domains, bloodline, mystery, school)
 - The subclass can be chosen already when creating the character or adding a class (see above).
@@ -82,7 +118,11 @@ The old "decks" were converted to characters (with all their spells) on the firs
   class bonus feats (fighter, wizard, monk, magus…) + racial bonus feat (human, half-elf) + manual **Extra** (traits…).
 - **Add feat** opens ~3,400 feats from Archives of Nethys: search, type, "Only feats I qualify for", PFS, full-text search.
   Each feat shows its prerequisite status: ✓ met, ✗ not met, ? check yourself. Race is checked when the character has one
-  (a half-elf also counts as an elf and a human). The app never blocks anything.
+  (a half-elf also counts as an elf and a human). The app never blocks anything – except in **strict mode**
+  (menu ⋮ or the checkbox in the feat / spell picker): then you can't add a feat beyond your feat count or one with a ✗
+  prerequisite ("?" is allowed), and only as many spells as the class may have on that spell level (prepared copies /
+  spells known, the specialist's school slot; the casting ability must be high enough). Removing is always allowed and
+  imports are not checked.
 - Also checked: skill ranks, class features from classes and levels (channel energy, rage, ki pool…), **alignment** and
   **deity** (set at the top of the character panel under the race; the deity from a list of ~460 deities with alignment,
   pantheon and favored weapon – search also by area, e.g. "healing"; **Custom…** = homebrew deity as text), size and creature

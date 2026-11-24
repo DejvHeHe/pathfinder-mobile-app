@@ -35,6 +35,16 @@ data class CharacterDto(
     val alignment: Alignment? = null,
     val deity: String = "",
     val confirmedPrereqs: Set<String> = emptySet(),
+    /** mazlíček: pořadí vlastníka v tomto exportu (0 = první postava) */
+    val owner: Int? = null,
+    val companion: CompanionKind? = null,
+    val size: CreatureSize? = null,
+    val quadruped: Boolean = false,
+    /** druh zvířete ([SpeciesCatalog] id) a efektivní úroveň druida zvířecího společníka */
+    val species: String? = null,
+    val companionLevel: Int? = null,
+    val rarity: CompanionRarity? = null,
+    val respawnRules: String? = null,
 )
 
 @Serializable
@@ -65,7 +75,13 @@ data class FeatFile(
 )
 
 /** Postava připravená k importu (bez id) + její inventář a spelly, které se nepodařilo najít. */
-data class ImportedCharacter(val character: Character, val inventory: Inventory?, val missingSpells: List<String>)
+data class ImportedCharacter(
+    val character: Character,
+    val inventory: Inventory?,
+    val missingSpells: List<String>,
+    /** mazlíček: pořadí vlastníka v importu (id se při importu přidělují znovu) */
+    val ownerIndex: Int? = null,
+)
 
 object CharacterTransfer {
     const val FORMAT = "pf-spellbook-characters"
@@ -74,9 +90,18 @@ object CharacterTransfer {
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
 
+    /** Mazlíček se exportuje s odkazem na pořadí vlastníka – jen když je vlastník v [characters] taky. */
     fun export(characters: List<Character>, db: SpellDatabase, inventoryOf: (Character) -> Inventory?): String =
         json.encodeToString(CharacterFile.serializer(), CharacterFile(characters = characters.map { c ->
             CharacterDto(
+                owner = c.ownerId?.let { o -> characters.indexOfFirst { it.id == o }.takeIf { it >= 0 } },
+                companion = c.companion,
+                size = c.size,
+                quadruped = c.quadruped,
+                species = c.species,
+                companionLevel = c.companionLevel,
+                rarity = c.rarity,
+                respawnRules = c.respawnRules,
                 name = c.name,
                 classes = c.classes.map { e ->
                     ClassDto(
@@ -139,7 +164,7 @@ object CharacterTransfer {
         if (file.version > 1) throw DeckImportException(ImportError.NewerVersion(file.version))
         if (file.characters.isEmpty()) throw DeckImportException(ImportError.NoDecks)
 
-        return file.characters.map { dto ->
+        return file.characters.mapIndexed { index, dto ->
             val missing = ArrayList<String>()
             val classes = dto.classes.map { cd ->
                 ClassCatalog.get(cd.classId) ?: throw DeckImportException(ImportError.UnknownClass(dto.name, cd.classId))
@@ -172,9 +197,17 @@ object CharacterTransfer {
                     alignment = dto.alignment,
                     deity = dto.deity,
                     confirmedPrereqs = dto.confirmedPrereqs,
+                    companion = dto.companion,
+                    size = dto.size,
+                    quadruped = dto.quadruped && dto.size != null,
+                    species = dto.species?.takeIf { SpeciesCatalog.get(it) != null },
+                    companionLevel = dto.companionLevel?.coerceIn(1, 20),
+                    rarity = dto.rarity,
+                    respawnRules = dto.respawnRules?.takeIf { it.isNotBlank() },
                 ),
                 dto.inventory?.let { InventoryTransfer.fromDto(it, itemDb) },
                 missing,
+                ownerIndex = dto.owner?.takeIf { it in file.characters.indices && it != index },
             )
         }
     }

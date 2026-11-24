@@ -40,6 +40,7 @@ import cz.pfspells.Screen
 import cz.pfspells.data.InvEntry
 import cz.pfspells.data.Inventory
 import cz.pfspells.data.ItemCategory
+import cz.pfspells.data.slotConflicts
 
 // ---------- seznam inventářů ----------
 
@@ -190,6 +191,15 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
             } else {
                 item { InventoryTableHeader() }
             }
+            val conflicts = inv.slotConflicts()
+            if (conflicts.isNotEmpty()) {
+                item(key = "slot-conflicts") {
+                    Text(
+                        s.slotConflict(conflicts.joinToString { s.itemSlot(it) }),
+                        color = Nb.error, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp),
+                    )
+                }
+            }
             if (inv.entries.isEmpty()) {
                 item {
                     Text(
@@ -270,7 +280,10 @@ private fun EntryRow(entry: InvEntry, wide: Boolean, revealed: Boolean, selected
     val mod = (if (selected) base.clip(Nb.shape).background(Nb.panel).dashedBorder() else base.bottomRule(Nb.ruleSoft))
         .clickable(onClick = onClick)
         .padding(horizontal = if (wide) 10.dp else 0.dp, vertical = if (wide) 6.dp else 4.dp)
-    val notes = listOfNotNull(entry.info, entry.note.ifBlank { null }).joinToString(" · ")
+    // nasazený předmět: „Nasazeno (Čelenka)“ před poznámkami
+    val s = str
+    val equipped = if (entry.equipped) s.equippedLabel + (entry.slot?.let { " (${s.itemSlot(it)})" } ?: "") else null
+    val notes = listOfNotNull(equipped, entry.info, entry.note.ifBlank { null }).joinToString(" · ")
     if (wide) {
         Row(mod, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(entry.name, Modifier.weight(3f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -1,6 +1,7 @@
 package cz.pfspells
 
 import cz.pfspells.data.CasterClasses
+import cz.pfspells.data.MagicTradition
 import cz.pfspells.data.Spell
 import cz.pfspells.data.SpellParser
 import kotlin.test.Test
@@ -10,6 +11,18 @@ import kotlin.test.assertTrue
 
 class CasterClassTest {
     private fun max(cls: String, level: Int) = CasterClasses.get(cls)!!.maxSpellLevel(level)
+
+    @Test
+    fun magicTraditions() {
+        // každá sesílající classa má druh magie (jinak by štítek ve výběru classy spadl)
+        val byTradition = CasterClasses.all.groupBy({ it.tradition }, { it.id })
+        assertEquals(10, byTradition[MagicTradition.ARCANE]?.size)
+        assertEquals(10, byTradition[MagicTradition.DIVINE]?.size)
+        assertEquals(listOf("psychic", "mesmerist", "occultist", "spiritualist", "medium"), byTradition[MagicTradition.PSYCHIC])
+        assertEquals(listOf("alchemist", "investigator"), byTradition[MagicTradition.ALCHEMICAL])
+        assertEquals(MagicTradition.ARCANE, CasterClasses.get("witch")!!.tradition)
+        assertEquals(MagicTradition.DIVINE, CasterClasses.get("shaman")!!.tradition)
+    }
 
     @Test
     fun fullCasters() {

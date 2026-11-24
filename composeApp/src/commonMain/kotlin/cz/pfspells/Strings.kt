@@ -4,6 +4,16 @@ import cz.pfspells.data.ResourceUnit
 import cz.pfspells.data.SubclassType
 import cz.pfspells.data.PrereqStatus
 import cz.pfspells.data.ClassGroup
+import cz.pfspells.data.CastingKind
+import cz.pfspells.data.MagicTradition
+import cz.pfspells.data.CompanionKind
+import cz.pfspells.data.CompanionRarity
+import cz.pfspells.data.ItemSlot
+import cz.pfspells.data.BonusTarget
+import cz.pfspells.data.BonusType
+import cz.pfspells.data.CompanionSpecial
+import cz.pfspells.data.AnimalSpecies
+import cz.pfspells.data.StrictBlock
 import cz.pfspells.data.CharacterStats
 import cz.pfspells.data.Ability
 import cz.pfspells.data.SpellItemKind
@@ -395,6 +405,7 @@ interface Strings {
     val sourceClasses: String
     val sourceRaces: String
     val sourceDeities: String
+    val sourceCompanions: String
     val privacyHeader: String
     val privacyText: String
     val licenseHeader: String
@@ -445,6 +456,71 @@ interface Strings {
     val chooseClass: String
     val searchClasses: String
     fun classGroup(g: ClassGroup): String
+    /** štítek druhu magie na kartě classy */
+    fun magicTradition(t: MagicTradition): String
+    /** štítek způsobu sesílání na kartě classy */
+    fun castingKind(k: CastingKind): String
+
+    // přísný režim
+    val strictMode: String
+    val strictModeHint: String
+    fun strictBlocked(b: StrictBlock): String
+
+    // mazlíčci a společníci
+    val companionsHeader: String
+    val companionsHint: String
+    val addCompanion: String
+    val newCompanion: String
+    val companionSettings: String
+    val companionKindLabel: String
+    fun companionKind(k: CompanionKind): String
+    val creatureLabel: String
+    val hitDiceLabel: String
+    /** velikost mazlíčka nezadaná – platí rasa */
+    val sizeByRace: String
+    /** „Mazlíček postavy Valeros“ (odkaz na vlastníka) */
+    fun companionOf(kind: String, owner: String): String
+    val speciesLabel: String
+    val speciesCustom: String
+    fun speciesName(sp: AnimalSpecies): String
+    val companionProgression: String
+    val companionLevelLabel: String
+    fun companionSpecial(sp: CompanionSpecial): String
+    /** „Přirozená zbroj +4 · Str/Dex +1 · triky navíc 2“ */
+    fun companionStats(naturalArmor: Int?, strDex: Int?, tricks: Int?): String
+    fun abilityIncreases(n: Int): String
+    val speedLabel: String
+    val attacksLabel: String
+    val qualitiesLabel: String
+    /** „vylepšení na 4. úrovni“ */
+    fun advancementAt(level: Int): String
+    fun companionIncludedHint(mods: String): String
+    val rarityLabel: String
+    fun rarity(r: CompanionRarity): String
+    val respawnLabel: String
+    /** výchozí pravidla pro návrat / náhradu po smrti podle druhu (Core Rulebook, APG) */
+    fun defaultRespawn(k: CompanionKind): String
+    val resetToDefault: String
+
+    // nasazené vybavení
+    val equipmentHeader: String
+    val equippedLabel: String
+    val equipHint: String
+    fun itemSlot(sl: ItemSlot): String
+    val noSlot: String
+    val bonusesLabel: String
+    val addBonus: String
+    val bonusTargetLabel: String
+    fun bonusTarget(t: BonusTarget): String
+    val bonusTypeLabel: String
+    fun bonusType(t: BonusType): String
+    val bonusValueLabel: String
+    val bonusSkillLabel: String
+    fun slotConflict(slots: String): String
+    fun gearIncludedHint(mods: String): String
+    /** „Vybavení: Odol +2, Reflex +2, Vůle +2 · AC +2 deflection“ */
+    fun gearSummary(parts: String): String
+    fun noBonuses(): String
     fun classSpellsHeader(className: String): String
     val noCasterClasses: String
     val maxLevelReached: String
@@ -486,6 +562,7 @@ interface Strings {
     fun addSubSkill(skill: String): String
     val subSkillLabel: String
     val skillsHint: String
+    /** [raceMod] = úprava rasy + společníka */
     fun abilityBaseTitle(name: String, raceMod: Int): String
     fun raceIncludedHint(mods: String): String
 
@@ -915,7 +992,123 @@ object EnStrings : Strings {
         ClassGroup.FOUR -> "4 spell levels"
         ClassGroup.NONE -> "No spells"
         ClassGroup.NPC -> "NPC classes"
+        ClassGroup.CREATURE -> "Creatures (racial hit dice)"
     }
+    override fun magicTradition(t: MagicTradition) = when (t) {
+        MagicTradition.ARCANE -> "arcane"
+        MagicTradition.DIVINE -> "divine"
+        MagicTradition.PSYCHIC -> "psychic"
+        MagicTradition.ALCHEMICAL -> "extracts"
+    }
+    override fun castingKind(k: CastingKind) = when (k) {
+        CastingKind.PREPARED -> "prepared"
+        CastingKind.SPONTANEOUS -> "spontaneous"
+        CastingKind.HYBRID -> "prepared + spontaneous"
+    }
+    override val strictMode = "Strict mode"
+    override val strictModeHint = "Spells only up to the per-level limit, feats only into free slots and with met prerequisites."
+    override fun strictBlocked(b: StrictBlock) = "Strict mode: " + when (b) {
+        is StrictBlock.SpellLevelFull -> "spell level ${b.spellLevel} is full (${b.limit})"
+        is StrictBlock.AbilityTooLow -> "casting ability is too low for spell level ${b.spellLevel}"
+        StrictBlock.SpellNotAvailable -> "the class can't cast this spell yet"
+        is StrictBlock.FeatSlotsFull -> "all ${b.total} feats are taken"
+        StrictBlock.FeatPrereqsUnmet -> "prerequisites are not met"
+    }
+    override val companionsHeader = "Companions"
+    override val companionsHint = "Animal companion, mount, familiar, eidolon or a pet – each with its own sheet, feats, skills and inventory."
+    override val addCompanion = "Add companion"
+    override val newCompanion = "New companion"
+    override val companionSettings = "Companion settings"
+    override val companionKindLabel = "Kind"
+    override fun companionKind(k: CompanionKind) = when (k) {
+        CompanionKind.ANIMAL_COMPANION -> "Animal companion"
+        CompanionKind.MOUNT -> "Mount"
+        CompanionKind.FAMILIAR -> "Familiar"
+        CompanionKind.EIDOLON -> "Eidolon"
+        CompanionKind.PET -> "Pet"
+    }
+    override val creatureLabel = "Creature type"
+    override val hitDiceLabel = "Hit dice"
+    override val sizeByRace = "by race"
+    override fun companionOf(kind: String, owner: String) = "$kind of $owner"
+    override val speciesLabel = "Animal"
+    override val speciesCustom = "Custom"
+    override fun speciesName(sp: AnimalSpecies) = sp.name
+    override val companionProgression = "Animal companion progression"
+    override val companionLevelLabel = "Effective druid level"
+    override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
+        CompanionSpecial.LINK -> "Link"
+        CompanionSpecial.SHARE_SPELLS -> "Share spells"
+        CompanionSpecial.EVASION -> "Evasion"
+        CompanionSpecial.ABILITY_INCREASE -> "Ability score increase"
+        CompanionSpecial.DEVOTION -> "Devotion"
+        CompanionSpecial.MULTIATTACK -> "Multiattack"
+        CompanionSpecial.IMPROVED_EVASION -> "Improved evasion"
+    }
+    override fun companionStats(naturalArmor: Int?, strDex: Int?, tricks: Int?) = listOfNotNull(
+        naturalArmor?.let { "Natural armor +$it" },
+        strDex?.let { "Str/Dex +$it" },
+        tricks?.let { "Bonus tricks $it" },
+    ).joinToString(" · ")
+    override fun abilityIncreases(n: Int) = "+1 to an ability score ×$n (add it to the base score yourself)"
+    override val speedLabel = "Speed"
+    override val attacksLabel = "Attacks"
+    override val qualitiesLabel = "Special"
+    override fun advancementAt(level: Int) = "advancement at level $level"
+    override fun companionIncludedHint(mods: String) = "Includes companion bonuses: $mods."
+    override val rarityLabel = "Rarity"
+    override fun rarity(r: CompanionRarity) = when (r) {
+        CompanionRarity.COMMON -> "Common"
+        CompanionRarity.UNCOMMON -> "Uncommon"
+        CompanionRarity.RARE -> "Rare"
+        CompanionRarity.UNIQUE -> "Unique"
+    }
+    override val respawnLabel = "If it dies (return / replacement)"
+    override fun defaultRespawn(k: CompanionKind) = when (k) {
+        CompanionKind.ANIMAL_COMPANION ->
+            "If the animal companion dies, a new one can be gained through a ceremony requiring 24 uninterrupted hours " +
+                "of prayer in the environment where the new companion typically lives."
+        CompanionKind.MOUNT ->
+            "Paladin (divine bond): another mount can't be summoned for 30 days or until the paladin gains a level, " +
+                "whichever comes first; meanwhile the paladin takes a −1 penalty on attack and weapon damage rolls. " +
+                "Cavalier: a new mount can be found after 1 week of mourning."
+        CompanionKind.FAMILIAR ->
+            "If the familiar dies or is dismissed, it can't be replaced for 1 week; then a ritual costing 200 gp per " +
+                "wizard level and taking 8 hours brings a new one."
+        CompanionKind.EIDOLON ->
+            "If the eidolon is sent back to its home plane by death, it can't be summoned again until the following day."
+        CompanionKind.PET -> "No special rules – write your own."
+    }
+    override val resetToDefault = "Default text"
+    override val equipmentHeader = "Equipment"
+    override val equippedLabel = "Equipped"
+    override val equipHint = "Bonuses of equipped items count for the character linked to this inventory (same-type bonuses don't stack – the highest applies)."
+    override fun itemSlot(sl: ItemSlot) = sl.name.lowercase().replaceFirstChar { it.uppercase() }
+    override val noSlot = "No slot"
+    override val bonusesLabel = "Bonuses"
+    override val addBonus = "Add bonus"
+    override val bonusTargetLabel = "Applies to"
+    override fun bonusTarget(t: BonusTarget) = when (t) {
+        BonusTarget.STR -> "Strength"
+        BonusTarget.DEX -> "Dexterity"
+        BonusTarget.CON -> "Constitution"
+        BonusTarget.INT -> "Intelligence"
+        BonusTarget.WIS -> "Wisdom"
+        BonusTarget.CHA -> "Charisma"
+        BonusTarget.FORT -> "Fortitude"
+        BonusTarget.REF -> "Reflex"
+        BonusTarget.WILL -> "Will"
+        BonusTarget.AC -> "AC"
+        BonusTarget.SKILL -> "Skill"
+    }
+    override val bonusTypeLabel = "Bonus type"
+    override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
+    override val bonusValueLabel = "Value"
+    override val bonusSkillLabel = "Skill"
+    override fun slotConflict(slots: String) = "Too many items equipped in: $slots"
+    override fun gearIncludedHint(mods: String) = "Includes equipment: $mods."
+    override fun gearSummary(parts: String) = "Equipment: $parts"
+    override fun noBonuses() = "No bonuses – add them below (e.g. +2 enhancement to Intelligence)."
     override fun classSpellsHeader(className: String) = "$className spells"
     override val noCasterClasses = "This character casts no spells – add a spellcasting class to build a spellbook."
     override val maxLevelReached = "Character level 20 reached."
@@ -964,7 +1157,7 @@ object EnStrings : Strings {
     override val subSkillLabel = "Kind (e.g. alchemy, sing, sailor)"
     override val skillsHint = "Class skill = +3 with at least 1 rank. Max ranks per skill = character level. Points per level: class + Int modifier (min 1), human +1; favored class bonus goes to Extra."
     override fun abilityBaseTitle(name: String, raceMod: Int) =
-        if (raceMod == 0) name else "$name – base score (race ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
+        if (raceMod == 0) name else "$name – base score (bonuses ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
     override fun raceIncludedHint(mods: String) = "Includes race: $mods. Tap a score to edit its base value."
 
     override val myItems = "My items"
@@ -1003,6 +1196,7 @@ object EnStrings : Strings {
     override val sourceClasses = "Classes (spells per day, BAB, saves)"
     override val sourceRaces = "Races (size, speed, ability modifiers)"
     override val sourceDeities = "Deities (alignment, domains, favored weapon)"
+    override val sourceCompanions = "Animal companions (progression, animals)"
     override val privacyHeader = "Privacy"
     override val privacyText = "The app collects no personal data. There is no account, no tracking and no ads. Characters, inventories " +
         "and settings are stored only on your device (in the web version in your browser) and never leave it unless you export them yourself. " +
@@ -1049,7 +1243,16 @@ private val csRaces = mapOf(
     "halfling" to "Půlčík", "human" to "Člověk", "orc" to "Ork", "drow" to "Drow", "aquatic-elf" to "Vodní elf",
 )
 
+private val csSpecies = mapOf(
+    "ape" to "Lidoop", "badger" to "Jezevec (rosomák)", "bear" to "Medvěd", "bird" to "Pták (orel, jestřáb, sova)",
+    "boar" to "Kanec", "camel" to "Velbloud", "cat_big" to "Velká kočka (lev, tygr)", "cat_small" to "Malá kočka (gepard, levhart)",
+    "crocodile" to "Krokodýl (aligátor)", "deinonychus" to "Dinosaurus (deinonychus, velociraptor)", "dog" to "Pes",
+    "horse" to "Kůň", "pony" to "Poník", "shark" to "Žralok", "snake_constrictor" to "Had, škrtič", "snake_viper" to "Had, zmije",
+    "wolf" to "Vlk",
+)
+
 private val csClasses = mapOf(
+    "animal" to "Zvíře", "magical_beast" to "Magická bestie",
     "wizard" to "Kouzelník", "sorcerer" to "Čaroděj", "arcanist" to "Arkanista", "cleric" to "Klerik",
     "oracle" to "Orákulum", "druid" to "Druid", "witch" to "Čarodějnice", "shaman" to "Šaman", "psychic" to "Psychik",
     "bard" to "Bard", "skald" to "Skald", "inquisitor" to "Inkvizitor", "magus" to "Mágus", "alchemist" to "Alchymista",
@@ -1544,7 +1747,137 @@ object CsStrings : Strings {
         ClassGroup.FOUR -> "4 úrovně kouzel"
         ClassGroup.NONE -> "Bez kouzel"
         ClassGroup.NPC -> "NPC classy"
+        ClassGroup.CREATURE -> "Tvorové (rasové kostky životů)"
     }
+    override fun magicTradition(t: MagicTradition) = when (t) {
+        MagicTradition.ARCANE -> "tajemná"
+        MagicTradition.DIVINE -> "božská"
+        MagicTradition.PSYCHIC -> "psychická"
+        MagicTradition.ALCHEMICAL -> "extrakty"
+    }
+    override fun castingKind(k: CastingKind) = when (k) {
+        CastingKind.PREPARED -> "připravuje"
+        CastingKind.SPONTANEOUS -> "spontánní"
+        CastingKind.HYBRID -> "připraví + spontánní"
+    }
+    override val strictMode = "Přísný režim"
+    override val strictModeHint = "Kouzla jen do limitu spell levelu, featy jen do volných slotů a se splněnými prerekvizitami."
+    override fun strictBlocked(b: StrictBlock) = "Přísný režim: " + when (b) {
+        is StrictBlock.SpellLevelFull -> "úroveň kouzel ${b.spellLevel} je plná (${b.limit})"
+        is StrictBlock.AbilityTooLow -> "na úroveň kouzel ${b.spellLevel} nestačí atribut sesílání"
+        StrictBlock.SpellNotAvailable -> "tohle kouzlo classa zatím nesesílá"
+        is StrictBlock.FeatSlotsFull -> "všech ${b.total} featů je vybráno"
+        StrictBlock.FeatPrereqsUnmet -> "prerekvizity nejsou splněné"
+    }
+    override val companionsHeader = "Mazlíčci a společníci"
+    override val companionsHint = "Zvířecí společník, jezdecké zvíře, familiár, eidolon nebo mazlíček – každý má vlastní list, featy, skills i inventář."
+    override val addCompanion = "Přidat mazlíčka"
+    override val newCompanion = "Nový mazlíček"
+    override val companionSettings = "Nastavení mazlíčka"
+    override val companionKindLabel = "Druh"
+    override fun companionKind(k: CompanionKind) = when (k) {
+        CompanionKind.ANIMAL_COMPANION -> "Zvířecí společník"
+        CompanionKind.MOUNT -> "Jezdecké zvíře"
+        CompanionKind.FAMILIAR -> "Familiár"
+        CompanionKind.EIDOLON -> "Eidolon"
+        CompanionKind.PET -> "Mazlíček"
+    }
+    override val creatureLabel = "Druh tvora"
+    override val hitDiceLabel = "Kostky životů (HD)"
+    override val sizeByRace = "podle rasy"
+    override fun companionOf(kind: String, owner: String) = "$kind · patří k: $owner"
+    override val speciesLabel = "Zvíře"
+    override val speciesCustom = "Vlastní"
+    override fun speciesName(sp: AnimalSpecies) = csSpecies[sp.id]?.let { "$it (${sp.name})" } ?: sp.name
+    override val companionProgression = "Progrese zvířecího společníka"
+    override val companionLevelLabel = "Efektivní úroveň druida"
+    override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
+        CompanionSpecial.LINK -> "Pouto (Link)"
+        CompanionSpecial.SHARE_SPELLS -> "Sdílení kouzel"
+        CompanionSpecial.EVASION -> "Vyhýbání (Evasion)"
+        CompanionSpecial.ABILITY_INCREASE -> "Zvýšení atributu"
+        CompanionSpecial.DEVOTION -> "Oddanost (Devotion)"
+        CompanionSpecial.MULTIATTACK -> "Multiattack"
+        CompanionSpecial.IMPROVED_EVASION -> "Zlepšené vyhýbání"
+    }
+    override fun companionStats(naturalArmor: Int?, strDex: Int?, tricks: Int?) = listOfNotNull(
+        naturalArmor?.let { "Přirozená zbroj +$it" },
+        strDex?.let { "Síl/Obr +$it" },
+        tricks?.let { "Triky navíc $it" },
+    ).joinToString(" · ")
+    override fun abilityIncreases(n: Int) = "+1 k atributu ×$n (přičtěte ručně k základní hodnotě)"
+    override val speedLabel = "Rychlost"
+    override val attacksLabel = "Útoky"
+    override val qualitiesLabel = "Zvláštní"
+    override fun advancementAt(level: Int) = "vylepšení na $level. úrovni"
+    override fun companionIncludedHint(mods: String) = "Včetně bonusů společníka: $mods."
+    override val rarityLabel = "Rarita"
+    override fun rarity(r: CompanionRarity) = when (r) {
+        CompanionRarity.COMMON -> "Běžný"
+        CompanionRarity.UNCOMMON -> "Neobvyklý"
+        CompanionRarity.RARE -> "Vzácný"
+        CompanionRarity.UNIQUE -> "Jedinečný"
+    }
+    override val respawnLabel = "Když zemře (návrat / náhrada)"
+    override fun defaultRespawn(k: CompanionKind) = when (k) {
+        CompanionKind.ANIMAL_COMPANION ->
+            "Když zvířecí společník zemře, nového lze získat obřadem – 24 hodin nepřerušené modlitby v prostředí, " +
+                "kde nový společník obvykle žije."
+        CompanionKind.MOUNT ->
+            "Paladin (divine bond): dalšího oře nelze přivolat 30 dní nebo do získání další úrovně paladina (co nastane dřív); " +
+                "do té doby má paladin postih −1 k útoku a zranění zbraní. Cavalier: nové zvíře si najde po týdnu truchlení."
+        CompanionKind.FAMILIAR ->
+            "Když familiár zemře nebo je propuštěn, nelze ho týden nahradit; pak rituál za 200 gp za úroveň kouzelníka, " +
+                "který trvá 8 hodin, přivolá nového."
+        CompanionKind.EIDOLON ->
+            "Když je eidolon smrtí poslán zpět na svou rovinu, nelze ho znovu přivolat dřív než následující den."
+        CompanionKind.PET -> "Bez zvláštních pravidel – zapište vlastní."
+    }
+    override val resetToDefault = "Výchozí text"
+    override val equipmentHeader = "Vybavení"
+    override val equippedLabel = "Nasazeno"
+    override val equipHint = "Bonusy nasazených předmětů platí pro postavu propojenou s tímto inventářem (bonusy stejného typu se nesčítají – platí nejvyšší)."
+    override fun itemSlot(sl: ItemSlot) = when (sl) {
+        ItemSlot.HEAD -> "Hlava"
+        ItemSlot.HEADBAND -> "Čelenka"
+        ItemSlot.EYES -> "Oči"
+        ItemSlot.SHOULDERS -> "Ramena"
+        ItemSlot.NECK -> "Krk"
+        ItemSlot.CHEST -> "Hruď"
+        ItemSlot.BODY -> "Tělo"
+        ItemSlot.ARMOR -> "Zbroj"
+        ItemSlot.BELT -> "Opasek"
+        ItemSlot.WRISTS -> "Zápěstí"
+        ItemSlot.HANDS -> "Ruce"
+        ItemSlot.RING -> "Prsten"
+        ItemSlot.FEET -> "Nohy"
+        ItemSlot.SHIELD -> "Štít"
+    }
+    override val noSlot = "Bez slotu"
+    override val bonusesLabel = "Bonusy"
+    override val addBonus = "Přidat bonus"
+    override val bonusTargetLabel = "Na co"
+    override fun bonusTarget(t: BonusTarget) = when (t) {
+        BonusTarget.STR -> "Síla"
+        BonusTarget.DEX -> "Obratnost"
+        BonusTarget.CON -> "Odolnost"
+        BonusTarget.INT -> "Inteligence"
+        BonusTarget.WIS -> "Moudrost"
+        BonusTarget.CHA -> "Charisma"
+        BonusTarget.FORT -> "Odolnost (záchrana)"
+        BonusTarget.REF -> "Reflexy"
+        BonusTarget.WILL -> "Vůle"
+        BonusTarget.AC -> "AC"
+        BonusTarget.SKILL -> "Skill"
+    }
+    override val bonusTypeLabel = "Typ bonusu"
+    override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
+    override val bonusValueLabel = "Hodnota"
+    override val bonusSkillLabel = "Skill"
+    override fun slotConflict(slots: String) = "Příliš mnoho nasazených předmětů ve slotu: $slots"
+    override fun gearIncludedHint(mods: String) = "Včetně vybavení: $mods."
+    override fun gearSummary(parts: String) = "Vybavení: $parts"
+    override fun noBonuses() = "Bez bonusů – přidejte je níže (např. +2 enhancement k Inteligenci)."
     override fun classSpellsHeader(className: String) = "Kouzla – $className"
     override val noCasterClasses = "Tato postava nesesílá kouzla – pro knihu kouzel přidejte sesílací classu."
     override val maxLevelReached = "Postava má 20. úroveň."
@@ -1594,7 +1927,7 @@ object CsStrings : Strings {
     override val subSkillLabel = "Druh (např. alchemy, sing, sailor)"
     override val skillsHint = "Třídní dovednost = +3, má-li aspoň 1 rank. Max. ranků v dovednosti = úroveň postavy. Body za úroveň: classa + mod. INT (min. 1), člověk +1; bonus za oblíbenou classu přidejte do „Navíc“."
     override fun abilityBaseTitle(name: String, raceMod: Int) =
-        if (raceMod == 0) name else "$name – základ (rasa ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
+        if (raceMod == 0) name else "$name – základ (bonusy ${if (raceMod < 0) "−${-raceMod}" else "+$raceMod"})"
     override fun raceIncludedHint(mods: String) = "Včetně rasy: $mods. Klepnutím na atribut upravíte základní hodnotu."
 
     override val myItems = "Moje předměty"
@@ -1633,6 +1966,7 @@ object CsStrings : Strings {
     override val sourceClasses = "Classy (kouzla za den, ZÚB, záchrany)"
     override val sourceRaces = "Rasy (velikost, rychlost, úpravy atributů)"
     override val sourceDeities = "Božstva (přesvědčení, domény, oblíbená zbraň)"
+    override val sourceCompanions = "Zvířecí společníci (progrese, zvířata)"
     override val privacyHeader = "Soukromí"
     override val privacyText = "Appka nesbírá žádné osobní údaje. Nemá účet, sledování ani reklamy. Postavy, inventáře a nastavení " +
         "jsou uložené jen ve vašem zařízení (u webové verze ve vašem prohlížeči) a nikam se neposílají, dokud je sami neexportujete. " +

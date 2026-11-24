@@ -23,7 +23,8 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
 
 ### Postava
 1. **New character** → jméno, rasa a božstvo (nepovinné), classa a úroveň. Výběr classy má hledání, classy jsou seskupené podle počtu úrovní kouzel
-   (9 / 6 / 4 / bez kouzel / NPC) a pod seznamem je náhled spell levelů pro zvolenou úroveň.
+   (9 / 6 / 4 / bez kouzel / NPC) a pod seznamem je náhled spell levelů pro zvolenou úroveň. Sesílající classy mají na kartě
+   štítky druhu magie (*tajemná / božská / psychická / extrakty*) a způsobu sesílání (*připravuje / spontánní*, arcanist obojí).
    Má-li vybraná classa podtřídu (klerik, druid, orákulum, čaroděj, kouzelník), objeví se pod úrovní rovnou její výběr –
    domény, mystérium, bloodline nebo škola. Je nepovinný, jde nastavit i později.
 2. **Multiclass:** v detailu postavy v panelu **Classes** → **Add class** (i nesesílací – fighter, rogue, swashbuckler…);
@@ -47,6 +48,38 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   místech. U postavy je vidět souhrn (váha, zatížení), **Otevřít** přejde do inventáře, × propojení zruší.
 - Jeden inventář patří nejvýš jedné postavě (propojení s jinou postavou ho od té původní odpojí); společný „Party stash“
   může zůstat nepropojený.
+- **Nasazené vybavení**: v detailu položky inventáře je sekce **Vybavení** – **Nasazeno**, slot (hlava, čelenka, krk,
+  opasek, prsten…) a **bonusy** (atribut, záchrana, AC nebo skill s typem bonusu). Známé magické předměty mají bonus
+  předvyplněný podle jména (Headband of Vast Intelligence, Belt of Giant Strength, Cloak of Resistance, Ring of Protection,
+  Amulet of Natural Armor, Bracers of Armor…), ostatním ho přidáte tlačítkem **Přidat bonus**.
+- Bonusy **nasazených** předmětů propojeného inventáře platí pro postavu: atributy (a s nimi bonusová kouzla, skill body,
+  prerekvizity, nosnost), součty skillů; záchrany a AC se ukážou jako souhrn „Vybavení: …“ u inventáře postavy.
+  Bonusy stejného typu se nesčítají (platí nejvyšší), dodge, untyped a circumstance ano. Dva předměty v jednom slotu
+  (tři prsteny) appka ohlásí v inventáři.
+
+### Mazlíčci a společníci
+- Sekce **Mazlíčci a společníci** v detailu postavy: **Přidat mazlíčka** – jméno, druh (zvířecí společník, jezdecké zvíře,
+  familiár, eidolon, mazlíček), druh tvora a kostky životů (**Zvíře** – d8, BAB ¾, dobrá Odolnost a Reflexy; **Magická bestie** –
+  d10, plný BAB), velikost a „čtyřnohý“.
+- Mazlíček má **vlastní list** jako postava: atributy, featy (za každé liché HD), skills (2 + Int za HD), počítadla, vlastní
+  inventář (velikost a čtyřnohost → nosnost – sedlové brašny koně) a může mít i classy (eidolon, NPC classy…).
+- V seznamu postav je odsazeně pod svým vlastníkem; nahoře v jeho listu je odkaz na vlastníka a **Nastavení mazlíčka**
+  (druh, velikost). Smazáním postavy se její mazlíčci nesmažou – zůstanou jako samostatné postavy.
+- **Rarita** (běžný / neobvyklý / vzácný / jedinečný) je jen štítek pro vlastní kampaň – pravidla PF1 ji nemají.
+- **Když zemře (návrat / náhrada)**: text v listu mazlíčka, předvyplněný oficiálním pravidlem podle druhu (zvířecí
+  společník 24 h modlitby, oř paladina 30 dní, familiár týden + rituál, eidolon další den); jde přepsat vlastním,
+  **Výchozí text** ho vrátí.
+- **Vlastní mazlíček**: zvíře *Vlastní* a vypnutá progrese = atributy, velikost, druh tvora i HD ručně.
+- Export postavy přibalí i její mazlíčky (po importu zůstanou propojení).
+- **Zvíře** ze seznamu (17 zvířecích společníků z Core Rulebooku – vlk, kůň, poník, pes, velká kočka, medvěd…) doplní
+  startovní atributy, velikost, čtyřnohost, rychlost, útoky a zvláštní schopnosti. **Vlastní** = vše ručně.
+- **Progrese zvířecího společníka** (výchozí u zvířecího společníka a jezdeckého zvířete): z **efektivní úrovně druida**
+  (navrhne se z class vlastníka – druid a hunter plně, ranger −3, u jezdeckého zvířete i paladin a cavalier) se
+  dopočítají HD, BAB, záchrany, featy, skill body, **bonus k Síle a Obratnosti**, **přirozená zbroj**, **triky navíc**
+  a zvláštní schopnosti (pouto, sdílení kouzel, vyhýbání, oddanost, multiattack…). Na 4. nebo 7. úrovni se zvíře
+  **vylepší** (např. vlk na 7. úrovni: Large, Síla +8, Obratnost −2, Odolnost +4, silnější kousnutí).
+- Úroveň jde měnit stepperem nahoře v listu mazlíčka; bonusy se ukazují u atributů („Včetně bonusů společníka“).
+  **Zvýšení atributu** (+1 na 4., 9., 14. a 20. úrovni) přičtěte ručně k základní hodnotě, kterou chcete.
 
 ### Podtřídy (domény, bloodline, mystérium, škola)
 - Podtřídu jde vybrat už při vytvoření postavy nebo přidání classy (viz výše).
@@ -78,7 +111,10 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   (bojovník, kouzelník, mnich, magus…) + ruční **Navíc** (např. human, traity).
 - **Přidat feat** otevře přehled ~3 400 featů z Archives of Nethys: hledání, typ, „Jen featy, na které mám“, PFS, hledání v textu.
   U každého featu je stav prerekvizit: ✓ splněno, ✗ nesplněno, ? ověř ručně (skill ranky, rasové traity…). Rasa se ověří,
-  když ji má postava vybranou (half-elf platí i jako elf a člověk). Appka nic nezakazuje.
+  když ji má postava vybranou (half-elf platí i jako elf a člověk). Appka nic nezakazuje – kromě **přísného režimu**
+  (menu ⋮ nebo zaškrtávátko ve výběru featů / kouzel): pak nejde přidat feat nad počet ani feat s ✗ prerekvizitou
+  (featy s „?“ jdou) a kouzel jen tolik, kolik classa na spell levelu smí (připravené kopie / známá kouzla, slot školy
+  specialisty; atribut sesílání musí stačit). Ubírat jde vždy, import přísný režim nekontroluje.
 - Ověřuje se i: class features podle class a úrovní (channel energy, rage, ki pool…), **přesvědčení** a **božstvo**
   (nastavíte nahoře v panelu postavy pod rasou; božstvo ze seznamu ~460 božstev s přesvědčením, panteonem a oblíbenou
   zbraní – hledání i podle oblasti, např. „healing“; **Vlastní…** = homebrew božstvo jako text), velikost a typ tvora podle rasy, Hit Dice, základní záchrany,

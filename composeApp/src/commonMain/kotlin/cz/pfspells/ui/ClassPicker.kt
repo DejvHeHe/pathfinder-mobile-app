@@ -39,6 +39,7 @@ import cz.pfspells.data.ClassCatalog
 import cz.pfspells.data.ClassGroup
 import cz.pfspells.data.Ability
 import cz.pfspells.data.ClassInfo
+import cz.pfspells.data.MagicTradition
 import cz.pfspells.data.RaceCatalog
 import cz.pfspells.data.DeityCatalog
 import cz.pfspells.data.SubclassIndex
@@ -249,22 +250,54 @@ private fun classRows(s: Strings, query: String, exclude: Set<String>): List<Any
 @Composable
 private fun ClassCard(s: Strings, c: ClassInfo, selected: Boolean, onClick: () -> Unit) {
     val base = Modifier.fillMaxWidth().clip(Nb.shape)
-    Row(
+    Column(
         (if (selected) base.background(Nb.accent) else base.background(Nb.paper).dashedBorder())
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        val local = s.classNameOf(c.id)
-        Text(
-            local, Modifier.weight(1f),
-            fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Color.White else Nb.ink,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-        )
-        val detail = buildString {
-            if (local != c.name) append(c.name).append(" · ")
-            append("d").append(c.hd)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val local = s.classNameOf(c.id)
+            Text(
+                local, Modifier.weight(1f),
+                fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Color.White else Nb.ink,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            val detail = buildString {
+                if (local != c.name) append(c.name).append(" · ")
+                append("d").append(c.hd)
+            }
+            Text(detail, fontSize = 12.sp, color = if (selected) Color.White else Nb.inkMuted, maxLines = 1)
         }
-        Text(detail, fontSize = 12.sp, color = if (selected) Color.White else Nb.inkMuted, maxLines = 1)
+        // štítky: druh magie (tajemná / božská / psychická / extrakty) a způsob sesílání
+        c.caster?.let { cc ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ClassTag(s.magicTradition(cc.tradition), traditionColor(cc.tradition), selected)
+                ClassTag(s.castingKind(cc.kind), Nb.inkMuted, selected)
+            }
+        }
     }
+}
+
+private fun traditionColor(t: MagicTradition): Color = when (t) {
+    MagicTradition.ARCANE -> Nb.accent
+    MagicTradition.DIVINE -> Nb.ochre
+    MagicTradition.PSYCHIC -> Nb.rust
+    MagicTradition.ALCHEMICAL -> Nb.inkMuted
+}
+
+/** Malý štítek na kartě classy (na vybrané kartě bílý text na průsvitném podkladu). */
+@Composable
+private fun ClassTag(text: String, color: Color, selected: Boolean) {
+    Text(
+        text,
+        Modifier.clip(Nb.shape)
+            .background(if (selected) Color.White.copy(alpha = 0.18f) else Nb.tag)
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+        color = if (selected) Color.White else color,
+        fontSize = 11.5.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontFamily = LocalNbFonts.current.sans,
+        maxLines = 1,
+    )
 }

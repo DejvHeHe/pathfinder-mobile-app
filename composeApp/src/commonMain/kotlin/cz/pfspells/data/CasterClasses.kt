@@ -35,6 +35,9 @@ enum class CastingKind {
     HYBRID,
 }
 
+/** Druh magie classy (štítek ve výběru classy; alchemist a investigator mají extrakty, ne kouzla). */
+enum class MagicTradition { ARCANE, DIVINE, PSYCHIC, ALCHEMICAL }
+
 data class CasterClass(
     val id: String,
     val name: String,
@@ -47,6 +50,16 @@ data class CasterClass(
     val hasCantrips: Boolean = progression != Progression.FOUR,
 ) {
     fun maxSpellLevel(classLevel: Int): Int = progression.maxSpellLevel(classLevel)
+
+    val tradition: MagicTradition get() = when (id) {
+        "wizard", "sorcerer", "arcanist", "witch", "bard", "skald", "magus",
+        "summoner", "summoner_unchained", "bloodrager" -> MagicTradition.ARCANE
+        "cleric", "oracle", "druid", "shaman", "inquisitor", "warpriest", "hunter",
+        "paladin", "antipaladin", "ranger" -> MagicTradition.DIVINE
+        "psychic", "mesmerist", "occultist", "spiritualist", "medium" -> MagicTradition.PSYCHIC
+        "alchemist", "investigator" -> MagicTradition.ALCHEMICAL
+        else -> error("neznámý druh magie classy $id")
+    }
 
     private val tables by lazy {
         CASTING_TABLE[id]?.let { (perDay, known) -> parseSlotTable(perDay) to known?.let(::parseSlotTable) }

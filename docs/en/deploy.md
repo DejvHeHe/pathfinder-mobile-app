@@ -154,6 +154,8 @@ Umami script is on the page; see *Events* in Umami). Only the kind of action and
 | `database-download` | `db` = `spells` / `items`, `ok` = `true` / `false` |
 | `database-reset` | `db` = `spells` / `items` |
 | `compendium-open`, `game-mode`, `rest`, `prices-revealed` | – |
+| `strict-mode` | `on` = `true` / `false` |
+| `companion-create` | `kind` (e.g. `animal_companion`, `mount`), `class`, `species` (e.g. `wolf`, `none`) |
 | `language` | `lang` = `en` / `cs` |
 
 ### User data

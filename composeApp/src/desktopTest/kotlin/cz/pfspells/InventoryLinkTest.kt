@@ -80,4 +80,62 @@ class InventoryLinkTest {
         state.setRace(c.id, "elf")
         assertNull(state.character(c.id)!!.raceBonus)
     }
+
+    @Test
+    fun companionsAndStrictMode() = onMain {
+        val state = AppState(inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings), settings = settings)
+        val owner = state.createCharacter("Lini", "druid", 4)
+        val wolf = state.createCompanion(
+            owner.id, "Droogami", cz.pfspells.data.CompanionKind.ANIMAL_COMPANION, "animal", 4,
+            cz.pfspells.data.CreatureSize.LARGE, quadruped = true,
+        )
+        assertEquals(listOf(wolf.id), state.companionsOf(owner.id).map { it.id })
+        assertEquals(listOf(owner.id), state.rootCharacters.map { it.id })
+
+        // velikost mazlíčka → nosnost propojeného inventáře
+        val inv = state.createInventoryFor(wolf.id)!!
+        assertEquals("LARGE", state.inventory(inv.id)!!.size)
+        assertEquals(true, state.inventory(inv.id)!!.quadruped)
+
+        // přísný režim: HD 4 → 2 featy, třetí nejde přidat (a volba se pamatuje)
+        state.changeStrictMode(true)
+        repeat(3) { state.addCustomFeat(wolf.id, "Feat $it", "") }
+        assertEquals(2, state.character(wolf.id)!!.feats.size)
+        state.changeStrictMode(false)
+        state.addCustomFeat(wolf.id, "Extra", "")
+        assertEquals(3, state.character(wolf.id)!!.feats.size)
+
+        // smazání vlastníka: mazlíček zůstane jako samostatná postava
+        state.deleteCharacter(owner.id)
+        assertNull(state.character(wolf.id)!!.ownerId)
+        assertEquals(listOf(wolf.id), state.rootCharacters.map { it.id })
+    }
+
+    @Test
+    fun equippedGearAffectsCharacter() = onMain {
+        val state = AppState(inventoryStore = InventoryStore(settings), itemRepo = ItemRepository(settings), settings = settings)
+        val c = state.createCharacter("Amiri", "barbarian", 5)
+        state.setAbility(c.id, Ability.STR, 16)
+        val inv = state.createInventoryFor(c.id)!!
+        val belt = cz.pfspells.data.InvEntry(
+            "belt", name = "Belt Of Giant Strength +4", slot = cz.pfspells.data.ItemSlot.BELT,
+            bonuses = cz.pfspells.data.ItemBonusGuess.of("Belt Of Giant Strength +4"),
+        )
+        state.addCustomEntry(inv.id, belt)
+        assertEquals(16, state.character(c.id)!!.scores.str) // nenasazeno
+
+        // nasadit: STR 20 u postavy i v nosnosti inventáře, základ zůstane 16
+        state.setEquipped(inv.id, "belt", true)
+        assertEquals(20, state.character(c.id)!!.scores.str)
+        assertEquals(16, state.character(c.id)!!.abilities.str)
+        assertEquals(20, state.inventory(inv.id)!!.strength)
+
+        // stepper síly v inventáři mění základ (bez bonusu opasku)
+        state.setInventoryStrength(inv.id, 22)
+        assertEquals(18, state.character(c.id)!!.abilities.str)
+
+        // odpojení inventáře bonusy zruší
+        state.linkInventory(c.id, null)
+        assertEquals(18, state.character(c.id)!!.scores.str)
+    }
 }

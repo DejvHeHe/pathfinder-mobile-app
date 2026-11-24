@@ -231,6 +231,7 @@ fun FeatPickerScreen(state: AppState, charId: String, wide: Boolean = false, sel
                 NbCheck(filter.onlyMet, s.onlyMet) { setFilter(filter.copy(onlyMet = it)) }
                 NbCheck(filter.pfsOnly, s.pfsOnly) { setFilter(filter.copy(pfsOnly = it)) }
                 NbCheck(filter.fullText, s.searchDescriptions) { setFilter(filter.copy(fullText = it)) }
+                NbCheck(state.strictMode, s.strictMode) { state.changeStrictMode(it) }
             }
             MonoLabel(s.results(results.size), Modifier.padding(top = 2.dp), size = 11.sp)
         }

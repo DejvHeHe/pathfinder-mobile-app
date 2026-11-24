@@ -90,6 +90,31 @@ class CharacterTransferTest {
     }
 
     @Test
+    fun companionKeepsOwnerByIndex() {
+        val wolf = Character(
+            "w", "Wolf", listOf(ClassEntry("animal", 3)), ownerId = "x",
+            companion = cz.pfspells.data.CompanionKind.ANIMAL_COMPANION,
+            size = cz.pfspells.data.CreatureSize.LARGE, quadruped = true,
+            species = "wolf", companionLevel = 7,
+            rarity = cz.pfspells.data.CompanionRarity.RARE, respawnRules = "Returns at the next full moon.",
+        )
+        val list = CharacterTransfer.parse(CharacterTransfer.export(listOf(thomas, wolf), db) { null }, db, featDb, null)
+        assertNull(list[0].ownerIndex)
+        assertEquals(0, list[1].ownerIndex)
+        val w = list[1].character
+        assertEquals(cz.pfspells.data.CompanionKind.ANIMAL_COMPANION, w.companion)
+        assertEquals(cz.pfspells.data.CreatureSize.LARGE, w.size)
+        assertEquals(true, w.quadruped)
+        assertEquals("animal", w.classes.single().classId)
+        assertEquals("wolf", w.species)
+        assertEquals(7, w.companionLevel)
+        assertEquals(cz.pfspells.data.CompanionRarity.RARE, w.rarity)
+        assertEquals("Returns at the next full moon.", w.respawnRules)
+        // mazlíček bez vlastníka v exportu se importuje jako samostatná postava
+        assertNull(CharacterTransfer.parse(CharacterTransfer.export(listOf(wolf), db) { null }, db, featDb, null).single().ownerIndex)
+    }
+
+    @Test
     fun withoutInventory() {
         val text = CharacterTransfer.export(listOf(thomas), db) { null }
         assertNull(CharacterTransfer.parse(text, db, featDb, null).single().inventory)

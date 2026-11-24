@@ -49,6 +49,7 @@ descriptions) as published under the OGL by their respective publishers.
 | Subdomain → domain table (`Subclasses.kt`) | [Archives of Nethys – Cleric Domains](https://aonprd.com/ClericDomains.aspx) | content OGL 1.0a / Paizo CUP |
 | Races – size, speed, ability and skill modifiers, vision (`RaceTable.kt`) | `packs/races` of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) – `tools/build_races.py` | project GPL-3.0; content OGL 1.0a |
 | Class BAB, saves, hit dice, class skills, proficiencies (`ClassTable.kt`) | `packs/classes` of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) – `tools/build_classes.py` | project GPL-3.0; content OGL 1.0a |
+| Animal companion progression and Core Rulebook animal companions (`AnimalCompanions.kt`) | Core Rulebook – Druid, Animal Companions, as published on [d20pfsrd.com](https://www.d20pfsrd.com/classes/core-classes/druid/animal-companions/) (entered by hand) | content OGL 1.0a / Paizo CUP |
 | Mundane gear, armor & shields, alchemical items, mounts (`ItemsBase.json`) | converted from the compendium packs of the [Pathfinder 1e system for Foundry VTT](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) | project GPL-3.0; content OGL 1.0a |
 
 Rules implemented in code (spell slots, carrying capacity, skills, feat prerequisites, default racial traits, item prices)

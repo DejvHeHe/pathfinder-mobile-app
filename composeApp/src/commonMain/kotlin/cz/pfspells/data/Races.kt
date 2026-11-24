@@ -57,9 +57,15 @@ object RaceCatalog {
 /** Rasa postavy (null = nevybraná). */
 val Character.raceInfo: RaceInfo? get() = RaceCatalog.get(race)
 
+/** Velikost postavy: zadaná u mazlíčka ([Character.size]), jinak podle rasy; null = neznámá. */
+val Character.creatureSize: CreatureSize? get() = size ?: raceInfo?.size
+
 /** Rasová úprava atributu postavy (0 bez rasy). */
 fun Character.raceMod(a: Ability): Int = raceInfo?.mod(a, raceBonus) ?: 0
 
-/** Výsledné atributy = základ + rasa (prerekvizity, sloty, schopnosti, nosnost). */
+/** Úprava atributu oproti základu: rasa + zvířecí společník + nasazené vybavení. */
+fun Character.abilityBonus(a: Ability): Int = raceMod(a) + companionMod(a) + gearMod(a)
+
+/** Výsledné atributy = základ + rasa + zvířecí společník + vybavení (prerekvizity, sloty, schopnosti, nosnost). */
 val Character.scores: Abilities
-    get() = Ability.entries.fold(abilities) { acc, a -> acc.with(a, (abilities[a] + raceMod(a)).coerceAtLeast(1)) }
+    get() = Ability.entries.fold(abilities) { acc, a -> acc.with(a, (abilities[a] + abilityBonus(a)).coerceAtLeast(1)) }

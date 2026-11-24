@@ -166,6 +166,8 @@ fun SpellBrowserScreen(
                 if (picker) NbCheck(filter.hideInDeck, s.hideAdded) { setFilter(filter.copy(hideInDeck = it)) }
                 NbCheck(filter.favoritesOnly, s.favoritesOnly) { setFilter(filter.copy(favoritesOnly = it)) }
                 NbCheck(filter.pfsOnly, s.pfsOnly) { setFilter(filter.copy(pfsOnly = it)) }
+                // přísný režim (globální, stejný jako v menu) – jen při výběru kouzel postavě
+                if (picker) NbCheck(state.strictMode, s.strictMode) { state.changeStrictMode(it) }
             }
             if (maxLevel >= minLevel) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

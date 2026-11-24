@@ -2,6 +2,16 @@ package cz.pfspells
 
 import cz.pfspells.data.Tracker
 import cz.pfspells.data.trackEvent
+import cz.pfspells.data.CompanionKind
+import cz.pfspells.data.CreatureSize
+import cz.pfspells.data.StrictBlock
+import cz.pfspells.data.StrictRules
+import cz.pfspells.data.creatureSize
+import cz.pfspells.data.withCompanion
+import cz.pfspells.data.gearBonuses
+import cz.pfspells.data.ItemSlot
+import cz.pfspells.data.ItemBonusGuess
+import cz.pfspells.data.abilityBonus
 import cz.pfspells.data.ResourceUnit
 import cz.pfspells.data.withSubclass
 import cz.pfspells.data.RaceCatalog
@@ -190,6 +200,24 @@ class AppState(
         settings.putString(LANG_KEY, l.code)
     }
 
+    /** Přísný režim: nejde přidat víc kouzel, než classa na spell levelu smí, ani feat nad počet / s nesplněnou prerekvizitou. */
+    var strictMode by mutableStateOf(settings.getBoolean(STRICT_KEY, false))
+        private set
+
+    fun changeStrictMode(on: Boolean) {
+        if (on == strictMode) return
+        strictMode = on
+        settings.putBoolean(STRICT_KEY, on)
+        trackEvent("strict-mode", mapOf("on" to on.toString()))
+    }
+
+    /** V přísném režimu ohlásí důvod a vrátí true (akce se neprovede). */
+    private fun strictBlocked(block: StrictBlock?): Boolean {
+        if (!strictMode || block == null) return false
+        showToast(UiMessage(isError = true) { it.strictBlocked(block) })
+        return true
+    }
+
     /** Hlavní sekce appky (záložky Spellbook / Inventory). */
     var section by mutableStateOf(Section.SPELLBOOK)
 
@@ -301,6 +329,15 @@ class AppState(
         if (i < 0) return
         val before = inventories[i].load
         inventories[i] = transform(inventories[i])
+        // nasazené vybavení → bonusy propojené postavy (a STR zpět do nosnosti, např. Belt of Giant Strength)
+        characterOfInventory(id)?.let { owner ->
+            val gear = inventories[i].gearBonuses()
+            if (gear != owner.gear) {
+                updateCharacter(owner.id) { it.copy(gear = gear) }
+                val str = character(owner.id)?.scores?.str
+                if (str != null && inventories[i].strength != str) inventories[i] = inventories[i].copy(strength = str)
+            }
+        }
         persistInventories()
         val after = inventories[i].load
         if (after > before) showToast(UiMessage(isError = true) { it.loadIncreased(after) })
@@ -309,8 +346,8 @@ class AppState(
     fun deleteInventory(id: String) {
         inventories.removeAll { it.id == id }
         persistInventories()
-        // odpojit od postavy
-        characters.filter { it.inventoryId == id }.forEach { c -> updateCharacter(c.id) { it.copy(inventoryId = null) } }
+        // odpojit od postavy (i s bonusy vybavení)
+        characters.filter { it.inventoryId == id }.forEach { c -> updateCharacter(c.id) { it.copy(inventoryId = null, gear = emptyList()) } }
     }
 
     // ---- propojení postava ↔ inventář (STR pro nosnost se drží stejná na obou stranách) ----
@@ -320,14 +357,15 @@ class AppState(
     fun linkInventory(charId: String, invId: String?) {
         if (invId != null) {
             characters.filter { it.inventoryId == invId && it.id != charId }
-                .forEach { o -> updateCharacter(o.id) { it.copy(inventoryId = null) } }
+                .forEach { o -> updateCharacter(o.id) { it.copy(inventoryId = null, gear = emptyList()) } }
         }
-        updateCharacter(charId) { it.copy(inventoryId = invId) }
+        val gear = invId?.let { inventory(it) }?.gearBonuses() ?: emptyList()
+        updateCharacter(charId) { it.copy(inventoryId = invId, gear = gear) }
         val c = character(charId) ?: return
         if (invId != null) updateInventory(invId) { inv ->
-            // velikost rasy → nosnost (jen když je rasa vybraná)
-            val size = c.raceInfo?.size
-            inv.copy(strength = c.scores.str, size = size?.name ?: inv.size, quadruped = if (size != null) false else inv.quadruped)
+            // velikost (mazlíček / rasa) → nosnost (jen když je známá)
+            val size = c.creatureSize
+            inv.copy(strength = c.scores.str, size = size?.name ?: inv.size, quadruped = if (size != null) c.size != null && c.quadruped else inv.quadruped)
         }
     }
 
@@ -343,7 +381,7 @@ class AppState(
     fun setInventoryStrength(invId: String, value: Int) {
         updateInventory(invId) { it.copy(strength = value) }
         characterOfInventory(invId)?.let { c ->
-            updateCharacter(c.id) { it.copy(abilities = it.abilities.with(Ability.STR, (value - it.raceMod(Ability.STR)).coerceIn(1, 99))) }
+            updateCharacter(c.id) { it.copy(abilities = it.abilities.with(Ability.STR, (value - it.abilityBonus(Ability.STR)).coerceIn(1, 99))) }
         }
     }
 
@@ -371,9 +409,14 @@ class AppState(
                 id = newEntryId(), itemId = dbId, name = item.name, category = item.category.name, qty = qty,
                 priceGp = item.priceGp, weightLb = item.weightLb, note = note.trim(),
                 info = if (item.isCustom) item.subtitle else item.summary,
+                // slot z databáze a bonusy známých předmětů (čelenky, opasky, plášť odolnosti…) – nasadí se ručně
+                slot = ItemSlot.parse(item.slot), bonuses = ItemBonusGuess.of(item.name),
             ))
         }
     }
+
+    /** Nasadit / sundat položku (bonusy pak platí pro propojenou postavu). */
+    fun setEquipped(invId: String, entryId: String, on: Boolean) = updateEntry(invId, entryId) { it.copy(equipped = on) }
 
     fun addCustomEntry(invId: String, entry: InvEntry) = updateInventory(invId) { it.copy(entries = it.entries + entry) }
 
@@ -546,18 +589,23 @@ class AppState(
     /** Přidá importované postavy jako nové (jména se nepřepisují); přibalený inventář se přidá a propojí. */
     fun importCharacters(imported: List<ImportedCharacter>): Int {
         trackEvent("import", mapOf("kind" to "characters", "count" to imported.size.toString()))
-        for (ic in imported) {
+        // nová id předem – mazlíček odkazuje na vlastníka pořadím v exportu
+        val newIds = imported.map { newId() }
+        for ((index, ic) in imported.withIndex()) {
             var name = ic.character.name
             while (characters.any { it.name == name }) name = "$name ${strings.importedSuffix}"
             var inventoryId: String? = null
+            // bonusy nasazeného vybavení z přibaleného inventáře (STR pro nosnost už s nimi)
+            val withGear = ic.character.copy(gear = ic.inventory?.gearBonuses() ?: emptyList())
             ic.inventory?.let { inv ->
                 var invName = inv.name
                 while (inventories.any { it.name == invName }) invName = "$invName ${strings.importedSuffix}"
                 val id = newId()
-                inventories.add(inv.copy(id = id, name = invName, strength = ic.character.scores.str))
+                inventories.add(inv.copy(id = id, name = invName, strength = withGear.scores.str))
                 inventoryId = id
             }
-            characters.add(ic.character.copy(id = newId(), name = name, inventoryId = inventoryId))
+            val owner = ic.ownerIndex?.takeIf { it in newIds.indices && it != index }?.let { newIds[it] }
+            characters.add(withGear.copy(id = newIds[index], name = name, inventoryId = inventoryId, ownerId = owner))
         }
         persistInventories()
         persist()
@@ -606,9 +654,56 @@ class AppState(
         persist()
     }
 
+    /** Smaže postavu; její mazlíčci zůstanou jako samostatné postavy. */
     fun deleteCharacter(id: String) {
         characters.removeAll { it.id == id }
+        for (i in characters.indices) if (characters[i].ownerId == id) characters[i] = characters[i].copy(ownerId = null)
         persist()
+    }
+
+    // ---- mazlíčci a společníci (postava s ownerId) ----
+
+    /** Mazlíčci postavy v pořadí založení. */
+    fun companionsOf(ownerId: String): List<Character> = characters.filter { it.ownerId == ownerId }
+
+    /** Postavy na nejvyšší úrovni seznamu (mazlíček bez existujícího vlastníka se ukáže taky). */
+    val rootCharacters: List<Character>
+        get() = characters.filter { c -> c.ownerId == null || characters.none { it.id == c.ownerId } }
+
+    /** Nový mazlíček; s druhem zvířete ([species]) a progresí ([companionLevel]) se atributy, velikost a HD dopočítají. */
+    fun createCompanion(
+        ownerId: String, name: String, kind: CompanionKind, classId: String, level: Int,
+        size: CreatureSize?, quadruped: Boolean, species: String? = null, companionLevel: Int? = null,
+    ): Character {
+        val base = Character(
+            newId(), name.trim().ifBlank { cz.pfspells.data.SpeciesCatalog.get(species)?.name ?: strings.companionKind(kind) },
+            listOf(ClassEntry(classId, level.coerceIn(1, 20))),
+            ownerId = ownerId,
+        )
+        val c = base.withCompanion(kind, species, companionLevel, size, quadruped)
+        characters.add(c)
+        persist()
+        trackEvent("companion-create", mapOf("kind" to kind.name.lowercase(), "class" to classId, "species" to (species ?: "none")))
+        return c
+    }
+
+    /** Druh mazlíčka, druh zvířete, progrese a velikost; velikost a STR se propíšou do propojeného inventáře (nosnost). */
+    fun setCompanionInfo(
+        charId: String, kind: CompanionKind?, size: CreatureSize?, quadruped: Boolean,
+        species: String? = null, companionLevel: Int? = null,
+    ) {
+        updateCharacter(charId) { it.withCompanion(kind, species, companionLevel, size, quadruped) }
+        syncInventory(charId)
+    }
+
+    /** Rarita a vlastní pravidla pro návrat po smrti (prázdný text = výchozí podle druhu). */
+    fun setCompanionNotes(charId: String, rarity: cz.pfspells.data.CompanionRarity?, respawnRules: String?) =
+        updateCharacter(charId) { it.copy(rarity = rarity, respawnRules = respawnRules?.trim()?.takeIf { t -> t.isNotEmpty() }) }
+
+    /** Úroveň zvířecího společníka (stepper v listu mazlíčka). */
+    fun setCompanionLevel(charId: String, level: Int) {
+        val c = character(charId) ?: return
+        setCompanionInfo(charId, c.companion, c.size, c.quadruped, c.species, level)
     }
 
     /** Úprava jedné classy postavy (null = hlavní classa). */
@@ -653,13 +748,18 @@ class AppState(
     }
 
     /** Přidá feat; neopakovatelný feat, který postava už má, se podruhé nepřidá. */
-    fun addFeat(charId: String, feat: Feat) = updateCharacter(charId) { c ->
-        if (!feat.repeatable && c.feats.any { it.featId == feat.id }) c
-        else c.copy(feats = c.feats + FeatPick(feat.id, feat.name))
+    fun addFeat(charId: String, feat: Feat) {
+        val ch = character(charId) ?: return
+        if (!feat.repeatable && ch.feats.any { it.featId == feat.id }) return
+        if (strictBlocked(StrictRules.featBlock(ch, feat, featDb, spellDb))) return
+        updateCharacter(charId) { it.copy(feats = it.feats + FeatPick(feat.id, feat.name)) }
     }
 
-    fun addCustomFeat(charId: String, name: String, text: String) =
+    fun addCustomFeat(charId: String, name: String, text: String) {
+        val ch = character(charId) ?: return
+        if (strictBlocked(StrictRules.featBlock(ch, null, featDb, spellDb))) return
         updateCharacter(charId) { it.copy(feats = it.feats + FeatPick(null, name.trim(), text = text.trim().ifEmpty { null })) }
+    }
 
     fun updateFeat(charId: String, index: Int, transform: (FeatPick) -> FeatPick) = updateCharacter(charId) { c ->
         if (index !in c.feats.indices) c else c.copy(feats = c.feats.mapIndexed { i, p -> if (i == index) transform(p) else p })
@@ -740,9 +840,9 @@ class AppState(
     private fun syncInventory(charId: String) {
         val c = character(charId) ?: return
         val inv = c.inventoryId ?: return
-        val size = c.raceInfo?.size
+        val size = c.creatureSize
         updateInventory(inv) {
-            it.copy(strength = c.scores.str, size = size?.name ?: it.size, quadruped = if (size != null) false else it.quadruped)
+            it.copy(strength = c.scores.str, size = size?.name ?: it.size, quadruped = if (size != null) c.size != null && c.quadruped else it.quadruped)
         }
     }
 
@@ -777,7 +877,19 @@ class AppState(
     fun setClassLevel(charId: String, classId: String?, level: Int) =
         updateClass(charId, classId) { it.copy(level = level.coerceIn(1, 20)) }
 
-    fun setSpellCount(charId: String, classId: String?, spellId: String, count: Int) = updateClass(charId, classId) { e ->
+    fun setSpellCount(charId: String, classId: String?, spellId: String, count: Int) {
+        // přísný režim hlídá jen přidání (víc kopií / nové kouzlo), ubírat jde vždy
+        val ch = character(charId) ?: return
+        val entry = ch.classEntry(classId) ?: return
+        val db = spellDb
+        if (strictMode && db != null && count > (entry.spells[spellId] ?: 0)) {
+            val spell = db.get(spellId)
+            if (spell != null && strictBlocked(StrictRules.spellBlock(ch, entry.classId, spell, db))) return
+        }
+        writeSpellCount(charId, classId, spellId, count)
+    }
+
+    private fun writeSpellCount(charId: String, classId: String?, spellId: String, count: Int) = updateClass(charId, classId) { e ->
         val m = e.spells.toMutableMap()
         if (count <= 0) m.remove(spellId) else m[spellId] = count.coerceAtMost(99)
         e.copy(spells = m)
@@ -796,5 +908,6 @@ class AppState(
     private companion object {
         const val LANG_KEY = "ui_lang"
         const val FAVORITES_KEY = "favorite_spells_v1"
+        const val STRICT_KEY = "strict_mode"
     }
 }
