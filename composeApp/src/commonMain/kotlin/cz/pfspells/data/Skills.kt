@@ -95,7 +95,9 @@ fun Character.skillTotal(key: String): Int? {
     val info = Skills.get(Skills.idOf(key)) ?: return null
     val r = ranks(key)
     if (info.trainedOnly && r == 0) return null
-    return r + abilityMod(scores[info.ability]) + (if (r > 0 && isClassSkill(key)) 3 else 0) + raceSkillMod(key) + gearSkill(key)
+    // postih zbroje / zatížení jen ke skillům Síly a Obratnosti
+    val acp = if (info.ability == Ability.STR || info.ability == Ability.DEX) armorCheckPenalty() else 0
+    return r + abilityMod(scores[info.ability]) + (if (r > 0 && isClassSkill(key)) 3 else 0) + raceSkillMod(key) + gearSkill(key) + acp
 }
 
 /**

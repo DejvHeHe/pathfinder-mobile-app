@@ -40,7 +40,8 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 ### 3b. Schopnosti s počtem použití
 - [x] Vlastní počítadla u postavy (název, maximum, jednotka, poznámka), v herním režimu odklikávání, Odpočinek
 - [x] Předvyplněné schopnosti běžných class se vzorci (Smite Evil, Lay on Hands, Channel, Rage, Ki, Arcane Pool, Grit…)
-- [ ] Další schopnosti (bloodline / domain powers 3 + atribut, hexy, revelations…) – případně z Foundry `class-abilities` (vzorce `uses`)
+- [x] Doménové schopnosti klerika / druida (3 + Wis) a bloodline čaroděje (3 + Cha) podle podtřídy
+- [ ] Hexy, revelations, schopnosti vyšších úrovní domén a bloodline – případně z Foundry `class-abilities` (vzorce `uses`)
 
 ### 4. Zvýraznění aktuálního zatížení (load) v inventáři
 - [x] Výrazný štítek aktuálního stavu: **Light / Medium / Heavy / Overloaded** s barvou (např. olivová → okrová → rezavá → červená)
@@ -72,7 +73,7 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Odvozené prerekvizity: class features, velikost / typ, HD, záchrany, proficience, druh kouzel, konkrétní kouzla, domény
   (featů s „?“ 2 475 → 974 u vyplněné postavy)
 - [x] přísný režim (menu ⋮ / zaškrtávátko v pickerech): featy jen do počtu a bez ✗ prerekvizit, kouzla jen do limitu spell levelu
-- [ ] Metamagické featy propojit se spelly (např. u spellu ukázat, o kolik levelů ho metamagie zvýší)
+- [x] Metamagické featy propojit se spelly (u spellu výsledná úroveň slotu, u featu zvýšení – parsováno z textu AoN)
 - [x] Export/import featů spolu s postavou (i samostatně); nový zdroj dat v `NOTICE.md`, OGL Section 15 a About
 
 ## Další nápady
@@ -94,7 +95,8 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] iOS: gesto swipe-back
 
 - [x] **Nasazené vybavení**: položka inventáře nasazeno / slot / bonusy (atributy, záchrany, AC, skills; sčítání typů PF1), odhad bonusu podle jména magického předmětu
-  - [ ] AC a HP postavy (zbroj, Dex, velikost) – teď jen souhrn bonusů k AC
+  - [x] AC (dotyk, zaskočený), max Dex, postih zbroje ke skillům, HP (1. HD max, průměr, Toughness, házené HP), zranění a léčení odpočinkem
+  - [ ] CMB / CMD, útoky zbraní
 
 ## Vydání / infrastruktura
 

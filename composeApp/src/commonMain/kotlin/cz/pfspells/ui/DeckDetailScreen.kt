@@ -159,6 +159,7 @@ fun DeckDetailScreen(
                     }
                 }
             }
+            item(key = "defense") { DefensePanel(state, c) }
             item(key = "inventory") { InventoryLink(state, c, wide) }
             // mazlíček nemá vlastní mazlíčky (familiár familiára…)
             if (!c.isCompanion) item(key = "companions") { CompanionsPanel(state, c, wide) }

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.data.CasterClasses
+import cz.pfspells.data.Metamagic
 import cz.pfspells.data.SpellDatabase
 
 /**
@@ -107,6 +108,23 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
                     val subclassSpell = deck != null && deck.entry.bonusSpellsByLevel(db.subclasses).values.any { l -> l.any { it.id == spell.id } }
                     if (deck != null && cls != null && !canAdd && !subclassSpell && inDeck == 0) {
                         Text(s.cannotCastThis(s.nameOf(cls), deck.classLevel), color = Nb.error, fontSize = 13.sp)
+                    }
+
+                    // metamagické featy postavy: výsledná úroveň slotu pro toto kouzlo
+                    val owner = charId?.let { state.character(it) }
+                    LaunchedEffect(charId) { if (charId != null) state.ensureFeats() }
+                    val spellLevel = cls?.spellLevelOf(spell)
+                    val meta = if (owner != null) Metamagic.ofCharacter(owner, state.featDb) else emptyList()
+                    if (deck != null && cls != null && spellLevel != null && meta.isNotEmpty()) {
+                        SectionHeader(s.metamagicHeader, Modifier.padding(top = 0.dp))
+                        meta.forEach { (feat, levels) ->
+                            val slot = levels?.let { spellLevel + it }
+                            val tooHigh = slot != null && slot > cls.maxSpellLevel(deck.classLevel)
+                            Text(
+                                s.metamagicLine(feat.name, levels, slot, tooHigh),
+                                fontSize = 14.sp, color = if (tooHigh) Nb.error else Nb.ink,
+                            )
+                        }
                     }
 
                     SectionHeader(s.description, Modifier.padding(top = 0.dp))

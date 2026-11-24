@@ -48,6 +48,8 @@ import cz.pfspells.Screen
 import cz.pfspells.Strings
 import cz.pfspells.data.Character
 import cz.pfspells.data.Feat
+import cz.pfspells.data.Metamagic
+import cz.pfspells.data.isMetamagic
 import cz.pfspells.data.FeatDatabase
 import cz.pfspells.data.FeatPrereqs
 import cz.pfspells.data.PrereqStatus
@@ -354,6 +356,9 @@ fun FeatDetailScreen(state: AppState, featId: String?, charId: String?, pick: In
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (feat.types.isEmpty()) NbTag(s.generalFeat) else feat.types.forEach { NbTag(it) }
                         if (!feat.pfs) NbTag(s.notPfsLegal, Nb.error)
+                    }
+                    if (feat.isMetamagic) {
+                        Text(s.metamagicSlot(Metamagic.levels(feat)), fontSize = 14.sp, color = Nb.rust, fontWeight = FontWeight.SemiBold)
                     }
                     feat.flavor?.let {
                         Text(it, fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = if (aside) 19.sp else 18.sp, lineHeight = 24.sp, color = Nb.ink)

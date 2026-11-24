@@ -1,6 +1,12 @@
 package cz.pfspells.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -34,6 +40,8 @@ import cz.pfspells.data.ItemSlot
 import cz.pfspells.data.SkillInfo
 import cz.pfspells.data.Skills
 import cz.pfspells.data.gearAc
+import cz.pfspells.data.equippedIn
+import cz.pfspells.data.isWorking
 import cz.pfspells.data.gearMod
 import cz.pfspells.data.gearSave
 import cz.pfspells.str
@@ -71,13 +79,27 @@ fun gearSummaryText(s: Strings, c: Character): String {
 fun gearAbilityText(s: Strings, c: Character): String =
     Ability.entries.mapNotNull { a -> c.gearMod(a).takeIf { it != 0 }?.let { "${signed(it)} ${s.abilityShort(a)}" } }.joinToString(", ")
 
-/** Sekce „Vybavení“ v detailu položky inventáře: nasazeno, slot, bonusy (přidat / odebrat). */
+/** „Odolnost · resistance“ – na co a typ (bez hodnoty, ta je v řádku zvlášť). */
+private fun bonusTargetText(s: Strings, b: ItemBonus): String {
+    val target = abilityOf(b.target)?.let { s.abilityLong(it) }
+        ?: if (b.target == BonusTarget.SKILL) b.skill?.let { k -> Skills.get(Skills.idOf(k))?.let { s.skillName(it.id, it.name) } ?: k } ?: s.bonusTarget(b.target)
+        else s.bonusTarget(b.target)
+    return "$target · ${s.bonusType(b.type)}"
+}
+
+/**
+ * Sekce „Vybavení“ v detailu položky inventáře (návrh Inventory 2.0): vybraný slot, nasazeno + slot,
+ * bonusy po řádcích (velké číslo + na co · typ), přidat bonus, karta konfliktu se stejným slotem (sundat druhý / prohodit).
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EquipmentSection(state: AppState, inv: Inventory, entry: InvEntry) {
     val s = str
+    val fonts = LocalNbFonts.current
     var addBonus by remember { mutableStateOf(false) }
+    val working = inv.isWorking(entry)
     SectionHeader(s.equipmentHeader)
+    entry.slot?.takeIf { entry.equipped }?.let { MonoLabel(s.selectedSlot(s.itemSlot(it)), color = Nb.rust) }
     Text(s.equipHint, fontSize = 12.5.sp, color = Nb.inkMuted)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         NbCheck(entry.equipped, s.equippedLabel) { state.setEquipped(inv.id, entry.id, it) }
@@ -89,20 +111,52 @@ fun EquipmentSection(state: AppState, inv: Inventory, entry: InvEntry) {
             onSelect = { sl -> state.updateEntry(inv.id, entry.id) { it.copy(slot = sl) } },
         )
     }
-    MonoLabel(s.bonusesLabel)
     if (entry.bonuses.isEmpty()) Text(s.noBonuses(), fontSize = 13.sp, color = Nb.inkMuted)
     entry.bonuses.forEachIndexed { i, b ->
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().bottomRule(Nb.ruleSoft).padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // bonus nenasazeného (nebo přebytečného ve slotu) předmětu neplatí – tlumeně
+            val active = entry.equipped && working
             Text(
-                bonusText(s, b), Modifier.weight(1f), fontSize = 14.5.sp,
-                color = if (entry.equipped) Nb.ink else Nb.inkMuted,
+                signed(b.value), Modifier.widthIn(min = 40.dp),
+                fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 22.sp,
+                color = if (active) Nb.accent else Nb.inkMuted,
             )
+            Text(bonusTargetText(s, b), Modifier.weight(1f), fontSize = 14.5.sp, color = if (active) Nb.ink else Nb.inkMuted)
             NbIconButton(NbIcons.Close, s.delete, {
                 state.updateEntry(inv.id, entry.id) { e -> e.copy(bonuses = e.bonuses.filterIndexed { j, _ -> j != i }) }
             }, Nb.inkMuted, 16.dp)
         }
     }
     NbDashedButton(s.addBonus, { addBonus = true }, icon = NbIcons.Plus)
+    // konflikt: jiný nasazený předmět ve stejném slotu
+    val slot = entry.slot
+    val other = if (entry.equipped && slot != null) inv.equippedIn(slot).firstOrNull { it.id != entry.id } else null
+    if (other != null && slot != null && inv.equippedIn(slot).sumOf { it.qty.coerceAtLeast(1) } > slot.capacity) {
+        Column(
+            Modifier.fillMaxWidth().clip(Nb.shape).background(Nb.error.copy(alpha = 0.07f)).border(1.5.dp, Nb.error, Nb.shape)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(s.sameSlotAs(other.name), fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = Nb.error)
+            Text(s.keepThisWorn, fontSize = 13.5.sp, color = Nb.ink)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // tenhle nechat, druhý do batohu
+                NbDashedButton(s.unequipOther(other.name), {
+                    state.preferInSlot(inv.id, entry.id)
+                    state.setEquipped(inv.id, other.id, false)
+                })
+                // prohodit: platí ten druhý, tenhle do batohu
+                NbPrimaryButton(s.swap, {
+                    state.preferInSlot(inv.id, other.id)
+                    state.setEquipped(inv.id, entry.id, false)
+                }, icon = null)
+            }
+        }
+    }
     if (addBonus) {
         BonusDialog(onDismiss = { addBonus = false }) { b ->
             addBonus = false
@@ -137,6 +191,7 @@ fun BonusDialog(onDismiss: () -> Unit, onSave: (ItemBonus) -> Unit) {
                             BonusTarget.FORT, BonusTarget.REF, BonusTarget.WILL -> BonusType.RESISTANCE
                             BonusTarget.AC -> BonusType.DEFLECTION
                             BonusTarget.SKILL -> BonusType.COMPETENCE
+                            BonusTarget.MAX_DEX, BonusTarget.ARMOR_CHECK -> BonusType.ARMOR
                             else -> BonusType.ENHANCEMENT
                         }
                     },

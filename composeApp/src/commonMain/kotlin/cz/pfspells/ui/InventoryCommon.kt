@@ -155,12 +155,11 @@ fun CoinRow(state: AppState, inv: Inventory, big: Boolean = false) {
     }
 }
 
-/** Barva stupně zatížení: olivová → okrová → rezavá → červená. */
+/** Barva stupně zatížení (barvy stavů: rezavá jen pro nadpisy): olivová → okrová → červená. */
 fun loadColor(l: Load): Color = when (l) {
     Load.LIGHT -> Nb.accent
     Load.MEDIUM -> Nb.ochre
-    Load.HEAVY -> Nb.rust
-    Load.OVERLOADED -> Nb.error
+    Load.HEAVY, Load.OVERLOADED -> Nb.error
 }
 
 /** Celková váha, pruh zatížení s úseky light / medium / heavy, štítek stavu, postihy, STR a velikost tvora. */
@@ -174,9 +173,10 @@ fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(s.totalWeight, Modifier.weight(1f), fontSize = 14.sp, color = Nb.ink)
+            // „58 / 130 lb“ – váha / hranice těžkého zatížení
             Text(
-                formatWeight(w).replace("—", "0 lb"),
-                fontFamily = LocalNbFonts.current.mono, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                "${formatWeight(w).replace("—", "0 lb").removeSuffix(" lb")} / ${formatWeight(inv.heavyLoad)}",
+                fontFamily = LocalNbFonts.current.mono, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                 color = if (load == Load.OVERLOADED) Nb.error else Nb.ink,
             )
         }
@@ -195,7 +195,7 @@ fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
             }
         }
         s.loadPenalties(load)?.let {
-            Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = color, fontWeight = FontWeight.SemiBold)
+            Text(it, fontSize = 12.5.sp, lineHeight = 17.sp, color = Nb.inkMuted)
         }
         Text(
             s.loadLimits(formatWeight(inv.lightLoad), formatWeight(inv.mediumLoad), formatWeight(inv.heavyLoad)),
@@ -226,31 +226,31 @@ fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
     }
 }
 
-/** Pruh: podbarvené úseky light / medium / heavy, značky hranic, výplň a ukazatel aktuální váhy. */
+/**
+ * Pruh (návrh Inventory 2.0): pastelové úseky light / medium / heavy (a přetížení), úseky za aktuálním stavem
+ * vybledlé, tmavý ukazatel aktuální váhy přesahující pruh.
+ */
 @Composable
-private fun LoadMeter(w: Double, light: Double, medium: Double, heavy: Double, color: Color) {
+private fun LoadMeter(w: Double, light: Double, medium: Double, heavy: Double, @Suppress("UNUSED_PARAMETER") color: Color) {
     val scaleMax = maxOf(heavy, w).takeIf { it > 0 } ?: 1.0
     val ink = Nb.ink
-    val zones = listOf(Nb.accent, Nb.ochre, Nb.rust, Nb.error)
-    Canvas(
-        Modifier.fillMaxWidth().height(18.dp).clip(Nb.shape).background(Nb.inset).border(1.dp, Nb.rule, Nb.shape),
-    ) {
+    val rule = Nb.rule
+    val zones = listOf(Color(0xFFB9C29A), Color(0xFFD9B76A), Color(0xFFD7A899), Color(0xFFD7A899))
+    Canvas(Modifier.fillMaxWidth().height(18.dp)) {
         val width = size.width
-        val h = size.height
+        val barTop = 4.dp.toPx()
+        val barH = size.height - 2 * barTop
         fun x(v: Double) = (v / scaleMax).toFloat().coerceIn(0f, 1f) * width
         val bounds = listOf(0.0, light, medium, heavy, scaleMax)
         for (i in 0 until 4) {
             val x0 = x(bounds[i])
             val x1 = x(bounds[i + 1])
-            if (x1 > x0) drawRect(zones[i].copy(alpha = 0.16f), Offset(x0, 0f), Size(x1 - x0, h))
+            // úsek, do kterého aktuální váha ještě nedosáhla, je vybledlý
+            if (x1 > x0) drawRect(zones[i].copy(alpha = if (w > bounds[i]) 1f else 0.45f), Offset(x0, barTop), Size(x1 - x0, barH))
         }
-        drawRect(color, Offset(0f, h * 0.28f), Size(x(w), h * 0.44f))
-        listOf(light, medium, heavy).forEach { b ->
-            val bx = x(b).coerceIn(1f, width - 1f)
-            drawLine(ink.copy(alpha = 0.45f), Offset(bx, 0f), Offset(bx, h), strokeWidth = 1.dp.toPx())
-        }
+        drawRect(rule, Offset(0f, barTop), Size(width, barH), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
         val px = x(w).coerceIn(1.5.dp.toPx(), width - 1.5.dp.toPx())
-        drawLine(ink, Offset(px, 0f), Offset(px, h), strokeWidth = 3.dp.toPx())
+        drawLine(ink, Offset(px, 0f), Offset(px, size.height), strokeWidth = 3.dp.toPx())
     }
 }
 

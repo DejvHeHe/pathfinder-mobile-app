@@ -71,10 +71,42 @@ data class Resource(
     val tracker: Tracker? = null,
 )
 
+/**
+ * Schopnosti 1. úrovně podle podtřídy (Core Rulebook / APG): doménová schopnost klerika a druida 3 + Wis za den,
+ * schopnost bloodline čaroděje 3 + Cha za den. Výjimky: Sun (pasivní) a Knowledge se nepočítají, Animal = rounds
+ * 3 + úroveň (speak with animals), Liberation = rounds podle úrovně, Arcane bloodline má místo schopnosti arcane bond.
+ */
+private fun subclassPresets(e: ClassEntry): List<FeaturePreset> {
+    fun title(v: String) = v.split(' ', '-').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
+    val domains = when (e.classId) {
+        "cleric" -> listOfNotNull(e.subclass[SubclassSlot.DOMAIN1], e.subclass[SubclassSlot.DOMAIN2])
+        "druid" -> listOfNotNull(e.subclass[SubclassSlot.DOMAIN1])
+        else -> emptyList()
+    }.map { it.lowercase() }.distinct()
+    val domainPowers = domains.mapNotNull { d ->
+        val id = "domain-power:${e.classId}:$d"
+        val name = "${title(d)} domain power (1st level)"
+        when (d) {
+            "sun", "knowledge" -> null
+            "animal" -> FeaturePreset(id, e.classId, "Animal domain: speak with animals", ResourceUnit.ROUNDS) { l, _ -> 3 + l }
+            "liberation" -> FeaturePreset(id, e.classId, "Liberation domain: liberation", ResourceUnit.ROUNDS) { l, _ -> l }
+            else -> FeaturePreset(id, e.classId, name, ResourceUnit.PER_DAY) { _, c -> (3 + c.mod(Ability.WIS)).coerceAtLeast(0) }
+        }
+    }
+    val bloodline = e.subclass[SubclassSlot.BLOODLINE]?.lowercase()
+        ?.takeIf { e.classId == "sorcerer" && it != "arcane" }
+        ?.let { b ->
+            FeaturePreset("bloodline-power:$b", e.classId, "${title(b)} bloodline power (1st level)", ResourceUnit.PER_DAY) { _, c ->
+                (3 + c.mod(Ability.CHA)).coerceAtLeast(0)
+            }
+        }
+    return domainPowers + listOfNotNull(bloodline)
+}
+
 /** Předvyplněné schopnosti class postavy (dostupné na její úrovni, bez skrytých) + vlastní počítadla. */
 fun Character.resources(includeHidden: Boolean = false): List<Resource> {
     val presets = classes.flatMap { e ->
-        FeaturePresets.all.filter { it.classId == e.classId && e.level >= it.minLevel }.map { p ->
+        (FeaturePresets.all.filter { it.classId == e.classId && e.level >= it.minLevel } + subclassPresets(e)).map { p ->
             Resource("res:${p.id}", p.name, p.unit, p.max(e.level, this), e.classId, preset = p)
         }
     }.filter { includeHidden || it.preset!!.id !in hiddenPresets }

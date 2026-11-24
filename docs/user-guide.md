@@ -52,6 +52,12 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   opasek, prsten…) a **bonusy** (atribut, záchrana, AC nebo skill s typem bonusu). Známé magické předměty mají bonus
   předvyplněný podle jména (Headband of Vast Intelligence, Belt of Giant Strength, Cloak of Resistance, Ring of Protection,
   Amulet of Natural Armor, Bracers of Armor…), ostatním ho přidáte tlačítkem **Přidat bonus**.
+- **Detail inventáře**: na mobilu záložky **Vybavení** a **Předměty**. Vybavení = figurka se sloty ve dvou sloupcích
+  (hlava, čelenka, oči, krk, ramena, hruď, tělo | zbroj, opasek, zápěstí, ruce, 2 prsteny, nohy), pod ní hlavní
+  a druhá ruka a předměty bez slotu; tečky na siluetě ukazují nasazená místa. Klepnutím na slot se otevře výběr: který
+  předmět platí, **Ostatní odložit do batohu**, **Nasadit jiný předmět** (na desktopu plný slot rovnou otevře detail).
+  Když je ve slotu víc předmětů, než se vejde, platí jen první – ukáže to červený banner s **Vyřešit**.
+  Seznam předmětů je rozdělený na **Nasazeno** (štítek slotu) a **Neseno**; na desktopu je v bočním panelu filtr „Nasazeno“.
 - Bonusy **nasazených** předmětů propojeného inventáře platí pro postavu: atributy (a s nimi bonusová kouzla, skill body,
   prerekvizity, nosnost), součty skillů; záchrany a AC se ukážou jako souhrn „Vybavení: …“ u inventáře postavy.
   Bonusy stejného typu se nesčítají (platí nejvyšší), dodge, untyped a circumstance ano. Dva předměty v jednom slotu
@@ -101,10 +107,23 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 - Sekce **Schopnosti s počtem použití** se sama naplní podle class postavy: Smite Evil, Lay on Hands, Channel Energy,
   Rage, Bardic Performance, Ki Pool, Arcane Pool, Grit, Panache, Judgment, Challenge, Wild Shape, Fervor, Blessings,
   Bombs, Inspiration, Martial Flexibility, schopnost školy kouzelníka… Maximum se počítá z úrovně classy a atributu.
+- Podle podtřídy přibudou **doménové schopnosti** klerika a druida (3 + Moudrost za den; Animal a Liberation v kolech,
+  Sun a Knowledge se nepočítají) a **schopnost bloodline** čaroděje (3 + Charisma, kromě Arcane). Hexy a revelations
+  si přidejte jako vlastní počítadla.
 - Nepotřebnou schopnost skryjete ×, „Zobrazit skryté“ je vrátí.
 - **Přidat počítadlo** = vlastní položka (název, maximum, jednotka: za den / kol za den / body, poznámka) – rasové
   schopnosti, magické předměty, náboje hůlky…
 - V **herním režimu** se použití odklikává (puntíky, u velkých čísel − / +), **Odpočinek** vše obnoví.
+
+### Obrana a životy
+- Sekce **Obrana a životy**: **AC**, **dotyk** a **zaskočený** – 10 + zbroj + štít + Obratnost (omezená max. Dex zbroje,
+  štítu nebo zatížení) + velikost + přirozená zbroj (zvíře, Amulet of Natural Armor) + deflection + dodge + ostatní bonusy
+  z nasazeného vybavení + ruční **AC – ostatní** (monk, featy, kouzla). Pod dlaždicemi je rozpis.
+- Zbroj a štít z databáze mají po přidání do inventáře bonus k AC, max. Dex a postih zbroje vyplněné – stačí je nasadit.
+  **Postih zbroje** (zbroj + štít, nebo horší postih zatížení) se odečte od skills Síly a Obratnosti.
+- **Životy**: 1. HD naplno, další průměr (polovina + 1), rasové HD tvorů průměr; + Odolnost za HD, Toughness a **HP navíc**
+  (oblíbená classa, traity). Házené HP zadáte v **Upravit** (prázdné = automaticky).
+- Stepper životů: − zranění, + léčení; **Odpočinek** vyléčí 1 HP za úroveň postavy.
 
 ### Featy
 - Sekce **Featy** v detailu postavy ukazuje „vybrané / dostupné“: featy za úrovně (1. a každá lichá) + bonusové featy class
@@ -125,6 +144,8 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   (např. zvolenou zbraň u Weapon Focus).
 - **Vlastní feat** = název + popis (homebrew, rasové schopnosti…), u postavy jde upravit tužkou v detailu.
 - Featy z databáze se neaktualizují tlačítkem (jsou přibalené k appce).
+- **Metamagie**: detail metamagického featu ukazuje, o kolik zvyšuje slot kouzla; v detailu kouzla postavy je sekce
+  **Metamagie** s výslednou úrovní slotu pro každý její metamagický feat (červeně, když tu úroveň ještě nesesílá).
 
 ### Dovednosti (skills)
 - Sekce **Dovednosti** v detailu postavy ukazuje skilly s ranky (celkový bonus a počet ranků) a vpravo nahoře

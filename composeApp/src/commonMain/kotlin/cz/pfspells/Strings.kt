@@ -11,6 +11,7 @@ import cz.pfspells.data.CompanionRarity
 import cz.pfspells.data.ItemSlot
 import cz.pfspells.data.BonusTarget
 import cz.pfspells.data.BonusType
+import cz.pfspells.data.Defense
 import cz.pfspells.data.CompanionSpecial
 import cz.pfspells.data.AnimalSpecies
 import cz.pfspells.data.StrictBlock
@@ -521,6 +522,50 @@ interface Strings {
     /** „Vybavení: Odol +2, Reflex +2, Vůle +2 · AC +2 deflection“ */
     fun gearSummary(parts: String): String
     fun noBonuses(): String
+
+    // obrana, životy, metamagie
+    val defenseHeader: String
+    val acLabel: String
+    val touchLabel: String
+    val flatFootedLabel: String
+    val hpLabel: String
+    /** „10 + zbroj 5 + štít 2 + Obr 2 (max 3) + …“ */
+    fun acBreakdown(d: Defense): String
+    fun hpHint(auto: Boolean): String
+    fun armorCheckPenalty(n: Int): String
+    val adjust: String
+    val hpBonusLabel: String
+    val hpOverrideLabel: String
+    val acMiscLabel: String
+    val damageHint: String
+    val metamagicHeader: String
+    /** řádek metamagie u kouzla: [levels] zvýšení (null = proměnné), [slot] výsledná úroveň slotu, [tooHigh] nad max. úrovní classy */
+    fun metamagicLine(feat: String, levels: Int?, slot: Int?, tooHigh: Boolean): String
+    /** u metamagického featu: o kolik zvyšuje slot */
+    fun metamagicSlot(levels: Int?): String
+
+    // inventář 2.0 – figurka a sloty
+    fun itemsTab(n: Int): String
+    fun slotsFilled(filled: Int, total: Int): String
+    val emptySlot: String
+    fun ringSlot(i: Int): String
+    val carriedLabel: String
+    val carriedGroup: String
+    fun conflictBanner(slot: String, n: Int): String
+    val resolve: String
+    val slotSheetLabel: String
+    val conflictExplain: String
+    val ignoredNotWorn: String
+    val moveOthersToCarried: String
+    val equipAnother: String
+    val equip: String
+    val noSlotCandidates: String
+    fun sameSlotAs(name: String): String
+    val keepThisWorn: String
+    fun unequipOther(name: String): String
+    val swap: String
+    fun selectedSlot(slot: String): String
+    val equippedOnly: String
     fun classSpellsHeader(className: String): String
     val noCasterClasses: String
     val maxLevelReached: String
@@ -765,7 +810,7 @@ object EnStrings : Strings {
     override val featAlreadyTaken = "Already taken"
     override val gameMode = "Game mode"
     override val rest = "Rest"
-    override val restedToast = "Rested – all spells and slots are back."
+    override val restedToast = "Rested – spells, slots and abilities are back, 1 HP per level healed."
     override val castSpell = "Cast"
     override fun castOf(used: Int, total: Int) = "$used / $total cast"
     override val slotLabel = "Spell slot"
@@ -1083,7 +1128,11 @@ object EnStrings : Strings {
     override val equipmentHeader = "Equipment"
     override val equippedLabel = "Equipped"
     override val equipHint = "Bonuses of equipped items count for the character linked to this inventory (same-type bonuses don't stack – the highest applies)."
-    override fun itemSlot(sl: ItemSlot) = sl.name.lowercase().replaceFirstChar { it.uppercase() }
+    override fun itemSlot(sl: ItemSlot) = when (sl) {
+        ItemSlot.MAIN_HAND -> "Main hand"
+        ItemSlot.SHIELD -> "Off hand"
+        else -> sl.name.lowercase().replaceFirstChar { it.uppercase() }
+    }
     override val noSlot = "No slot"
     override val bonusesLabel = "Bonuses"
     override val addBonus = "Add bonus"
@@ -1100,6 +1149,8 @@ object EnStrings : Strings {
         BonusTarget.WILL -> "Will"
         BonusTarget.AC -> "AC"
         BonusTarget.SKILL -> "Skill"
+        BonusTarget.MAX_DEX -> "Max Dex"
+        BonusTarget.ARMOR_CHECK -> "Armor check penalty"
     }
     override val bonusTypeLabel = "Bonus type"
     override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
@@ -1109,6 +1160,53 @@ object EnStrings : Strings {
     override fun gearIncludedHint(mods: String) = "Includes equipment: $mods."
     override fun gearSummary(parts: String) = "Equipment: $parts"
     override fun noBonuses() = "No bonuses – add them below (e.g. +2 enhancement to Intelligence)."
+    override val defenseHeader = "Defense & hit points"
+    override val acLabel = "AC"
+    override val touchLabel = "Touch"
+    override val flatFootedLabel = "Flat-footed"
+    override val hpLabel = "HP"
+    override fun acBreakdown(d: Defense) = acParts(d, "armor", "shield", "Dex", "max", "size", "natural", "deflection", "dodge", "other")
+    override fun hpHint(auto: Boolean) =
+        if (auto) "1st HD maximum, then average (half + 1), creature HD average; + Con per HD, Toughness and extra HP."
+        else "Max HP entered by hand."
+    override fun armorCheckPenalty(n: Int) = "Armor check penalty $n (Str and Dex skills)"
+    override val adjust = "Adjust"
+    override val hpBonusLabel = "Extra HP (favored class, traits…)"
+    override val hpOverrideLabel = "Rolled max HP (empty = automatic)"
+    override val acMiscLabel = "AC – other (monk, feats, spells…)"
+    override val damageHint = "− takes damage, + heals. Rest heals 1 HP per level."
+    override val metamagicHeader = "Metamagic"
+    override fun metamagicLine(feat: String, levels: Int?, slot: Int?, tooHigh: Boolean) = when {
+        levels == null -> "$feat – any higher level (up to 9th)"
+        levels == 0 -> "$feat – no higher slot"
+        else -> "$feat +$levels → level $slot slot" + if (tooHigh) " (you can't cast that level yet)" else ""
+    }
+    override fun metamagicSlot(levels: Int?) = when (levels) {
+        null -> "Spell slot: varies (see text)"
+        0 -> "Spell slot: same level"
+        else -> "Spell slot: +$levels levels"
+    }
+    override fun itemsTab(n: Int) = "Items ($n)"
+    override fun slotsFilled(filled: Int, total: Int) = "$filled of $total slots"
+    override val emptySlot = "Empty"
+    override fun ringSlot(i: Int) = "Ring $i"
+    override val carriedLabel = "carried"
+    override val carriedGroup = "Carried"
+    override fun conflictBanner(slot: String, n: Int) = "$slot: $n items, only the first works."
+    override val resolve = "Resolve"
+    override val slotSheetLabel = "Slot"
+    override val conflictExplain = "Only as many items as the slot holds work at a time. Pick the one that is worn."
+    override val ignoredNotWorn = "ignored while not worn"
+    override val moveOthersToCarried = "Move the others to Carried"
+    override val equipAnother = "Equip another item"
+    override val equip = "Equip"
+    override val noSlotCandidates = "No other item in this inventory fits this slot."
+    override fun sameSlotAs(name: String) = "Same slot as $name"
+    override val keepThisWorn = "Keep this item worn and move the other one to Carried?"
+    override fun unequipOther(name: String) = "Unequip $name"
+    override val swap = "Swap"
+    override fun selectedSlot(slot: String) = "Selected slot · $slot"
+    override val equippedOnly = "Equipped"
     override fun classSpellsHeader(className: String) = "$className spells"
     override val noCasterClasses = "This character casts no spells – add a spellcasting class to build a spellbook."
     override val maxLevelReached = "Character level 20 reached."
@@ -1242,6 +1340,21 @@ private val csRaces = mapOf(
     "dwarf" to "Trpaslík", "elf" to "Elf", "gnome" to "Gnóm", "half-elf" to "Půlelf", "half-orc" to "Půlork",
     "halfling" to "Půlčík", "human" to "Člověk", "orc" to "Ork", "drow" to "Drow", "aquatic-elf" to "Vodní elf",
 )
+
+/** Rozpis AC: nenulové části „10 + zbroj 5 + Obr 2 (max 3) + …“ (popisky podle jazyka). */
+private fun acParts(
+    d: Defense, armor: String, shield: String, dex: String, max: String, size: String,
+    natural: String, deflection: String, dodge: String, other: String,
+): String {
+    fun sg(v: Int) = if (v < 0) "− ${-v}" else "+ $v"
+    val parts = listOf(
+        armor to d.armor, shield to d.shield, dex to d.dex, size to d.size, natural to d.natural,
+        deflection to d.deflection, dodge to d.dodge, other to d.other,
+    ).filter { (label, v) -> v != 0 || (label == dex && d.maxDex != null) }
+    return "10 " + parts.joinToString(" ") { (label, v) ->
+        "${sg(v)} $label" + if (label == dex && d.maxDex != null) " ($max ${d.maxDex})" else ""
+    }
+}
 
 private val csSpecies = mapOf(
     "ape" to "Lidoop", "badger" to "Jezevec (rosomák)", "bear" to "Medvěd", "bird" to "Pták (orel, jestřáb, sova)",
@@ -1477,7 +1590,7 @@ object CsStrings : Strings {
     override val featAlreadyTaken = "Postava ho už má"
     override val gameMode = "Herní režim"
     override val rest = "Odpočinek"
-    override val restedToast = "Odpočinuto – všechna kouzla a sloty jsou zpět."
+    override val restedToast = "Odpočinuto – kouzla, sloty a schopnosti zpět, vyléčeno 1 HP za úroveň."
     override val castSpell = "Seslat"
     override fun castOf(used: Int, total: Int) = "$used / $total sesláno"
     override val slotLabel = "Slot kouzla"
@@ -1851,7 +1964,8 @@ object CsStrings : Strings {
         ItemSlot.HANDS -> "Ruce"
         ItemSlot.RING -> "Prsten"
         ItemSlot.FEET -> "Nohy"
-        ItemSlot.SHIELD -> "Štít"
+        ItemSlot.MAIN_HAND -> "Hlavní ruka"
+        ItemSlot.SHIELD -> "Druhá ruka"
     }
     override val noSlot = "Bez slotu"
     override val bonusesLabel = "Bonusy"
@@ -1869,6 +1983,8 @@ object CsStrings : Strings {
         BonusTarget.WILL -> "Vůle"
         BonusTarget.AC -> "AC"
         BonusTarget.SKILL -> "Skill"
+        BonusTarget.MAX_DEX -> "Max. Obratnost"
+        BonusTarget.ARMOR_CHECK -> "Postih zbroje"
     }
     override val bonusTypeLabel = "Typ bonusu"
     override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
@@ -1878,6 +1994,53 @@ object CsStrings : Strings {
     override fun gearIncludedHint(mods: String) = "Včetně vybavení: $mods."
     override fun gearSummary(parts: String) = "Vybavení: $parts"
     override fun noBonuses() = "Bez bonusů – přidejte je níže (např. +2 enhancement k Inteligenci)."
+    override val defenseHeader = "Obrana a životy"
+    override val acLabel = "AC"
+    override val touchLabel = "Dotyk"
+    override val flatFootedLabel = "Zaskočen"
+    override val hpLabel = "Životy"
+    override fun acBreakdown(d: Defense) = acParts(d, "zbroj", "štít", "Obr", "max", "velikost", "přirozená", "deflection", "dodge", "ostatní")
+    override fun hpHint(auto: Boolean) =
+        if (auto) "1. HD naplno, dál průměr (polovina + 1), HD tvorů průměr; + Odolnost za HD, Toughness a HP navíc."
+        else "Max. HP zadané ručně."
+    override fun armorCheckPenalty(n: Int) = "Postih zbroje $n (skills Síly a Obratnosti)"
+    override val adjust = "Upravit"
+    override val hpBonusLabel = "HP navíc (oblíbená classa, traity…)"
+    override val hpOverrideLabel = "Házené max. HP (prázdné = automaticky)"
+    override val acMiscLabel = "AC – ostatní (monk, featy, kouzla…)"
+    override val damageHint = "− zranění, + léčení. Odpočinek vyléčí 1 HP za úroveň."
+    override val metamagicHeader = "Metamagie"
+    override fun metamagicLine(feat: String, levels: Int?, slot: Int?, tooHigh: Boolean) = when {
+        levels == null -> "$feat – libovolná vyšší úroveň (max. 9.)"
+        levels == 0 -> "$feat – slot stejné úrovně"
+        else -> "$feat +$levels → slot $slot. úrovně" + if (tooHigh) " (tuto úroveň zatím nesesíláte)" else ""
+    }
+    override fun metamagicSlot(levels: Int?) = when (levels) {
+        null -> "Slot kouzla: proměnný (viz text)"
+        0 -> "Slot kouzla: stejná úroveň"
+        else -> "Slot kouzla: +$levels úrovně"
+    }
+    override fun itemsTab(n: Int) = "Předměty ($n)"
+    override fun slotsFilled(filled: Int, total: Int) = "$filled z $total slotů"
+    override val emptySlot = "Prázdné"
+    override fun ringSlot(i: Int) = "Prsten $i"
+    override val carriedLabel = "neseno"
+    override val carriedGroup = "Neseno"
+    override fun conflictBanner(slot: String, n: Int) = "$slot: $n předměty, platí jen první."
+    override val resolve = "Vyřešit"
+    override val slotSheetLabel = "Slot"
+    override val conflictExplain = "Platí jen tolik předmětů, kolik se do slotu vejde. Vyberte ten, který má postava na sobě."
+    override val ignoredNotWorn = "neplatí, dokud není nasazený"
+    override val moveOthersToCarried = "Ostatní odložit do batohu"
+    override val equipAnother = "Nasadit jiný předmět"
+    override val equip = "Nasadit"
+    override val noSlotCandidates = "Do tohoto slotu se v inventáři nic dalšího nehodí."
+    override fun sameSlotAs(name: String) = "Stejný slot jako $name"
+    override val keepThisWorn = "Nechat nasazený tento předmět a ten druhý odložit do batohu?"
+    override fun unequipOther(name: String) = "Sundat $name"
+    override val swap = "Prohodit"
+    override fun selectedSlot(slot: String) = "Vybraný slot · $slot"
+    override val equippedOnly = "Nasazeno"
     override fun classSpellsHeader(className: String) = "Kouzla – $className"
     override val noCasterClasses = "Tato postava nesesílá kouzla – pro knihu kouzel přidejte sesílací classu."
     override val maxLevelReached = "Postava má 20. úroveň."

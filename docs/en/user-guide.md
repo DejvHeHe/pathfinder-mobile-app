@@ -54,6 +54,12 @@ The old "decks" were converted to characters (with all their spells) on the firs
   belt, ring…) and **bonuses** (ability, save, AC or skill with a bonus type). Known magic items get the bonus prefilled from
   their name (Headband of Vast Intelligence, Belt of Giant Strength, Cloak of Resistance, Ring of Protection, Amulet of
   Natural Armor, Bracers of Armor…); add others with **Add bonus**.
+- **Inventory detail**: on a phone there are **Equipment** and **Items** tabs. Equipment = a figure with slots in two
+  columns (head, headband, eyes, neck, shoulders, chest, body | armor, belt, wrists, hands, 2 rings, feet), below it the
+  main and off hand and slotless items; dots on the silhouette mark what is worn. Tapping a slot opens a picker: which
+  item works, **Move the others to Carried**, **Equip another item** (on desktop a filled slot opens the item detail).
+  When a slot holds more items than it fits, only the first works – a red banner with **Resolve** says so.
+  The item list is split into **Equipped** (slot badge) and **Carried**; on desktop the sidebar has an "Equipped" filter.
 - Bonuses of **equipped** items in the linked inventory apply to the character: abilities (and with them bonus spells,
   skill points, prerequisites, carrying capacity) and skill totals; saves and AC are shown as an "Equipment: …" summary
   under the character's inventory. Bonuses of the same type don't stack (the highest applies); dodge, untyped and
@@ -108,10 +114,24 @@ The old "decks" were converted to characters (with all their spells) on the firs
 - The **Limited-use abilities** section fills itself according to the character's classes: Smite Evil, Lay on Hands,
   Channel Energy, Rage, Bardic Performance, Ki Pool, Arcane Pool, Grit, Panache, Judgment, Challenge, Wild Shape, Fervor,
   Blessings, Bombs, Inspiration, Martial Flexibility, the wizard school power… The maximum is computed from class level and abilities.
+- Subclasses add the cleric's and druid's **domain powers** (3 + Wisdom per day; Animal and Liberation in rounds, Sun and
+  Knowledge are not counted) and the sorcerer's **bloodline power** (3 + Charisma, except Arcane). Add hexes and
+  revelations as your own counters.
 - Hide an ability you do not need with ×, "Show hidden" brings it back.
 - **Add counter** = your own entry (name, maximum, unit: per day / rounds per day / points, note) – racial abilities,
   magic items, wand charges…
 - In **game mode** uses are ticked off (dots, − / + for large numbers), **Rest** restores everything.
+
+### Defense and hit points
+- The **Defense & hit points** section: **AC**, **touch** and **flat-footed** – 10 + armor + shield + Dex (limited by the
+  max Dex of armor, shield or load) + size + natural armor (animals, Amulet of Natural Armor) + deflection + dodge + other
+  bonuses from equipped gear + a manual **AC – other** (monk, feats, spells). A breakdown is shown below the tiles.
+- Armor and shields from the database get their AC bonus, max Dex and armor check penalty filled in when added to an
+  inventory – just equip them. The **armor check penalty** (armor + shield, or the worse load penalty) is applied to
+  Strength and Dexterity skills.
+- **Hit points**: 1st HD maximum, then average (half + 1), creature HD average; + Con per HD, Toughness and **extra HP**
+  (favored class, traits). Enter rolled HP under **Adjust** (empty = automatic).
+- The HP stepper: − takes damage, + heals; **Rest** heals 1 HP per character level.
 
 ### Feats
 - The **Feats** section in the character detail shows "chosen / available": feats from levels (1st and every odd level) +
@@ -134,6 +154,9 @@ The old "decks" were converted to characters (with all their spells) on the firs
   **note** (e.g. the chosen weapon for Weapon Focus).
 - **Custom feat** = name + description (homebrew, racial abilities…), editable with the pencil in its detail.
 - Feats from the database are not updated with a button (they are bundled with the app).
+- **Metamagic**: a metamagic feat's detail shows how much it raises the spell slot; a character's spell detail has a
+  **Metamagic** section with the resulting slot level for each of the character's metamagic feats (red when the character
+  can't cast that level yet).
 
 ### Skills
 - The **Skills** section in the character detail shows skills with ranks (total bonus and number of ranks) and, at top

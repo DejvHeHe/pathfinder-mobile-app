@@ -59,6 +59,8 @@ data class Item(
     val requirements: String? = null,
 ) {
     val searchName: String = name.lowercase()
+    /** štít (podtyp „Shield“ v datech) – bonus typu shield, slot SHIELD */
+    val isShield: Boolean get() = subtitle?.contains("shield", ignoreCase = true) == true || searchName.contains("shield")
     val paragraphs: List<String> by lazy { description.split('\n').map { it.trim() }.filter { it.isNotEmpty() } }
 
     /** Krátké shrnutí pro poznámku v inventáři (např. „1d8 / 19–20/×2“, „+6 AC, ACP −5“). */

@@ -9,6 +9,8 @@ import cz.pfspells.data.StrictRules
 import cz.pfspells.data.creatureSize
 import cz.pfspells.data.withCompanion
 import cz.pfspells.data.gearBonuses
+import cz.pfspells.data.workingEquipped
+import cz.pfspells.data.loadBonuses
 import cz.pfspells.data.ItemSlot
 import cz.pfspells.data.ItemBonusGuess
 import cz.pfspells.data.abilityBonus
@@ -329,14 +331,16 @@ class AppState(
         if (i < 0) return
         val before = inventories[i].load
         inventories[i] = transform(inventories[i])
-        // nasazené vybavení → bonusy propojené postavy (a STR zpět do nosnosti, např. Belt of Giant Strength)
+        // nasazené vybavení → bonusy propojené postavy: STR s vybavením (Belt of Giant Strength) → nosnost,
+        // z ní zatížení → max Dex a postih ke skillům (střední / těžké zatížení)
         characterOfInventory(id)?.let { owner ->
-            val gear = inventories[i].gearBonuses()
-            if (gear != owner.gear) {
-                updateCharacter(owner.id) { it.copy(gear = gear) }
-                val str = character(owner.id)?.scores?.str
-                if (str != null && inventories[i].strength != str) inventories[i] = inventories[i].copy(strength = str)
-            }
+            var inv = inventories[i]
+            val items = inv.gearBonuses()
+            val str = owner.copy(gear = items).scores.str
+            if (inv.strength != str) inv = inv.copy(strength = str)
+            inventories[i] = inv
+            val gear = items + loadBonuses(inv.load)
+            if (gear != owner.gear) updateCharacter(owner.id) { it.copy(gear = gear) }
         }
         persistInventories()
         val after = inventories[i].load
@@ -379,10 +383,11 @@ class AppState(
 
     /** STR z inventáře – u propojeného inventáře se změní i atribut postavy (základ = výsledná STR − rasa). */
     fun setInventoryStrength(invId: String, value: Int) {
-        updateInventory(invId) { it.copy(strength = value) }
+        // nejdřív základ postavy (výsledná STR = hodnota), pak inventář – jinak by ho synchronizace přepsala starou STR
         characterOfInventory(invId)?.let { c ->
             updateCharacter(c.id) { it.copy(abilities = it.abilities.with(Ability.STR, (value - it.abilityBonus(Ability.STR)).coerceIn(1, 99))) }
         }
+        updateInventory(invId) { it.copy(strength = value) }
     }
 
     fun importInventories(list: List<Inventory>) {
@@ -410,13 +415,36 @@ class AppState(
                 priceGp = item.priceGp, weightLb = item.weightLb, note = note.trim(),
                 info = if (item.isCustom) item.subtitle else item.summary,
                 // slot z databáze a bonusy známých předmětů (čelenky, opasky, plášť odolnosti…) – nasadí se ručně
-                slot = ItemSlot.parse(item.slot), bonuses = ItemBonusGuess.of(item.name),
+                slot = ItemBonusGuess.slotOf(item), bonuses = ItemBonusGuess.of(item),
             ))
         }
     }
 
     /** Nasadit / sundat položku (bonusy pak platí pro propojenou postavu). */
     fun setEquipped(invId: String, entryId: String, on: Boolean) = updateEntry(invId, entryId) { it.copy(equipped = on) }
+
+    /**
+     * Ve slotu má platit tahle položka: nasadí se a přesune před ostatní nasazené ve stejném slotu
+     * (platí první v pořadí inventáře – [cz.pfspells.data.workingEquipped]).
+     */
+    fun preferInSlot(invId: String, entryId: String, slot: ItemSlot? = null) = updateInventory(invId) { inv ->
+        val e = inv.entries.firstOrNull { it.id == entryId } ?: return@updateInventory inv
+        val moved = e.copy(equipped = true, slot = slot ?: e.slot)
+        val rest = inv.entries.filter { it.id != entryId }
+        val at = rest.indexOfFirst { it.equipped && it.slot == moved.slot }.takeIf { it >= 0 && moved.slot != null } ?: rest.size
+        inv.copy(entries = rest.take(at) + moved + rest.drop(at))
+    }
+
+    /** Odloží do batohu (sundá) položky, které se do slotu nevejdou a neplatí. */
+    fun unequipExtra(invId: String, slot: ItemSlot) = updateInventory(invId) { inv ->
+        val working = inv.workingEquipped().map { it.id }.toSet()
+        inv.copy(entries = inv.entries.map { if (it.equipped && it.slot == slot && it.id !in working) it.copy(equipped = false) else it })
+    }
+
+    /** Mobilní inventář: 0 = Vybavení, 1 = Předměty. */
+    var inventoryTab by mutableStateOf(0)
+    /** Filtr seznamu inventáře jen na nasazené (boční panel širokého okna). */
+    var inventoryEquippedOnly by mutableStateOf(false)
 
     fun addCustomEntry(invId: String, entry: InvEntry) = updateInventory(invId) { it.copy(entries = it.entries + entry) }
 
@@ -596,12 +624,14 @@ class AppState(
             while (characters.any { it.name == name }) name = "$name ${strings.importedSuffix}"
             var inventoryId: String? = null
             // bonusy nasazeného vybavení z přibaleného inventáře (STR pro nosnost už s nimi)
-            val withGear = ic.character.copy(gear = ic.inventory?.gearBonuses() ?: emptyList())
+            var withGear = ic.character.copy(gear = ic.inventory?.gearBonuses() ?: emptyList())
             ic.inventory?.let { inv ->
                 var invName = inv.name
                 while (inventories.any { it.name == invName }) invName = "$invName ${strings.importedSuffix}"
                 val id = newId()
-                inventories.add(inv.copy(id = id, name = invName, strength = withGear.scores.str))
+                val added = inv.copy(id = id, name = invName, strength = withGear.scores.str)
+                inventories.add(added)
+                withGear = withGear.copy(gear = withGear.gear + loadBonuses(added.load))
                 inventoryId = id
             }
             val owner = ic.ownerIndex?.takeIf { it in newIds.indices && it != index }?.let { newIds[it] }
@@ -815,9 +845,18 @@ class AppState(
 
     /** Odpočinek: obnoví všechna kouzla a sloty postavy. */
     fun rest(charId: String) {
-        updateCharacter(charId) { it.copy(castToday = emptyMap()) }
+        // 8 hodin odpočinku: kouzla a schopnosti zpět, léčení 1 HP za úroveň postavy (Core Rulebook)
+        updateCharacter(charId) { it.copy(castToday = emptyMap(), damage = (it.damage - it.level).coerceAtLeast(0)) }
         trackEvent("rest")
         showToast(UiMessage { it.restedToast })
+    }
+
+    /** Utržené zranění (aktuální HP = max − zranění); záporné léčení se ořízne na plné HP. */
+    fun setDamage(charId: String, damage: Int) = updateCharacter(charId) { it.copy(damage = damage.coerceIn(0, 9999)) }
+
+    /** HP navíc, ručně házené max. HP (null = automaticky) a AC – ostatní. */
+    fun setDefenseSettings(charId: String, hpBonus: Int, hpOverride: Int?, acMisc: Int) = updateCharacter(charId) {
+        it.copy(hpBonus = hpBonus.coerceIn(-999, 999), hpOverride = hpOverride?.coerceIn(1, 9999), acMisc = acMisc.coerceIn(-50, 50))
     }
 
     /** Rasa postavy (null = žádná); velikost rasy se propíše do propojeného inventáře (nosnost). */

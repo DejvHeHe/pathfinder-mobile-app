@@ -134,6 +134,14 @@ data class Character(
     val respawnRules: String? = null,
     /** bonusy nasazeného vybavení z propojeného inventáře (kopie – drží ji AppState při změně inventáře / propojení) */
     val gear: List<ItemBonus> = emptyList(),
+    /** HP navíc (oblíbená classa, traity…) – k automatickému výpočtu */
+    val hpBonus: Int = 0,
+    /** ručně zadané max. HP (házené kostky) – přebije výpočet; null = automaticky (1. HD max, dál průměr) */
+    val hpOverride: Int? = null,
+    /** utržené zranění (aktuální HP = max − zranění) */
+    val damage: Int = 0,
+    /** AC – ostatní (monk Wis, Two-Weapon Defense, kouzla…) */
+    val acMisc: Int = 0,
 ) {
     val isCompanion: Boolean get() = ownerId != null
 

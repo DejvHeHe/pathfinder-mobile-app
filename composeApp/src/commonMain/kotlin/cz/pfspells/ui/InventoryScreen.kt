@@ -40,7 +40,10 @@ import cz.pfspells.Screen
 import cz.pfspells.data.InvEntry
 import cz.pfspells.data.Inventory
 import cz.pfspells.data.ItemCategory
-import cz.pfspells.data.slotConflicts
+import cz.pfspells.data.ItemSlot
+import cz.pfspells.data.equippedIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.Color
 
 // ---------- seznam inventářů ----------
 
@@ -120,7 +123,14 @@ fun InventorySidebar(state: AppState, selected: Inventory?, modifier: Modifier =
 private fun CategoryFilterList(state: AppState, inv: Inventory) {
     val counts = inv.entries.groupingBy { it.cat }.eachCount()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        CategoryRow(str.all, inv.entries.size, state.inventoryCategory == null) { state.inventoryCategory = null }
+        CategoryRow(str.all, inv.entries.size, state.inventoryCategory == null && !state.inventoryEquippedOnly) {
+            state.inventoryCategory = null
+            state.inventoryEquippedOnly = false
+        }
+        // jen nasazené (návrh Inventory 2.0)
+        CategoryRow(str.equippedOnly, inv.entries.count { it.equipped }, state.inventoryEquippedOnly) {
+            state.inventoryEquippedOnly = !state.inventoryEquippedOnly
+        }
         ItemCategory.entries.filter { (counts[it] ?: 0) > 0 }.forEach { c ->
             CategoryRow(str.category(c), counts[c] ?: 0, state.inventoryCategory == c) {
                 state.inventoryCategory = if (state.inventoryCategory == c) null else c
@@ -142,6 +152,11 @@ private fun CategoryRow(label: String, count: Int, selected: Boolean, onClick: (
 
 // ---------- detail inventáře ----------
 
+/**
+ * Detail inventáře (návrh „Inventory 2.0“): figurka se sloty vybavení, banner konfliktu slotu, seznam rozdělený
+ * na nasazené a nesené (štítek slotu), poznámky. Mobil: záložky Vybavení | Předměty; desktop: vše pod sebou,
+ * měšec, zatížení a kategorie jsou v bočním panelu.
+ */
 @Composable
 fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selectedEntryId: String? = null) {
     val inv = state.inventory(invId)
@@ -153,20 +168,33 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
     var rename by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var export by remember { mutableStateOf(false) }
+    // otevřený sheet slotu: Pair(slot) – null uvnitř = předměty bez slotu
+    var sheet by remember { mutableStateOf<Pair<ItemSlot?, Unit>?>(null) }
     val s = str
     val revealed = state.pricesRevealed
     val q = state.inventoryQuery.trim().lowercase()
     val catFilter = if (wide) state.inventoryCategory else null
     val visible = inv.entries.filter { e ->
-        (catFilter == null || e.cat == catFilter) && (q.isEmpty() || e.name.lowercase().contains(q) || e.note.lowercase().contains(q))
+        (catFilter == null || e.cat == catFilter) && (!wide || !state.inventoryEquippedOnly || e.equipped) &&
+            (q.isEmpty() || e.name.lowercase().contains(q) || e.note.lowercase().contains(q))
     }
-    val grouped = visible.groupBy { it.cat }.entries.sortedBy { it.key.ordinal } // toSortedMap není v common
+    // nasazené zvlášť, nesené podle kategorie a jména
+    val equipped = visible.filter { it.equipped }
+    val carried = visible.filter { !it.equipped }.sortedWith(compareBy({ it.cat.ordinal }, { it.name.lowercase() }))
     val subtitle = buildString {
+        state.characterOfInventory(inv.id)?.let { append(it.name).append(" · ") }
         append(s.itemTypes(inv.entries.size))
-        if (wide) append(" · ").append(formatWeight(inv.totalWeight).replace("—", "0 lb"))
+        append(" · ").append(formatWeight(inv.totalWeight).replace("—", "0 lb"))
         append(" · ").append(worthText(s, inv, revealed))
     }
     val openPicker: () -> Unit = { if (wide) state.openRoot(Screen.ItemPicker(invId)) else state.push(Screen.ItemPicker(invId)) }
+    val openSlot: (ItemSlot?) -> Unit = { slot ->
+        // desktop: plný slot bez konfliktu rovnou otevře předmět v detailu vpravo
+        val worn = if (slot == null) inv.entries.filter { it.equipped && it.slot == null } else inv.equippedIn(slot)
+        val single = worn.singleOrNull()
+        if (wide && single != null) state.showItem(single.itemId, invId, single.id) else sheet = slot to Unit
+    }
+    val tab = if (wide) -1 else state.inventoryTab
 
     NbScreen(
         title = inv.name,
@@ -185,55 +213,70 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
             contentPadding = PaddingValues(start = if (wide) 0.dp else 16.dp, end = if (wide) 0.dp else 16.dp, top = 6.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            if (!wide) {
-                item { CoinRow(state, inv) }
-                item { Box(Modifier.padding(top = 12.dp)) { LoadBar(state, inv) } }
-            } else {
-                item { InventoryTableHeader() }
-            }
-            val conflicts = inv.slotConflicts()
-            if (conflicts.isNotEmpty()) {
-                item(key = "slot-conflicts") {
-                    Text(
-                        s.slotConflict(conflicts.joinToString { s.itemSlot(it) }),
-                        color = Nb.error, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp),
-                    )
+            if (!wide) item(key = "tabs") { InventoryTabs(state, inv) }
+            // vybavení: desktop vždy nahoře, mobil v záložce Vybavení
+            if (wide || tab == 0) {
+                item(key = "conflicts-top") { if (!wide) SlotConflictBanners(inv) { sheet = it to Unit } }
+                item(key = "equipment") {
+                    Column {
+                        if (wide) EquipmentHeader(inv) else Box(Modifier.padding(top = 6.dp))
+                        EquipmentBoard(inv, wide, selectedEntryId, openSlot)
+                    }
+                }
+                if (wide) item(key = "conflicts") { Box(Modifier.padding(top = 8.dp)) { SlotConflictBanners(inv) { sheet = it to Unit } } }
+                if (!wide) item(key = "load") {
+                    Column(Modifier.padding(top = 12.dp).clip(Nb.shape).background(Nb.panel).dashedBorder().padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        LoadBar(state, inv)
+                    }
                 }
             }
-            if (inv.entries.isEmpty()) {
-                item {
-                    Text(
-                        s.inventoryEmpty,
-                        Modifier.fillMaxWidth().padding(32.dp), textAlign = TextAlign.Center, color = Nb.inkMuted,
-                    )
+            if (wide || tab == 1) {
+                if (!wide) item(key = "coins") { Box(Modifier.padding(top = 10.dp)) { CoinRow(state, inv) } }
+                if (wide) item(key = "table-head") { InventoryTableHeader() }
+                if (inv.entries.isEmpty()) {
+                    item(key = "empty") {
+                        Text(
+                            s.inventoryEmpty,
+                            Modifier.fillMaxWidth().padding(32.dp), textAlign = TextAlign.Center, color = Nb.inkMuted,
+                        )
+                    }
                 }
-            }
-            grouped.forEach { (cat, list) ->
-                item(key = "h-${cat.name}") { SectionHeader(s.category(cat)) }
-                items(list, key = { it.id }) { e ->
-                    EntryRow(
-                        entry = e, wide = wide, revealed = revealed, selected = e.id == selectedEntryId,
-                        onClick = { state.showItem(e.itemId, invId, e.id) },
-                        onQty = { state.setEntryQty(invId, e.id, it) },
-                    )
+                listOf(s.equippedOnly to equipped, s.carriedGroup to carried).forEach { (label, list) ->
+                    if (list.isNotEmpty()) {
+                        item(key = "h-$label") {
+                            SectionHeader(label, size = 18.sp) {
+                                MonoLabel(formatWeight(list.sumOf { (it.weightLb ?: 0.0) * it.qty }).replace("—", "0 lb"))
+                            }
+                        }
+                        items(list, key = { it.id }) { e ->
+                            EntryRow(
+                                inv = inv, entry = e, wide = wide, revealed = revealed, selected = e.id == selectedEntryId,
+                                onClick = { state.showItem(e.itemId, invId, e.id) },
+                                onQty = { state.setEntryQty(invId, e.id, it) },
+                            )
+                        }
+                    }
                 }
-            }
-            item(key = "notes") {
-                Column(Modifier.padding(top = 6.dp)) {
-                    SectionHeader(s.notes)
-                    Text(s.notesHint, fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(bottom = 6.dp))
-                    OutlinedTextField(
-                        value = inv.notes,
-                        onValueChange = { t -> state.updateInventory(invId) { it.copy(notes = t) } },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 112.dp),
-                        textStyle = androidx.compose.ui.text.TextStyle(fontFamily = LocalNbFonts.current.sans, fontSize = 15.sp, lineHeight = 28.sp, color = Nb.ink),
-                        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Nb.dash, focusedBorderColor = Nb.accent),
-                    )
+                item(key = "notes") {
+                    Column(Modifier.padding(top = 6.dp)) {
+                        SectionHeader(s.notes)
+                        Text(s.notesHint, fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(bottom = 6.dp))
+                        OutlinedTextField(
+                            value = inv.notes,
+                            onValueChange = { t -> state.updateInventory(invId) { it.copy(notes = t) } },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 112.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(fontFamily = LocalNbFonts.current.sans, fontSize = 15.sp, lineHeight = 28.sp, color = Nb.ink),
+                            colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Nb.dash, focusedBorderColor = Nb.accent),
+                        )
+                    }
                 }
             }
         }
     }
 
+    sheet?.let { (slot, _) ->
+        SlotSheet(state, inv, slot, wide, onOpen = { e -> sheet = null; state.showItem(e.itemId, invId, e.id) }) { sheet = null }
+    }
     if (export) InventoryExportDialog(listOf(inv)) { export = false }
     if (rename) {
         TextFieldDialog(s.renameInventory, inv.name, s.name, onDismiss = { rename = false }) { n ->
@@ -259,47 +302,71 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
     }
 }
 
+/** Segmentové záložky mobilu: Vybavení | Předměty (N) – olivová vybraná, čárkovaný rámeček. */
 @Composable
-private fun InventoryTableHeader() {
+private fun InventoryTabs(state: AppState, inv: Inventory) {
+    val s = str
     Row(
-        Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier.fillMaxWidth().padding(bottom = 4.dp).clip(Nb.shape).dashedBorder().padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        MonoLabel(str.colItem, Modifier.weight(3f))
-        MonoLabel(str.colQty, Modifier.width(108.dp))
-        MonoLabel(str.colWeight, Modifier.weight(1f))
-        MonoLabel(str.colPrice, Modifier.weight(1f))
-        MonoLabel(str.colNotes, Modifier.weight(2f))
+        listOf(s.equipmentHeader, s.itemsTab(inv.entries.size)).forEachIndexed { i, label ->
+            val on = state.inventoryTab == i
+            Box(
+                Modifier.weight(1f).height(38.dp).clip(Nb.shape).then(if (on) Modifier.background(Nb.accent) else Modifier)
+                    .clickable { state.inventoryTab = i },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (on) Color.White else Nb.ink, maxLines = 1)
+            }
+        }
     }
 }
 
 @Composable
-private fun EntryRow(entry: InvEntry, wide: Boolean, revealed: Boolean, selected: Boolean, onClick: () -> Unit, onQty: (Int) -> Unit) {
+private fun InventoryTableHeader() {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        MonoLabel(str.colItem, Modifier.weight(3f))
+        MonoLabel(str.slot, Modifier.weight(1.3f))
+        MonoLabel(str.colQty, Modifier.width(104.dp))
+        MonoLabel(str.colWeight, Modifier.weight(0.9f))
+        MonoLabel(str.colPrice, Modifier.weight(1.1f))
+    }
+}
+
+@Composable
+private fun EntryRow(inv: Inventory, entry: InvEntry, wide: Boolean, revealed: Boolean, selected: Boolean, onClick: () -> Unit, onQty: (Int) -> Unit) {
     val mono = LocalNbFonts.current.mono
     val base = Modifier.fillMaxWidth()
     val mod = (if (selected) base.clip(Nb.shape).background(Nb.panel).dashedBorder() else base.bottomRule(Nb.ruleSoft))
         .clickable(onClick = onClick)
-        .padding(horizontal = if (wide) 10.dp else 0.dp, vertical = if (wide) 6.dp else 4.dp)
-    // nasazený předmět: „Nasazeno (Čelenka)“ před poznámkami
-    val s = str
-    val equipped = if (entry.equipped) s.equippedLabel + (entry.slot?.let { " (${s.itemSlot(it)})" } ?: "") else null
-    val notes = listOfNotNull(equipped, entry.info, entry.note.ifBlank { null }).joinToString(" · ")
+        .padding(horizontal = if (wide) 10.dp else 0.dp, vertical = 4.dp)
+    val notes = listOfNotNull(entry.info, entry.note.ifBlank { null }).joinToString(" · ")
     if (wide) {
-        Row(mod, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(entry.name, Modifier.weight(3f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            CountStepper(entry.qty, onQty, min = 0, max = 9999, size = 32.dp, numberSize = 14.sp, modifier = Modifier.width(108.dp))
-            Text(formatWeight(entry.weightLb), Modifier.weight(1f), fontFamily = mono, fontSize = 13.sp, color = Nb.ink)
-            Text(priceLabel(entry.priceGp, revealed), Modifier.weight(1f), fontFamily = mono, fontSize = 13.sp, color = Nb.ink)
-            Text(notes, Modifier.weight(2f), fontSize = 14.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(mod, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.weight(3f)) {
+                Text(entry.name, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold, color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (notes.isNotEmpty()) Text(notes, fontSize = 12.5.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Box(Modifier.weight(1.3f)) { SlotBadge(inv, entry) }
+            CountStepper(entry.qty, onQty, min = 0, max = 9999, size = 32.dp, numberSize = 14.sp, modifier = Modifier.width(104.dp))
+            Text(formatWeight(entry.weightLb), Modifier.weight(0.9f), fontFamily = mono, fontSize = 13.sp, color = Nb.ink)
+            Text(priceLabel(entry.priceGp, revealed), Modifier.weight(1.1f), fontFamily = mono, fontSize = 13.sp, color = Nb.ink)
         }
     } else {
         Row(mod, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(entry.name, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold, color = Nb.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    listOfNotNull(formatWeight(entry.weightLb), priceLabel(entry.priceGp, revealed), notes.ifBlank { null }).joinToString(" · "),
-                    fontFamily = mono, fontSize = 12.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (entry.equipped) SlotBadge(inv, entry)
+                    Text(
+                        listOfNotNull(formatWeight(entry.weightLb), priceLabel(entry.priceGp, revealed), notes.ifBlank { null }).joinToString(" · "),
+                        fontFamily = mono, fontSize = 12.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             CountStepper(entry.qty, onQty, min = 0, max = 9999, size = 32.dp, numberSize = 14.sp)
         }

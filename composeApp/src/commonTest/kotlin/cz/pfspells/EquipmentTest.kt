@@ -11,6 +11,8 @@ import cz.pfspells.data.ItemBonus
 import cz.pfspells.data.ItemBonusGuess
 import cz.pfspells.data.ItemSlot
 import cz.pfspells.data.gearBonuses
+import cz.pfspells.data.isWorking
+import cz.pfspells.data.workingEquipped
 import cz.pfspells.data.gearSave
 import cz.pfspells.data.scores
 import cz.pfspells.data.skillTotal
@@ -56,6 +58,22 @@ class EquipmentTest {
         val worn = c.copy(gear = inv.copy(entries = listOf(headband, cloak.copy(equipped = true))).gearBonuses())
         assertEquals(c.skillTotal("stealth")!! + 5, worn.skillTotal("stealth"))
         assertEquals(0, worn.gearSave(BonusTarget.FORT))
+    }
+
+    @Test
+    fun onlyWhatFitsTheSlotWorks() {
+        // dva pláště na ramenou: platí jen první v pořadí, druhý se ignoruje (návrh Inventory 2.0)
+        val resistance = InvEntry("r", name = "Cloak of Resistance +1", equipped = true, slot = ItemSlot.SHOULDERS,
+            bonuses = ItemBonusGuess.of("Cloak Of Resistance +1"))
+        val elvenkind = InvEntry("e", name = "Cloak of Elvenkind", equipped = true, slot = ItemSlot.SHOULDERS,
+            bonuses = listOf(ItemBonus(BonusTarget.SKILL, 5, BonusType.COMPETENCE, "stealth")))
+        val inv = Inventory("i", "I", entries = listOf(resistance, elvenkind))
+        assertEquals(listOf("r"), inv.workingEquipped().map { it.id })
+        assertEquals(resistance.bonuses, inv.gearBonuses())
+        assertEquals(false, inv.isWorking(elvenkind))
+        // prsteny: dva platí, třetí ne
+        fun ring(id: String) = InvEntry(id, name = id, equipped = true, slot = ItemSlot.RING, bonuses = listOf(ItemBonus(BonusTarget.AC, 1, BonusType.DEFLECTION)))
+        assertEquals(listOf("a", "b"), Inventory("i", "I", entries = listOf(ring("a"), ring("b"), ring("c"))).workingEquipped().map { it.id })
     }
 
     @Test
