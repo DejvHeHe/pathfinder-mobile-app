@@ -2,6 +2,7 @@ package cz.pfspells
 
 import com.russhwolf.settings.PreferencesSettings
 import cz.pfspells.data.Ability
+import cz.pfspells.data.scores
 import cz.pfspells.data.InventoryStore
 import cz.pfspells.data.ItemRepository
 import kotlinx.coroutines.Dispatchers

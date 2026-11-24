@@ -335,7 +335,7 @@ private fun SlotSheetContent(state: AppState, inv: Inventory, slot: ItemSlot?, o
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (conflict && slot != null) NbPrimaryButton(s.moveOthersToCarried, { state.unequipExtra(inv.id, slot) }, icon = null)
+            if (conflict) NbPrimaryButton(s.moveOthersToCarried, { state.unequipExtra(inv.id, slot) }, icon = null)
             if (!showCandidates) NbDashedButton(s.equipAnother, { showCandidates = true }, icon = NbIcons.Plus)
         }
         if (showCandidates) {

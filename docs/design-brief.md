@@ -11,7 +11,6 @@ Appka: offline list postavy a inventář pro Pathfinder 1e. Mobil, tablet, deskt
 
 List z linkovaného zápisníku: teplý papír, inkoust, čárkované okraje jako tužkou, olivová pro akce,
 rezavá pro nadpisy. Jen světlý režim.
-
 ### Barvy
 | Token | Hex | Použití |
 |---|---|---|
