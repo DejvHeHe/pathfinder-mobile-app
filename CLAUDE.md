@@ -286,7 +286,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
   (hodnoty jen v `.env` na serveru, ne v repu). Události z appky: `trackEvent(name, data)` (no-op mimo web) → `umami.track`;
   posílat jen druh akce a obecné údaje (nikdy jména, texty, id), seznam událostí v `docs/deploy.md` – nová událost → doplnit tam.
   `.gitattributes` drží LF u `*.sh` a `gradlew`; `gradlew` má exec bit.
-- Podpis APK: env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (v CI ze secrets) – secrets nastavené (27. 11. 2026), keystore `pf-spellbook.jks` jen u uživatele (alias `pfspells`).
+- Podpis APK: env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (v CI ze secrets) – secrets nastavené (27. 11. 2026), keystore `pf-spellbook.jks` jen u uživatele (alias `pfspells`, CN=DejvHeHE); otisk SHA-256 certifikátu `f39818b489c14991eae01b8b9c15ca9d787e876361bfb792f6e888629ce1a64e` (ověření: `apksigner verify --print-certs`).
 - iOS se do Release nedává (nutný Apple Developer účet) – kamarádi s Macem staví přes Xcode (`docs/ios-install.md`;
   bundle ID = `$(BUNDLE_ID)$(TEAM_ID)`, bez Android SDK si build fáze vytvoří prázdnou složku).
 
