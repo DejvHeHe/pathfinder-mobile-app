@@ -27,6 +27,10 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ **Vydáno `v1.5.0`** (26. 11. 2026): schopnosti class z Foundry, alternativní rasové traity, podtřídy patron / spirit /
   bloodline bloodragera / disciplína / blessingy / doména a inquisition inquisitora, schopnosti podtříd z AoN, wandering spirit,
   bonusové featy bloodline – workflowy Release, Docker i CI zelené (ověřeno 26. 11. 2026).
+- ✅ **Vydáno `v1.6.1`** (27. 11. 2026): menu „Databáze a aktualizace“, sekce aktualizace appky nahoře. Release, Docker zelené,
+  APK podepsané stabilním klíčem. **Aktualizace v1.6.0 → v1.6.1 přímo z appky na telefonu uživatel otestoval – funguje.**
+  Otevřené: Play Protect označil APK za škodlivé (nejspíš kvůli `REQUEST_INSTALL_PACKAGES` + novému klíči) – uživatel zatím
+  oprávnění nechává; desktop po „Stáhnout instalátor“ appku nezavře (nápad: tlačítko „Stáhnout a zavřít appku“).
 - ✅ **Vydáno `v1.6.0`** (27. 11. 2026): **aktualizace appky z GitHub Releases** – `data/AppUpdate.kt` (`AppUpdates`: API
   `releases/latest`, `parseVersion` / `isNewer` / `pickAsset` / `evaluate`; `expect val appUpdater`): Android stáhne APK do
   `cache/updates` a otevře instalátor (`AndroidAppUpdater`, FileProvider `${applicationId}.updates`, `REQUEST_INSTALL_PACKAGES`),

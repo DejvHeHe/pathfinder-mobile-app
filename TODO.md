@@ -117,6 +117,10 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 
 - [x] Stabilní podpisový klíč pro Android APK (secrets v GitHubu – postup v `docs/deploy.md`), od v1.6.0
 - [x] Aktualizace appky z GitHub Releases (Android APK v appce s kontrolou podpisu, desktop instalátor, dotaz + export před instalací)
+  – otestováno v1.6.0 → v1.6.1 na telefonu
+  - [ ] Play Protect označuje APK za škodlivé – zvážit odebrání `REQUEST_INSTALL_PACKAGES` (stažení APK přes prohlížeč)
+    nebo odvolání u Googlu
+  - [ ] Desktop: tlačítko „Stáhnout a zavřít appku“ (teď appka po otevření stažení instalátoru běží dál)
 - [x] Vyzkoušet appku na skutečném Android zařízení
 - [x] Vyzkoušet iOS build na Macu (`docs/ios-install.md`)
 - [x] Web: v `docker/nginx.conf` dát `.js` / `.wasm` místo `max-age=3600` `no-cache` (revalidace přes ETag) – po nové verzi
