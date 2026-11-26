@@ -49,12 +49,23 @@ in bloodlines) are dropped. Result: 37 domains, 113 subdomains, 34 mysteries, 25
 | oracle | mystery | known spell of level N from level 2N |
 | sorcerer | bloodline | known spell of level N from level 2N + 1 |
 | wizard | school / elemental school + opposition schools | +1 slot per spell level for school spells; opposition spells with a warning (2 slots) |
+| witch | patron (51, Foundry) | patron spell of level N from level 2N (familiar, normal slots – overview only) |
+| shaman | spirit (17, Foundry) | spirit magic: 1 spontaneous cast per day on each spell level she can cast |
+| bloodrager | bloodline (22, Foundry) | known spell of level N from level 3N + 4 (7th, 10th, 13th, 16th) |
+| psychic | discipline (23, Foundry) | known 1st-level spell from level 1, level N from 2N |
+| warpriest | 2 blessings (47, Foundry) – deity's domains only | none; minor (1st) and major (10th) powers |
+| inquisitor | 1 domain (+ subdomain) – deity's domains only | none; domain powers |
+
+Patrons, spirits, bloodrager bloodlines and disciplines are not in the spell source – their spells are read from the Foundry
+descriptions (`tools/build_class_abilities.py` → `SUBCLASS_SPELL_TABLE`, spell names matched to `SpellList.json`,
+"X, Mass" ↔ "Mass X", roman numerals) and `SubclassIndex` adds them to the subclasses from the source (keys `patron:`,
+`spirit:`, `brbloodline:`, `discipline:`). Blessing → domain (`BLESSING_DOMAINS`) comes from Foundry tags; Death and Evil
+have a wrong tag in Foundry, so the blessing name wins.
 
 A subdomain replaces its domain's spells at the levels it lists. The source does not contain the subdomain → domain link –
 it is hand-written in `Subclasses.kt` (`SUBDOMAIN_DOMAINS`, from the table at [aonprd.com/ClericDomains.aspx](https://aonprd.com/ClericDomains.aspx)).
 Only subdomains of the chosen domain are offered (archon, azata, devil… belong to two domains); changing the domain removes a
 subdomain that does not belong to the new one. Boreal and sleep are missing from the AoN table, so they are not offered.
-Patron (witch), spirit (shaman), the bloodrager bloodline and psychic discipline are not in the source.
 
 ## Items
 
@@ -124,7 +135,7 @@ Downloads the three CSVs from GitHub (`raw.githubusercontent.com/Vireche/randomi
 - Classes with several lists take the lower level: hunter = hunter/druid/ranger, warpriest = warpriest/cleric,
   skald = skald/bard, investigator = investigator/alchemist, arcanist = sorcerer/wizard, oracle = cleric/oracle.
 - Medium (Occult Adventures, Table 1-2): knacks from 1st level, 1st at 4, 2nd at 7, 3rd at 10, 4th at 13.
-- Left out: adept (NPC class). Subclasses see above (no patrons or spirits yet).
+- Left out: adept (NPC class). Subclasses see above.
 
 ### Potions, scrolls and wands from a spell (`SpellItemKind`)
 Price by the Core Rulebook: potion 50 gp × SL × CL (max 3rd level), scroll 25 gp × SL × CL, wand 750 gp × SL × CL
@@ -203,6 +214,19 @@ loosely, its alignment is unknown). A cleric with a deity from the list chooses 
 subdomains only from `DeityInfo.subdomains`; `subdomains = null` = page missing → all subdomains of the domain are offered.
 A mismatch (e.g. after changing the deity) is reported by `ClassEntry.deityConflicts`.
 
+### Subclass abilities from AoN (`SubclassAbilityTable.kt`, `SubclassAbilities.json`)
+`python tools/build_subclass_abilities.py [--cache DIR]` downloads the shaman spirit, bloodrager bloodline, psychic discipline
+and Inquisitions pages (~70 requests, 1 per second, cache `build/subclass-cache`) – Foundry does not link these powers to the subclass:
+
+- **`SubclassAbilityTable.kt`** – `AON_SUBCLASS_POWER_TABLE` (371 powers: spirit ability 1st, greater 8th, true 16th, manifestation
+  20th; bloodlines, disciplines and inquisitions take the level from "At Nth level"), uses from the text ("a number of times per
+  day equal to 3 + your Wisdom modifier", "once per day"; with "…, plus 1 round…" the formula is skipped). `DISCIPLINE_POOL_ABILITY`
+  (phrenic pool ability), `INQUISITION_DEITIES` (empty = any deity, also "n/a").
+- **`BLOODLINE_BONUS_FEATS`** – bonus feats of 75 bloodrager and sorcerer bloodlines; the sorcerer bloodline pages
+  (SorcererBloodlines.aspx) also give their powers – the app uses them only for bloodlines Foundry lacks.
+- **`SubclassAbilities.json`** – 82 spirit hexes with text (`ClassAbilities.json` format, `spirits` field); a hex with the same
+  name as a regular shaman hex is skipped by the app.
+
 ### Class abilities (`ClassAbilityTable.kt`, `ClassAbilities.json`)
 `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` (pyyaml) processes Foundry VTT PF1
 `packs/class-abilities` (~4,700 YAML files) and book names from `module/registry/sources.mjs` (code "PZO1115" →
@@ -214,7 +238,7 @@ A mismatch (e.g. after changing the deity) is reported by `ClassEntry.deityConfl
   `subdomain:archon@good` (a subdomain under two domains), `bloodline:draconic`, `school:evocation`, `school:element:fire`.
   325 powers of 136 subclasses, 240 with uses. Where Foundry has no formula but the text gives one ("number of rounds
   per day equal to 3 + your Charisma modifier"), the script fills it in. Unit: "rounds per day" in the text → rounds.
-- **`ClassAbilities.json`** – hexes (tags Hex / Major Hex / Grand Hex, classes witch and shaman, no spirit hexes) and
+- **`ClassAbilities.json`** – hexes (tags Hex / Major Hex / Grand Hex, classes witch and shaman; spirit hexes come from AoN – see above) and
   revelations (tag Revelation, oracle, mysteries from "X Mystery" tags, no final revelations): text from HTML
   (`@UUID[…]{Name}` links → name), uses formula, Ex / Su / Sp, source, minimum level (major hex 10, grand hex 18,
   revelations from "must be at least 7th level"). 420 entries (117 hexes, 303 revelations), loaded lazily.

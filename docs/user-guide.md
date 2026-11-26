@@ -103,11 +103,27 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
     pod classou se objeví červené upozornění „Torag nedává: Fire – vyberte znovu“ (klepnutím otevře výběr).
   - **Druid**: jedna přírodní doména (Air, Animal, Earth, Fire, Plant, Water, Weather), volitelně její subdoména (kromě Metal).
   - **Orákulum**: mystérium, **čaroděj**: bloodline.
+  - **Čarodějnice**: patron, **šaman**: duch (spirit), **bloodrager**: bloodline, **psychic**: disciplína.
+  - **Warpriest**: dvě požehnání (blessings), **inquisitor**: jedna doména (volitelně subdoména) – obojí jen podle domén
+    božstva ze seznamu (jinak všechna); nesoulad s božstvem ukáže stejné červené upozornění jako u klerika.
   - **Kouzelník**: škola specializace (nebo univerzalista / elementární škola) a opoziční školy.
+- Dialog podtřídy ukazuje i **Schopnosti podtřídy** (domény, bloodline, školy, požehnání) s úrovní, od které je classa má.
 - Klerik / druid: pod kouzly je sekce **Doménová kouzla** – na každé úrovni kouzel jeden doménový slot (počet „x / 1“).
-- Orákulum / čaroděj: sekce **Kouzla mystéria / bloodline** – známá automaticky od příslušné úrovně, v herním režimu se sesílají ze slotů.
+- Orákulum / čaroděj / bloodrager / psychic: sekce **Kouzla mystéria / bloodline / disciplíny** – známá automaticky od příslušné
+  úrovně (bloodrager 7., 10., 13., 16.; psychic 1. a pak sudé), v herním režimu se sesílají ze slotů.
+- Čarodějnice: **Kouzla patrona** od sudých úrovní – přibývají familiárovi a připravují se do běžných slotů: tlačítky +/− v sekci
+  (nebo Přidat v detailu kouzla), pak jsou mezi kouzly čarodějnice na svém levelu, i když nejsou na jejím spell listu.
+- Inquisitor může místo domény zvolit **inquisition** (AoN, jen inquisitions svého božstva). Schopnosti spiritů, bloodline
+  bloodragera, disciplín a inquisitions (AoN) jsou v dialogu podtřídy; ty s počtem použití i v sekci Schopnosti.
+  Psychic má podle disciplíny počítadlo **Phrenic Pool** (½ úrovně + Moudrost / Charisma).
+- Šaman může zvolit i **toulavého ducha** (wandering spirit): od 4. úrovně jeho schopnost (větší od 12., pravá od 20.) a jeho kouzla
+  v magii ducha, od 6. úrovně jeden jeho hex navíc (od 14. dva). Duch se mění denně – stačí ho přepnout v dialogu podtřídy.
+- Čaroděj a bloodrager vidí u featů i v dialogu podtřídy **bonusové featy své bloodline** (AoN). Bloodline čaroděje, které
+  Foundry nezná (Aquatic, Accursed…), mají schopnosti z AoN.
+- Šaman: **Magie ducha** – na každé úrovni kouzel, kterou umí, jedno spontánní seslání za den (v herním režimu „x / 1 sesláno“).
+- Warpriest / inquisitor nemají bonusová kouzla, jen schopnosti (počet použití požehnání je společný – Blessings).
 - Kouzelník specialista má u každé úrovně kouzel „+1 škola“; kouzla opoziční školy mají rezavé ⚠ (příprava stojí 2 sloty).
-- Podtřída se ukládá u postavy i v exportu. Patron (čarodějnice), spirit (šaman) a bloodline bloodragera zatím nejsou (chybí data).
+- Podtřída se ukládá u postavy i v exportu.
 
 ### Schopnosti s počtem použití
 - Sekce **Schopnosti s počtem použití** se sama naplní podle class postavy: Smite Evil, Lay on Hands, Channel Energy,
@@ -127,7 +143,8 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 ### Hexy a zjevení (revelations)
 - Čarodějnice a šaman mají v detailu postavy sekci **Hexy**, orákulum sekci **Zjevení**. Vpravo je počet „vybrané / dostupné“
   podle úrovně classy (čarodějnice 1 + 1 za každou sudou úroveň, šaman na 2., 4., 8., 10., 12., 16., 18. a 20. úrovni,
-  orákulum na 1., 3., 7., 11., 15. a 19.). Hexy z patrona či spiritu a featy Extra Hex / Extra Revelation se nepočítají.
+  orákulum na 1., 3., 7., 11., 15. a 19.) plus jeden za každý feat Extra Hex / Extra Revelation u postavy.
+- Šaman vybírá i **hexy svého ducha** (AoN, ~80 hexů): v seznamu jsou nahoře, přepínač **Hexy všech duchů** ukáže i ostatní.
 - **Přidat hex / Přidat zjevení** otevře seznam z Foundry VTT (~120 hexů, ~300 zjevení): hledání v názvu i textu,
   u každého druh (hex, velký hex, nejvyšší hex), Ex / Su / Sp, počet použití a minimální úroveň. Klepnutím se rozbalí
   celý text a zdroj. Orákulum vidí zjevení svého mystéria, **Všechna mystéria** ukáže i ostatní.

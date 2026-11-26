@@ -42,6 +42,7 @@ import cz.pfspells.Strings
 import cz.pfspells.data.resources
 import cz.pfspells.data.isOppositionSpell
 import cz.pfspells.data.hasSubclassSlot
+import cz.pfspells.data.spellLevelFor
 import cz.pfspells.data.subclassType
 import cz.pfspells.data.SubclassType
 import cz.pfspells.data.levelSlots
@@ -457,7 +458,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
     val cls = CasterClasses.get(e.classId) ?: return
     val game = state.gameMode
     val entries = e.spells.mapNotNull { (id, count) -> db.get(id)?.let { it to count } }
-    val byLevel = entries.groupBy { (spell, _) -> cls.spellLevelOf(spell) ?: -1 }
+    val byLevel = entries.groupBy { (spell, _) -> e.spellLevelFor(cls, spell, db.subclasses) ?: -1 }
     val maxLevel = cls.maxSpellLevel(e.level)
     val score = c.scores[cls.ability]
     // všechny dostupné levely (i prázdné – kvůli limitům), pak případné kouzla nad úrovní / mimo list

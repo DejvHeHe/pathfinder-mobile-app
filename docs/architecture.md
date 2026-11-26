@@ -76,8 +76,9 @@ composeApp/src/
       RacialTraitTable.kt     GENEROVANÉ: výchozí traity ras (AoN, tools/build_racial_traits.py)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       schopnosti podtříd (SubclassPowers), vzorce Foundry (FoundryFormula), hexy a zjevení (ClassAbility, AbilityPick, AbilityRules)
-      ClassAbilityTable.kt    GENEROVANÉ: schopnosti domén, bloodline a škol s úrovní a vzorcem (Foundry, tools/build_class_abilities.py)
-      Subclasses.kt           domény, mystéria, bloodline, školy – SubclassIndex, bonusová kouzla
+      ClassAbilityTable.kt    GENEROVANÉ: schopnosti domén, bloodline, škol a blessingů, kouzla patronů / spiritů / disciplín (Foundry, tools/build_class_abilities.py)
+      SubclassAbilityTable.kt GENEROVANÉ: schopnosti spiritů, bloodline bloodragera, disciplín a inquisitions (AoN, tools/build_subclass_abilities.py)
+      Subclasses.kt           domény, mystéria, bloodline, školy, patroni, spirity, disciplíny, blessingy – SubclassIndex, bonusová kouzla
       Feats.kt                Feat, FeatDatabase, FeatRepository, FeatPrereqs, featSlots
       CharacterTransfer.kt    export/import postav a featů (+ starých decků)
       CustomItems.kt          vlastní katalog itemů, lektvary/svitky/hůlky ze spellů (SpellItemKind)
@@ -227,7 +228,7 @@ staré decky z `decks_v1`, starý klíč nechává jako zálohu).
 - **Spelly** se načtou při startu (`SpellRepository.load` na `Dispatchers.Default`, ~0,35 s). Do té doby je vidět „Loading spells…“.
 - **Featy** (`Feats.json`, jen přibalené) se načtou **líně** při prvním otevření postavy nebo výběru featů (`ensureFeats`).
 - **Alternativní rasové traity** (`RacialTraits.json`) se načtou **líně** při otevření jejich dialogu (`ensureRacialTraits`).
-- **Hexy a zjevení** (`ClassAbilities.json`) se načtou **líně**, když má postava witch / shaman / oracle (`ensureClassAbilities`).
+- **Hexy a zjevení** (`ClassAbilities.json` + hexy duchů `SubclassAbilities.json`) se načtou **líně**, když má postava witch / shaman / oracle (`ensureClassAbilities`).
 - **Itemy** se načtou **líně** – až při otevření inventáře, importu inventáře nebo obrazovky databází (`ensureItems`, ~0,3 s).
 - Obě repository nejdřív zkusí staženou verzi z `AppFiles`; když chybí nebo je poškozená, smažou ji a použijí přibalenou z resources.
 - **Stažení:** HTTP GET → celé naparsovat (validace) → teprve pak zapsat do cache. Chyba stahování nic nepoškodí.
@@ -331,7 +332,7 @@ Design „Linkovaný zápisník“ (podle návrhu uživatele v Claude Design):
 | `AnimalCompanionTest` | tabulka zvířecího společníka proti HD „animal“, vylepšení vlka na 7. úrovni, atributy druhu, zvláštní schopnosti, navržená úroveň |
 | `StrictModeTest` | přísný režim: připravené kopie (sloty + bonus), limit známých, atribut a spell level, počet featů a prerekvizity, zvířecí společník |
 | `BundledDataTest` | přibalené spelly jdou načíst, každá classa má spelly, unikátní id; hexy a zjevení (text, vzorce, mystéria a domény appky); alternativní rasové traity (rasy, nahrazované traity) |
-| `SubclassTest` | domény, bloodline, mystéria a školy z `access_ways`, bonusová kouzla podle úrovně, změny podtřídy, subdoména → doména |
+| `SubclassTest` | domény, bloodline, mystéria a školy z `access_ways`, patroni / spirity / bloodline bloodragera / disciplíny z Foundry, blessingy a doména inquisitora (božstvo), bonusová kouzla podle úrovně, změny podtřídy, subdoména → doména |
 | `CharacterStoreTest` | migrace starých decků na postavy |
 | `CharacterTransferTest` | export → import postavy (s inventářem i bez, rasa, skills, obrana a HP, nasazené vybavení, hexy a zjevení, rasové traity), mazlíčci s vlastníkem, jen featy, staré decky, chyby |
 | `DeckTransferTest` | starý formát decků: export → import, párování podle jména, odmítnutí nesmyslů |

@@ -29,10 +29,11 @@ object StrictRules {
     fun spellBlock(c: Character, classId: String, spell: Spell, db: SpellDatabase): StrictBlock? {
         val e = c.classEntry(classId) ?: return null
         val cls = CasterClasses.get(e.classId) ?: return null
-        val lvl = cls.spellLevelOf(spell) ?: return null
+        val lvl = e.spellLevelFor(cls, spell, db.subclasses) ?: return null
         // známé kouzlo se podruhé nepřidává – nic se nemění
         if (cls.distinctSpells && spell.id in e.spells) return null
-        if (!cls.canCast(spell, e.level)) return StrictBlock.SpellNotAvailable
+        // kouzlo patrona (mimo spell list) má úroveň ověřenou už v spellLevelFor
+        if (cls.spellLevelOf(spell) != null && !cls.canCast(spell, e.level)) return StrictBlock.SpellNotAvailable
         val slots = cls.levelSlots(e.level, c.scores[cls.ability], lvl)
         if (!slots.abilityOk) return StrictBlock.AbilityTooLow(lvl)
         val base = slots.limit ?: return null
@@ -41,7 +42,7 @@ object StrictRules {
         val limit = base + schoolSlot
         val chosen = e.spells.entries.sumOf { (id, n) ->
             val sp = db.get(id)
-            if (sp != null && cls.spellLevelOf(sp) == lvl) (if (cls.distinctSpells) 1 else n) else 0
+            if (sp != null && e.spellLevelFor(cls, sp, db.subclasses) == lvl) (if (cls.distinctSpells) 1 else n) else 0
         }
         return if (chosen >= limit) StrictBlock.SpellLevelFull(lvl, limit) else null
     }
@@ -60,7 +61,7 @@ object StrictRules {
     fun classAbilityBlock(c: Character, classId: String, a: ClassAbility): StrictBlock? {
         val e = c.classEntry(classId) ?: return null
         if (e.level < a.minLevel) return StrictBlock.ClassAbilityLevel(a.minLevel)
-        val total = AbilityRules.slots(classId, e.level)
+        val total = AbilityRules.slots(c, e)
         if (e.abilities.size >= total) return StrictBlock.ClassAbilitySlotsFull(total)
         return null
     }

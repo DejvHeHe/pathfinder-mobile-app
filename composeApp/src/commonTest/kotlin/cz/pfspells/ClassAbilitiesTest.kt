@@ -81,8 +81,10 @@ class ClassAbilitiesTest {
         assertEquals(6, r["Draconic Claws (Draconic)"]!!.max)
         assertEquals(ResourceUnit.ROUNDS, r["Draconic Claws (Draconic)"]!!.unit)
         assertEquals(1, r["Breath Weapon (Draconic)"]!!.max)
-        // bloodline bez dat ve Foundry → obecná schopnost
-        assertEquals(6, uses(char(ClassEntry("sorcerer", 1, subclass = mapOf("bloodline" to "aquatic"))))["Aquatic bloodline power (1st level)"])
+        // bloodline bez dat ve Foundry → schopnosti z AoN (Aquatic: Dehydrating Touch 3 + Cha)
+        assertEquals(6, uses(char(ClassEntry("sorcerer", 1, subclass = mapOf("bloodline" to "aquatic"))))["Dehydrating Touch (Aquatic)"])
+        // bloodline, kterou nezná ani AoN → obecná schopnost 1. úrovně
+        assertEquals(6, uses(char(ClassEntry("sorcerer", 1, subclass = mapOf("bloodline" to "homebrew"))))["Homebrew bloodline power (1st level)"])
         // kouzelník se školou: schopnosti školy místo obecné „Arcane school power“
         val evoker = uses(char(ClassEntry("wizard", 8, subclass = mapOf("school" to "evocation"))))
         assertEquals(6, evoker["Force Missile (Evocation)"])

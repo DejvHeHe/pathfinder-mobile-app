@@ -76,7 +76,7 @@ data class Resource(
  * bloodline, školy kouzelníka; název „Fire Bolt (Fire)“). Podtřída, kterou Foundry nezná (bloodline z pozdějších knih…),
  * dostane obecnou schopnost 1. úrovně: doména 3 + Wis, bloodline 3 + Cha za den.
  */
-private fun subclassPresets(e: ClassEntry): List<FeaturePreset> = SubclassPowers.keysOf(e).flatMap { (key, label) ->
+private fun subclassPresets(e: ClassEntry): List<FeaturePreset> = phrenicPool(e) + SubclassPowers.keysOf(e).flatMap { (key, label) ->
     val powers = SubclassPowers.of(key)
     when {
         powers != null -> powers.filter { it.uses != null && e.level >= it.level }.map { p ->
@@ -96,6 +96,15 @@ private fun subclassPresets(e: ClassEntry): List<FeaturePreset> = SubclassPowers
         )
         else -> emptyList()
     }
+}
+
+/** Psychic: phrenic pool = ½ úrovně (min. 1) + modifikátor atributu disciplíny (Wis / Cha, AoN). */
+private fun phrenicPool(e: ClassEntry): List<FeaturePreset> {
+    if (e.classId != "psychic") return emptyList()
+    val ab = disciplinePoolAbility(e.subclass[SubclassSlot.DISCIPLINE]) ?: return emptyList()
+    return listOf(FeaturePreset("psychic-phrenic-pool", "psychic", "Phrenic Pool", ResourceUnit.POINTS) { l, c ->
+        (maxOf(1, l / 2) + c.mod(ab)).coerceAtLeast(0)
+    })
 }
 
 /** Kouzelník se školou, kterou zná Foundry, má schopnosti školy z tabulky místo obecné „Arcane school power“. */

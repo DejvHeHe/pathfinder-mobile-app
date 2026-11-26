@@ -3,8 +3,10 @@
 Class abilities from the Foundry VTT PF1 system (packs/class-abilities, OGL content, GPL-3.0 project):
 
 1. composeApp/src/commonMain/kotlin/cz/pfspells/data/ClassAbilityTable.kt – powers granted by a subclass
-   (cleric/druid domains and subdomains, sorcerer bloodlines, wizard schools and elemental schools) with the level
-   they are gained at (`system.links.supplements`) and the max-uses formula (`system.uses.maxFormula`).
+   (cleric/druid/inquisitor domains and subdomains, sorcerer bloodlines, wizard schools and elemental schools,
+   warpriest blessings) with the level they are gained at (`system.links.supplements`) and the max-uses formula
+   (`system.uses.maxFormula`); spells of witch patrons, shaman spirits, bloodrager bloodlines and psychic disciplines
+   (parsed from the description, matched to SpellList.json names); blessing → domain.
 2. composeApp/src/commonMain/composeResources/files/ClassAbilities.json – selectable abilities with text:
    witch / shaman hexes (hex, major hex, grand hex) and oracle revelations (with their mysteries).
 
@@ -29,6 +31,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 OUT_KT = ROOT / "composeApp/src/commonMain/kotlin/cz/pfspells/data/ClassAbilityTable.kt"
 OUT_JSON = ROOT / "composeApp/src/commonMain/composeResources/files/ClassAbilities.json"
+SPELL_LIST = ROOT / "composeApp/src/commonMain/composeResources/files/SpellList.json"
 PROJECT = "https://gitlab.com/api/v4/projects/16774935/repository"
 ZIP = PROJECT + "/archive.zip?sha=master&path=packs/class-abilities"
 SOURCES = PROJECT + "/files/module%2Fregistry%2Fsources.mjs/raw?ref=master"
@@ -191,7 +194,92 @@ def subclass_key(name: str, folder: str):
         return "school:" + name[: -len(" School")].lower()
     if folder == "wizard-schools/elemental-schools" and name.endswith(" Elemental School"):
         return "school:element:" + name[: -len(" Elemental School")].lower()
+    if folder == "warpriest-blessings" and name.endswith(" Blessing"):
+        return "blessing:" + name[: -len(" Blessing")].lower()
     return None
+
+
+# ---- kouzla podtříd, která SpellList.json nemá (patron, spirit, bloodrager bloodline, disciplína) ----
+SPELL_SUBCLASSES = [
+    # (předpona klíče, přípona jména ve Foundry, třída, očekávaný počet kouzel)
+    ("patron", " Patron", "witch", 9),
+    ("spirit", " Spirit", "shaman", 9),
+    ("brbloodline", " Bloodrager Bloodline", "bloodrager", 4),
+    ("discipline", " Discipline", "psychic", 9),
+]
+LINK = r"(?:@UUID\[Compendium\.|Compendium\[)pf1\.spells\.[^\]]+\]\{([^}]+)\}\*?"
+# „2nd — @UUID[…]{Jump}“ (patron, spirit) nebo „@UUID[…]{Sleep} (1st)“ (bloodrager, disciplína)
+ORD_BEFORE = re.compile(r"(\d+)(?:st|nd|rd|th)\s*(?:level)?\s*[—–:-]+\s*" + LINK)
+ORD_AFTER = re.compile(LINK + r"\s*(?:\([^)0-9]*\)\s*)?\((\d+)(?:st|nd|rd|th)\)")
+ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9}
+
+
+def spell_level_of(prefix: str, ordinal: int) -> int:
+    """Řadová číslovka ze zdroje → spell level: patron a disciplína uvádějí úroveň classy (2., 4. … → SL = /2,
+    disciplína 1. → SL 1), bloodrager 7./10./13./16. úroveň, spirit přímo spell level."""
+    if prefix == "patron":
+        return ordinal // 2
+    if prefix == "discipline":
+        return max(1, ordinal // 2)
+    if prefix == "brbloodline":
+        return (ordinal - 4) // 3
+    return ordinal
+
+
+def spell_resolver(names):
+    """Jméno kouzla z Foundry → jméno v SpellList.json (velikost písmen, „X, Mass“ ↔ „Mass X“, poznámky v závorce)."""
+    norm = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+    by = {norm(n): n for n in names}
+
+    def resolve(raw):
+        base = re.sub(r"\s*\([^)]*\)", "", raw).strip()
+        cands = [raw, base]
+        m = re.match(r"(.+) (I|II|III|IV|V|VI|VII|VIII|IX)$", base)
+        if m:
+            cands.append(f"{m.group(1)} {ROMAN[m.group(2)]}")
+        m = re.match(r"(.+), (Mass|Greater|Lesser|Communal|Mythic)$", base)
+        if m:
+            cands.append(f"{m.group(2)} {m.group(1)}")
+        m = re.match(r"(Mass|Greater|Lesser) (.+)$", base)
+        if m:
+            cands.append(f"{m.group(2)}, {m.group(1)}")
+        for c in cands:
+            if norm(c) in by:
+                return by[norm(c)]
+        return None
+
+    return resolve
+
+
+def subclass_spells(items, resolve):
+    """Klíč („patron:agility“) → 9 / 4 jmen kouzel po spell levelech („“ = neznámé)."""
+    out, missing = {}, []
+    for d in items:
+        for prefix, suffix, cls, count in SPELL_SUBCLASSES:
+            classes = [c.lower() for c in (d["system"].get("associations") or {}).get("classes") or []]
+            if not d["name"].endswith(suffix) or cls not in classes:
+                continue
+            name = d["name"][: -len(suffix)].strip()
+            if not name or (prefix == "spirit" and d["_folder"] != "shaman-spirits"):
+                continue
+            desc = re.sub(r"\s+", " ", (d["system"].get("description") or {}).get("value", ""))
+            found = {}
+            for m in ORD_BEFORE.finditer(desc):
+                found.setdefault(spell_level_of(prefix, int(m.group(1))), m.group(2).strip())
+            for m in ORD_AFTER.finditer(desc):
+                found.setdefault(spell_level_of(prefix, int(m.group(2))), m.group(1).strip())
+            if sorted(found) != list(range(1, count + 1)):
+                print(f"  ! {d['name']}: spell levely {sorted(found)}")
+            spells = []
+            for lvl in range(1, count + 1):
+                raw = found.get(lvl)
+                hit = resolve(raw) if raw else None
+                if raw and not hit:
+                    missing.append(f"{d['name']}: {raw}")
+                spells.append(hit or "")
+            if any(spells):
+                out[f"{prefix}:{name.lower()}"] = spells
+    return out, missing
 
 
 def main():
@@ -237,10 +325,45 @@ def main():
         extra = f", uses = {kstr(f)}, unit = ResourceUnit.{unit}" if f else ""
         lines.append(f"    SubclassPower({kstr(key)}, {level}, {kstr(name)}{extra}),")
     lines.append(")")
+
+    # kouzla patronů, spiritů, bloodrager bloodlines a disciplín (jména jako v SpellList.json, index = spell level - 1)
+    spell_names = [s["Name"] for s in json.loads(SPELL_LIST.read_text(encoding="utf-8")) if s.get("Name")]
+    sub_spells, missing = subclass_spells(items, spell_resolver(spell_names))
+    lines += ["", "internal val SUBCLASS_SPELL_TABLE: Map<String, List<String>> = mapOf("]
+    for key in sorted(sub_spells):
+        lines.append(f"    {kstr(key)} to listOf({', '.join(kstr(s) for s in sub_spells[key])}),")
+    lines.append(")")
+
+    # blessing warpriesta → doména / subdoména (výběr podle božstva)
+    # (jméno = doména má přednost – Foundry má u Death / Evil chybné štítky Darkness / Earth)
+    domain_names = {p[0][len("domain:"):] for p in powers if p[0].startswith("domain:")}
+    blessing_domains = {}
+    for d in items:
+        key = subclass_key(d["name"], d["_folder"])
+        if key and key.startswith("blessing:"):
+            b = key[len("blessing:"):]
+            if b in domain_names:
+                blessing_domains[b] = b
+                continue
+            for t in d["system"].get("tags") or []:
+                m = re.match(r"(.+) (Domain|Subdomain)$", t)
+                if m:
+                    blessing_domains[b] = m.group(1).lower()
+    lines += ["", "internal val BLESSING_DOMAINS: Map<String, String> = mapOf("]
+    for b in sorted(blessing_domains):
+        lines.append(f"    {kstr(b)} to {kstr(blessing_domains[b])},")
+    lines.append(")")
+
     OUT_KT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     keys = {p[0] for p in powers}
     print(f"{OUT_KT.relative_to(ROOT)}: {len(powers)} powers of {len(keys)} subclasses "
           f"({sum(1 for p in powers if p[3])} with uses)")
+    by_prefix = {}
+    for k in sub_spells:
+        by_prefix[k.split(":")[0]] = by_prefix.get(k.split(":")[0], 0) + 1
+    print(f"  subclass spells: {by_prefix}, {len(blessing_domains)} blessings with a domain")
+    for m in missing:
+        print(f"  ? kouzlo není v SpellList.json: {m}")
 
     # 2) hexy a revelations
     out, seen = [], set()

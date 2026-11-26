@@ -28,10 +28,34 @@ class SubclassPower(
 )
 
 object SubclassPowers {
-    private val byKey: Map<String, List<SubclassPower>> = SUBCLASS_POWER_TABLE.groupBy { it.key }
+    /**
+     * Foundry (domény, bloodline, školy, blessingy) + AoN (spirity, bloodline bloodragera i čaroděje, disciplíny,
+     * inquisitions); podtřída, kterou zná Foundry, bere jen Foundry (AoN by schopnosti zdvojil).
+     */
+    private val byKey: Map<String, List<SubclassPower>> = SUBCLASS_POWER_TABLE.groupBy { it.key }.let { foundry ->
+        foundry + AON_SUBCLASS_POWER_TABLE.groupBy { it.key }.filterKeys { it !in foundry }
+    }
 
-    /** Schopnosti podtřídy; null = Foundry podtřídu nezná. */
-    fun of(key: String): List<SubclassPower>? = byKey[key]
+    /** Bloodline čaroděje ze zdroje kouzel, které jsou variantou jiné („fire“ → Elemental). */
+    private val BLOODLINE_ALIASES = mapOf("air" to "elemental", "earth" to "elemental", "fire" to "elemental", "water" to "elemental")
+
+    /** Bonusové featy bloodline (čaroděj 7. / 13. / 19., bloodrager 6. a každá 3.) – AoN; prázdné = neznámé. */
+    fun bonusFeats(e: ClassEntry): List<String> = keysOf(e).firstNotNullOfOrNull { BLOODLINE_BONUS_FEATS[it.first] }.orEmpty()
+
+    /** Schopnosti podtřídy; null = podtřídu nezná Foundry ani AoN. */
+    fun of(key: String): List<SubclassPower>? = byKey[key] ?: key.takeIf { it.startsWith("wspirit:") }?.let(::wandering)
+
+    /**
+     * Wandering spirit šamana: schopnost ducha od 4. úrovně, větší od 12., pravá od 20. (bez manifestace) –
+     * klíč „wspirit:life“, schopnosti z „spirit:life“ s posunutou úrovní.
+     */
+    private fun wandering(key: String): List<SubclassPower>? =
+        byKey["spirit:" + key.substringAfter(':')]?.filter { it.level < 20 }?.map { p ->
+            SubclassPower(key, when (p.level) { 1 -> 4; 8 -> 12; else -> 20 }, p.name, p.uses, p.unit)
+        }
+
+    /** Úroveň šamana, od které má wandering spirit. */
+    const val WANDERING_SPIRIT_LEVEL = 4
 
     /** „archon (good, law)“ → „archon“ */
     private fun base(v: String) = v.substringBefore('(').trim().lowercase()
@@ -56,7 +80,21 @@ object SubclassPowers {
                 domain(sc[SubclassSlot.DOMAIN2], sc[SubclassSlot.SUBDOMAIN2]),
             ).distinctBy { it.first }
             "druid" -> listOfNotNull(domain(sc[SubclassSlot.DOMAIN1], sc[SubclassSlot.SUBDOMAIN1]))
-            "sorcerer" -> listOfNotNull(sc[SubclassSlot.BLOODLINE]?.lowercase()?.let { "bloodline:$it" to title(it) })
+            // inquisitor: doména, nebo místo ní inquisition
+            "inquisitor" -> listOfNotNull(
+                sc[SubclassSlot.INQUISITION]?.lowercase()?.let { "inquisition:$it" to title(it) }
+                    ?: domain(sc[SubclassSlot.DOMAIN1], sc[SubclassSlot.SUBDOMAIN1]),
+            )
+            "warpriest" -> listOfNotNull(sc[SubclassSlot.BLESSING1], sc[SubclassSlot.BLESSING2])
+                .map { it.lowercase() }.distinct().map { "blessing:$it" to title(it) }
+            "shaman" -> listOfNotNull(
+                sc[SubclassSlot.SPIRIT]?.lowercase()?.let { "spirit:$it" to title(it) },
+                sc[SubclassSlot.WANDERING_SPIRIT]?.lowercase()?.takeIf { e.level >= WANDERING_SPIRIT_LEVEL && it != sc[SubclassSlot.SPIRIT]?.lowercase() }
+                    ?.let { "wspirit:$it" to title(it) },
+            )
+            "bloodrager" -> listOfNotNull(sc[SubclassSlot.BLOODLINE]?.lowercase()?.let { "brbloodline:$it" to title(it) })
+            "psychic" -> listOfNotNull(sc[SubclassSlot.DISCIPLINE]?.lowercase()?.let { "discipline:$it" to title(it) })
+            "sorcerer" -> listOfNotNull(sc[SubclassSlot.BLOODLINE]?.lowercase()?.let { "bloodline:${BLOODLINE_ALIASES[it] ?: it}" to title(it) })
             "wizard" -> listOfNotNull(sc[SubclassSlot.SCHOOL]?.lowercase()?.let { v ->
                 "school:$v" to title(v.removePrefix("element:"))
             })
@@ -193,6 +231,8 @@ data class ClassAbility(
     val kind: AbilityKind,
     val classes: List<String> = emptyList(),
     val mysteries: List<String> = emptyList(),
+    /** hex ducha šamana (AoN, `SubclassAbilities.json`): spirity, které ho dávají; prázdné = běžný hex */
+    val spirits: List<String> = emptyList(),
     val minLevel: Int = 1,
     val uses: String? = null,
     val unit: ResourceUnit? = null,
@@ -228,11 +268,25 @@ class ClassAbilityDatabase(val all: List<ClassAbility>) {
 object ClassAbilityRepository {
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun parse(text: String) = ClassAbilityDatabase(json.decodeFromString(ListSerializer(ClassAbility.serializer()), text))
+    private fun list(text: String) = json.decodeFromString(ListSerializer(ClassAbility.serializer()), text)
+
+    /**
+     * [text] = ClassAbilities.json (Foundry), [spiritHexes] = SubclassAbilities.json (AoN) – hex ducha se stejným jménem
+     * jako běžný hex šamana se vynechá (běžný hex jde vybrat i tak).
+     */
+    fun parse(text: String, spiritHexes: String? = null): ClassAbilityDatabase {
+        val base = list(text)
+        val shamanHexes = base.filter { "shaman" in it.classes }.map { it.searchName }.toSet()
+        val extra = spiritHexes?.let(::list).orEmpty().filter { it.searchName !in shamanHexes }
+        return ClassAbilityDatabase(base + extra)
+    }
 
     @OptIn(ExperimentalResourceApi::class)
     suspend fun load(): ClassAbilityDatabase = withContext(Dispatchers.Default) {
-        parse(Res.readBytes("files/ClassAbilities.json").decodeToString())
+        parse(
+            Res.readBytes("files/ClassAbilities.json").decodeToString(),
+            Res.readBytes("files/SubclassAbilities.json").decodeToString(),
+        )
     }
 }
 
@@ -249,7 +303,7 @@ object AbilityRules {
         else -> null
     }
 
-    /** Počet hexů / revelations podle úrovně classy (Core Rulebook, APG, ACG) – bez hexů z patrona / spiritu a extra featů. */
+    /** Počet hexů / revelations podle úrovně classy (Core Rulebook, APG, ACG) – bez extra featů. */
     fun slots(classId: String, level: Int): Int = when (classId) {
         "witch" -> 1 + level / 2
         "shaman" -> SHAMAN_HEX_LEVELS.count { it <= level }
@@ -257,7 +311,40 @@ object AbilityRules {
         else -> 0
     }
 
+    /** Feat, který přidává jeden hex / revelation (jde vzít víckrát). */
+    fun extraFeatId(classId: String): String? = when (groupOf(classId)) {
+        AbilityGroup.HEXES -> "extra-hex"
+        AbilityGroup.REVELATIONS -> "extra-revelation"
+        null -> null
+    }
+
+    /** Kolikrát má postava Extra Hex / Extra Revelation (podle id featu z AoN nebo jména vlastního featu). */
+    fun extraFeats(c: Character, classId: String): Int {
+        val id = extraFeatId(classId) ?: return 0
+        val name = id.replace('-', ' ')
+        return c.feats.count { it.featId == id || (it.featId == null && it.name.trim().lowercase() == name) }
+    }
+
+    /** Wandering hex šamana: jeden hex wandering spiritu od 6. úrovně, dva od 14. (jen se zvoleným wandering spiritem). */
+    fun wanderingHexes(e: ClassEntry): Int =
+        if (e.classId != "shaman" || e.subclass[SubclassSlot.WANDERING_SPIRIT] == null) 0
+        else listOf(6, 14).count { it <= e.level }
+
+    /** Hexy / revelations classy postavy celkem: podle úrovně + Extra Hex / Extra Revelation + wandering hex. */
+    fun slots(c: Character, e: ClassEntry): Int = slots(e.classId, e.level) + extraFeats(c, e.classId) + wanderingHexes(e)
+
     /** Revelation patří k mystériu orákula (nebo k žádnému konkrétnímu); bez zvoleného mystéria vše. */
     fun matchesMystery(a: ClassAbility, mystery: String?): Boolean =
         a.kind != AbilityKind.REVELATION || mystery == null || a.mysteries.isEmpty() || mystery.lowercase() in a.mysteries
+
+    /** Hex ducha jen pro šamana s tím duchem (bez zvoleného ducha všechny); běžné hexy vždy. */
+    fun matchesSpirit(a: ClassAbility, spirit: String?): Boolean =
+        a.spirits.isEmpty() || spirit == null || spirit.lowercase() in a.spirits
+
+    /** Hex ducha šamana: jeho duch, nebo wandering spirit od 6. úrovně (wandering hex). */
+    fun matchesSpirits(a: ClassAbility, e: ClassEntry): Boolean {
+        val spirit = e.subclass[SubclassSlot.SPIRIT]
+        val wandering = e.subclass[SubclassSlot.WANDERING_SPIRIT]?.takeIf { wanderingHexes(e) > 0 }
+        return matchesSpirit(a, spirit) || (wandering != null && wandering.lowercase() in a.spirits)
+    }
 }

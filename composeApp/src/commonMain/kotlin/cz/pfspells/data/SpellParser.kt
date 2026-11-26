@@ -90,7 +90,7 @@ object SpellParser {
         val aw = o["access_ways"] as? JsonObject ?: return emptyMap()
         val out = LinkedHashMap<String, Int>()
         for (kind in SubclassKind.entries) {
-            val list = aw[kind.sourceKey] as? JsonArray ?: continue
+            val list = kind.sourceKey?.let { aw[it] } as? JsonArray ?: continue
             for (pair in list) {
                 val arr = pair as? JsonArray ?: continue
                 if (arr.size < 2) continue

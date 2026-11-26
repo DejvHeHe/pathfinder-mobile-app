@@ -109,13 +109,28 @@ The old "decks" were converted to characters (with all their spells) on the firs
     the class (tap it to open the picker).
   - **Druid**: one nature domain (Air, Animal, Earth, Fire, Plant, Water, Weather), optionally its subdomain (except Metal).
   - **Oracle**: mystery, **sorcerer**: bloodline.
+  - **Witch**: patron, **shaman**: spirit, **bloodrager**: bloodline, **psychic**: discipline.
+  - **Warpriest**: two blessings, **inquisitor**: one domain (optionally a subdomain) – both limited to the domains of a
+    deity from the list (otherwise all); a mismatch with the deity shows the same red warning as for the cleric.
   - **Wizard**: specialization school (or universalist / elemental school) and opposition schools.
+- The subclass dialog also lists the **Subclass powers** (domains, bloodlines, schools, blessings) with the level they are gained at.
 - Cleric / druid: below the spells is a **Domain spells** section – one domain slot per spell level (count "x / 1").
-- Oracle / sorcerer: **Mystery / Bloodline spells** – known automatically from the matching level, cast from slots in game mode.
+- Oracle / sorcerer / bloodrager / psychic: **Mystery / Bloodline / Discipline spells** – known automatically from the
+  matching level (bloodrager 7th, 10th, 13th, 16th; psychic 1st and then even levels), cast from slots in game mode.
+- Witch: **Patron spells** from even levels – added to the familiar and prepared in normal slots: with +/− in the section
+  (or Add in the spell detail); they then appear among the witch's spells at their level even if not on her spell list.
+- An inquisitor can pick an **inquisition** instead of a domain (AoN, only inquisitions of her deity). Powers of spirits,
+  bloodrager bloodlines, disciplines and inquisitions (AoN) are in the subclass dialog; those with uses also under Abilities.
+  The psychic gets a **Phrenic Pool** counter by discipline (½ level + Wisdom / Charisma).
+- A shaman can also pick a **wandering spirit**: from 4th level its spirit ability (greater from 12th, true from 20th) and its
+  spells in spirit magic, from 6th level one of its hexes on top (two from 14th). It changes daily – switch it in the subclass dialog.
+- Sorcerers and bloodragers see their **bloodline bonus feats** (AoN) under Feats and in the subclass dialog. Sorcerer bloodlines
+  Foundry does not know (Aquatic, Accursed…) get their powers from AoN.
+- Shaman: **Spirit magic** – one spontaneous cast per day on each spell level she can cast (game mode shows "x / 1 cast").
+- Warpriest / inquisitor get no bonus spells, only powers (blessing uses share one pool – Blessings).
 - A specialist wizard has "+1 school" at each spell level; spells of an opposition school have a rust ⚠ (preparing them
   takes 2 slots).
-- The subclass is saved with the character and in exports. Patron (witch), spirit (shaman) and the bloodrager bloodline
-  are not supported yet (no data).
+- The subclass is saved with the character and in exports.
 
 ### Limited-use abilities
 - The **Limited-use abilities** section fills itself according to the character's classes: Smite Evil, Lay on Hands,
@@ -135,8 +150,9 @@ The old "decks" were converted to characters (with all their spells) on the firs
 ### Hexes and revelations
 - The witch and the shaman have a **Hexes** section in the character detail, the oracle a **Revelations** section.
   On the right is "chosen / available" by class level (witch 1 + 1 per even level, shaman at 2nd, 4th, 8th, 10th, 12th,
-  16th, 18th and 20th, oracle at 1st, 3rd, 7th, 11th, 15th and 19th). Patron / spirit hexes and the Extra Hex /
-  Extra Revelation feats are not counted.
+  16th, 18th and 20th, oracle at 1st, 3rd, 7th, 11th, 15th and 19th) plus one for each Extra Hex / Extra Revelation feat.
+- The shaman can also pick the **hexes of her spirit** (AoN, ~80 hexes): they are at the top of the list, **Hexes of all
+  spirits** shows the others too.
 - **Add hex / Add revelation** opens the list from Foundry VTT (~120 hexes, ~300 revelations): search in name and text,
   each with its kind (hex, major hex, grand hex), Ex / Su / Sp, uses and minimum level. Tap to expand the full text
   and source. The oracle sees the revelations of their mystery, **All mysteries** shows the rest too.

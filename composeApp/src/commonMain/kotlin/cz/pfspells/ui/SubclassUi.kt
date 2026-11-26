@@ -38,6 +38,15 @@ import cz.pfspells.data.SubclassKind
 import cz.pfspells.data.SubclassSlot
 import cz.pfspells.data.SubclassType
 import cz.pfspells.data.UNIVERSALIST
+import cz.pfspells.data.BLESSINGS
+import cz.pfspells.data.DEITY_DOMAIN_CLASSES
+import cz.pfspells.data.SubclassPowers
+import cz.pfspells.data.blessingAllowed
+import cz.pfspells.data.INQUISITIONS
+import cz.pfspells.data.inquisitionAllowed
+import cz.pfspells.data.hasBonusSpells
+import cz.pfspells.data.singleSlotOf
+import cz.pfspells.data.tableNames
 import cz.pfspells.data.bonusSpellClassLevel
 import cz.pfspells.data.bonusSpellsByLevel
 import cz.pfspells.data.scores
@@ -64,8 +73,15 @@ fun subclassSummary(s: Strings, e: ClassEntry): String? {
     val text = when (type) {
         SubclassType.TWO_DOMAINS -> listOfNotNull(dom(SubclassSlot.DOMAIN1, SubclassSlot.SUBDOMAIN1), dom(SubclassSlot.DOMAIN2, SubclassSlot.SUBDOMAIN2)).joinToString(", ")
         SubclassType.ONE_DOMAIN -> dom(SubclassSlot.DOMAIN1, SubclassSlot.SUBDOMAIN1) ?: ""
-        SubclassType.MYSTERY -> sub[SubclassSlot.MYSTERY]?.let(::cap) ?: ""
-        SubclassType.BLOODLINE -> sub[SubclassSlot.BLOODLINE]?.let(::cap) ?: ""
+        SubclassType.INQUISITOR_DOMAIN -> sub[SubclassSlot.INQUISITION]?.let { s.inquisitionName(cap(it)) }
+            ?: dom(SubclassSlot.DOMAIN1, SubclassSlot.SUBDOMAIN1) ?: ""
+        SubclassType.MYSTERY, SubclassType.BLOODLINE, SubclassType.PATRON,
+        SubclassType.BLOODRAGER_BLOODLINE, SubclassType.DISCIPLINE -> singleSlotOf(type)?.let { sub[it] }?.let(::cap) ?: ""
+        SubclassType.SPIRIT -> listOfNotNull(
+            sub[SubclassSlot.SPIRIT]?.let(::cap),
+            sub[SubclassSlot.WANDERING_SPIRIT]?.let { "${s.wanderingSpirit.substringBefore(" (")}: ${cap(it)}" },
+        ).joinToString(" · ")
+        SubclassType.BLESSINGS -> listOfNotNull(sub[SubclassSlot.BLESSING1], sub[SubclassSlot.BLESSING2]).joinToString(", ") { cap(it) }
         SubclassType.SCHOOL -> sub[SubclassSlot.SCHOOL]?.let { school ->
             val opp = listOfNotNull(sub[SubclassSlot.OPPOSITION1], sub[SubclassSlot.OPPOSITION2]).map { schoolOptionName(s, it) }
             schoolOptionName(s, school) + if (opp.isNotEmpty()) " · ${s.oppositionShort}: " + opp.joinToString(", ") else ""
@@ -90,10 +106,37 @@ fun SubclassDialog(state: AppState, db: SpellDatabase, c: Character, e: ClassEnt
                     if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad)
                 }
                 SubclassFields(e.classId, type, e.subclass, db.subclasses, deity = c.deityInfo) { key, v -> state.setSubclass(c.id, e.classId, key, v) }
+                SubclassPowersList(s, e)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(s.close, color = Nb.ink) } },
     )
+}
+
+/**
+ * Schopnosti zvolených podtříd z Foundry (domény, bloodline, školy, blessingy) s úrovní, od které je classa má;
+ * ještě nedostupné jsou tlumené. Počty použití jsou v sekci „Schopnosti“.
+ */
+@Composable
+private fun SubclassPowersList(s: Strings, e: ClassEntry) {
+    val powers = SubclassPowers.keysOf(e).flatMap { (key, label) -> SubclassPowers.of(key).orEmpty().map { label to it } }
+    val feats = SubclassPowers.bonusFeats(e)
+    if (feats.isNotEmpty()) Text(s.bloodlineBonusFeats(feats.joinToString(", ")), fontSize = 12.5.sp, color = Nb.inkMuted)
+    if (powers.isEmpty()) return
+    Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        MonoLabel(s.subclassPowersHeader)
+        powers.forEach { (label, p) ->
+            val has = e.level >= p.level
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${p.name} ($label)", Modifier.weight(1f),
+                    fontSize = 13.5.sp, color = if (has) Nb.ink else Nb.inkMuted,
+                    fontWeight = if (has) FontWeight.SemiBold else FontWeight.Normal,
+                )
+                Text(s.knownFromLevel(p.level), fontFamily = LocalNbFonts.current.mono, fontSize = 11.sp, color = Nb.inkMuted)
+            }
+        }
+    }
 }
 
 /**
@@ -123,9 +166,9 @@ fun SubclassFields(
     }
 
     when (type) {
-        SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> {
-            // klerik volí z domén svého božstva (ze seznamu); bez božstva nebo s vlastním všechny
-            val deityDomains = deity?.domains?.takeIf { classId == "cleric" && it.isNotEmpty() }
+        SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN, SubclassType.INQUISITOR_DOMAIN -> {
+            // klerik a inquisitor volí z domén svého božstva (ze seznamu); bez božstva nebo s vlastním všechny
+            val deityDomains = deity?.domains?.takeIf { classId in DEITY_DOMAIN_CLASSES && it.isNotEmpty() }
             val domains = idx.domainsFor(classId).filter { deityDomains == null || it in deityDomains }
             // subdomény jen ty, které božstvo dává („archon (good, law)“ ↔ „archon“)
             val deitySubs = deity?.subdomains?.takeIf { deityDomains != null }
@@ -141,11 +184,40 @@ fun SubclassFields(
                 d2?.let { d -> subsOf(d).filter { it != sub[SubclassSlot.SUBDOMAIN1] } }
                     ?.takeIf { it.isNotEmpty() }?.let { pick(s.subdomain, SubclassSlot.SUBDOMAIN2, it) }
             }
+            if (type == SubclassType.INQUISITOR_DOMAIN) {
+                // inquisition místo domény (Ultimate Magic) – jen ty, které božstvo dovoluje
+                pick(s.inquisitionLabel, SubclassSlot.INQUISITION, INQUISITIONS.filter { inquisitionAllowed(it, deity) })
+            }
             if (deityDomains != null) Text(s.deityDomainsHint(deity.name), fontSize = 12.5.sp, color = Nb.inkMuted)
+            if (type == SubclassType.INQUISITOR_DOMAIN) Text(s.inquisitorDomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
             Text(if (classId == "druid") s.druidDomainHint else s.subdomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
         }
         SubclassType.MYSTERY -> pick(s.subclassLabel(type), SubclassSlot.MYSTERY, idx.names(SubclassKind.MYSTERY))
         SubclassType.BLOODLINE -> pick(s.subclassLabel(type), SubclassSlot.BLOODLINE, idx.names(SubclassKind.BLOODLINE))
+        SubclassType.PATRON, SubclassType.SPIRIT, SubclassType.BLOODRAGER_BLOODLINE, SubclassType.DISCIPLINE -> {
+            pick(s.subclassLabel(type), singleSlotOf(type)!!, idx.tableNames(type))
+            if (type == SubclassType.SPIRIT) {
+                pick(s.wanderingSpirit, SubclassSlot.WANDERING_SPIRIT, idx.tableNames(type).filter { it != sub[SubclassSlot.SPIRIT] })
+            }
+            val hint = when (type) {
+                SubclassType.PATRON -> s.patronHint
+                SubclassType.SPIRIT -> s.spiritHint + "\n\n" + s.wanderingSpiritHint
+                SubclassType.BLOODRAGER_BLOODLINE -> s.bloodragerBloodlineHint
+                else -> s.disciplineHint
+            }
+            Text(hint, fontSize = 12.5.sp, color = Nb.inkMuted)
+        }
+        SubclassType.BLESSINGS -> {
+            // warpriest: dvě požehnání z domén božstva (ze seznamu); bez božstva nebo s vlastním všechna
+            val limited = deity != null && deity.domains.isNotEmpty()
+            val options = BLESSINGS.filter { blessingAllowed(it, deity) }
+            val b1 = sub[SubclassSlot.BLESSING1]
+            val b2 = sub[SubclassSlot.BLESSING2]
+            pick(s.blessingN(1), SubclassSlot.BLESSING1, options.filter { it != b2 })
+            pick(s.blessingN(2), SubclassSlot.BLESSING2, options.filter { it != b1 })
+            if (limited) Text(s.deityBlessingsHint(deity!!.name), fontSize = 12.5.sp, color = Nb.inkMuted)
+            Text(s.blessingHint, fontSize = 12.5.sp, color = Nb.inkMuted)
+        }
         SubclassType.SCHOOL -> {
             val elements = idx.names(SubclassKind.ELEMENT).map { "element:$it" }
             val school = sub[SubclassSlot.SCHOOL]
@@ -181,11 +253,14 @@ fun LazyListScope.subclassBonusSpells(
     onEditSubclass: () -> Unit,
 ) {
     val type = subclassType(e.classId) ?: return
-    if (type == SubclassType.SCHOOL) return
+    if (!type.hasBonusSpells) return
     val game = state.gameMode
     val bonus = e.bonusSpellsByLevel(db.subclasses)
     val domainType = type == SubclassType.TWO_DOMAINS || type == SubclassType.ONE_DOMAIN
+    val spirit = type == SubclassType.SPIRIT
+    val patron = type == SubclassType.PATRON
     val nothingChosen = e.subclass.isEmpty()
+    fun spiritKey(lvl: Int) = Character.castKey(e.classId, "spirit:$lvl")
 
     item(key = "${e.classId}-bonus-header") {
         val s = str
@@ -199,7 +274,14 @@ fun LazyListScope.subclassBonusSpells(
                 Modifier.clickable(onClick = onEditSubclass).padding(vertical = 2.dp),
                 fontSize = 12.5.sp, color = Nb.accent,
             )
-            if (!domainType && !nothingChosen) Text(s.knownAutomatically, fontSize = 12.5.sp, color = Nb.inkMuted)
+            val note = when {
+                domainType || nothingChosen -> null
+                patron -> s.patronSpellsNote
+                spirit -> s.spiritSlot
+                else -> s.knownAutomatically
+            }
+            if (note != null) Text(note, fontSize = 12.5.sp, color = Nb.inkMuted)
+            if (patron && !nothingChosen && !game) Text(s.patronPrepareHint, fontSize = 12.5.sp, color = Nb.inkMuted)
             if (!nothingChosen && bonus.isEmpty()) Text(s.subclassNotAvailable, fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
         }
     }
@@ -214,6 +296,7 @@ fun LazyListScope.subclassBonusSpells(
                     s.castOf(used, prepared)
                 }
                 domainType -> s.domainSlot(spells.sumOf { e.bonusSpells[it.id] ?: 0 })
+                spirit && game -> s.castOf(c.cast(spiritKey(lvl)).coerceAtMost(1), 1)
                 else -> s.knownFromLevel(bonusSpellClassLevel(type, lvl) ?: lvl)
             }
             val over = domainType && !game && spells.sumOf { e.bonusSpells[it.id] ?: 0 } > 1
@@ -238,8 +321,19 @@ fun LazyListScope.subclassBonusSpells(
                         e.bonusSpells[spell.id] ?: 0, { state.setBonusSpellCount(c.id, e.classId, spell.id, it) },
                         max = 9, size = 32.dp, numberSize = 14.sp,
                     )
+                    spirit && game -> {
+                        // magie ducha: 1 spontánní seslání za den na spell level (vlastní slot)
+                        val used = c.cast(spiritKey(lvl))
+                        NbDashedButton(str.castSpell, { state.setCast(c.id, spiritKey(lvl), used + 1) }, enabled = used < 1)
+                    }
+                    // kouzla patrona se připravují do běžných slotů čarodějnice (pak jsou i mezi jejími kouzly)
+                    patron && !game -> CountStepper(
+                        e.spells[spell.id] ?: 0, { state.setSpellCount(c.id, e.classId, spell.id, it) },
+                        max = 9, size = 32.dp, numberSize = 14.sp,
+                    )
+                    patron -> {}
                     game -> {
-                        // mystérium / bloodline: sesílá se ze slotu spell levelu
+                        // mystérium / bloodline / disciplína: sesílá se ze slotu spell levelu
                         val key = Character.slotKey(e.classId, lvl)
                         val slots = cls.levelSlots(e.level, c.scores[cls.ability], lvl)
                         val total = (slots.perDay ?: 0) + slots.bonus

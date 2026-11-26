@@ -24,12 +24,21 @@ object DeityCatalog {
 /** Božstvo postavy ze seznamu (null = nezadané nebo vlastní text). */
 val Character.deityInfo: DeityInfo? get() = DeityCatalog.get(deity)
 
+/** Classy, které volí domény / blessingy jen ze svého božstva. */
+val DEITY_DOMAIN_CLASSES = setOf("cleric", "inquisitor", "warpriest")
+
 /**
- * Domény a subdomény klerika, které jeho božstvo (ze seznamu) nedává – např. po změně božstva.
- * Prázdné = vše v pořádku, jiná classa, nebo božstvo vlastní / nezadané.
+ * Domény a subdomény klerika / inquisitora a blessingy warpriesta, které jeho božstvo (ze seznamu) nedává –
+ * např. po změně božstva. Prázdné = vše v pořádku, jiná classa, nebo božstvo vlastní / nezadané.
  */
 fun ClassEntry.deityConflicts(deity: DeityInfo?): List<String> {
-    if (classId != "cleric" || deity == null || deity.domains.isEmpty()) return emptyList()
+    if (classId !in DEITY_DOMAIN_CLASSES || deity == null || deity.domains.isEmpty()) return emptyList()
+    if (classId == "warpriest") {
+        return listOfNotNull(subclass[SubclassSlot.BLESSING1], subclass[SubclassSlot.BLESSING2]).filter { !blessingAllowed(it, deity) }
+    }
+    if (classId == "inquisitor" && subclass[SubclassSlot.INQUISITION] != null) {
+        return listOfNotNull(subclass[SubclassSlot.INQUISITION]).filter { !inquisitionAllowed(it, deity) }
+    }
     val domains = listOfNotNull(subclass[SubclassSlot.DOMAIN1], subclass[SubclassSlot.DOMAIN2]).filter { it !in deity.domains }
     val subs = deity.subdomains?.let { allowed ->
         listOfNotNull(subclass[SubclassSlot.SUBDOMAIN1], subclass[SubclassSlot.SUBDOMAIN2]).filter { it.substringBefore(" (") !in allowed }

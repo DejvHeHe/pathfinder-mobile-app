@@ -23,24 +23,43 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (24. 11. 2026)
+## Stav (26. 11. 2026)
+- ✅ **Vydáno `v1.5.0`** (26. 11. 2026): schopnosti class z Foundry, alternativní rasové traity, podtřídy patron / spirit /
+  bloodline bloodragera / disciplína / blessingy / doména a inquisition inquisitora, schopnosti podtříd z AoN, wandering spirit,
+  bonusové featy bloodline – workflowy Release a Docker po pushi tagu ověřit.
 - ✅ **Vydáno `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
   inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md`.
   Release a Docker zelené; CI testy padaly na kompilaci (`InventoryLinkTest` bez importu `scores`) – opraveno v `08289c8`,
   nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) lokálně zelené (24. 11.); CI po pushi ověřit.
   Po vydání opraveno: export postavy nepřenášel `hpBonus` / `hpOverride` / `acMisc` (`CharacterDto`; zranění se záměrně neexportuje).
-- ✅ 24. 11. 2026 (v main, nevydáno – bez tagu): **schopnosti class z Foundry** – `tools/build_class_abilities.py` (packs/class-abilities
+- ✅ 24. 11. 2026 (v1.5.0): **schopnosti class z Foundry** – `tools/build_class_abilities.py` (packs/class-abilities
   + názvy knih z `module/registry/sources.mjs`; Python cert → lokální ZIP stažený curlem) → `ClassAbilityTable.kt` (schopnosti domén,
   subdomén, 11 bloodline, škol kouzelníka s úrovní a vzorcem) + `files/ClassAbilities.json` (117 hexů, 303 zjevení s textem, líně).
   `FoundryFormula` vyhodnocuje vzorce Foundry; hexy / zjevení = `ClassEntry.abilities` (`AbilityPick`), panel `ClassAbilitiesPanel`,
   přísný režim `StrictRules.classAbilityBlock`, export v `ClassDto.abilities`. Testy 108+ zelené.
-- ✅ 24. 11. 2026 (v main, nevydáno – bez tagu): **alternativní rasové traity z AoN** – `tools/build_racial_traits.py` (stránky ras, cache `build/race-cache`,
+- ✅ 24. 11. 2026 (v1.5.0): **alternativní rasové traity z AoN** – `tools/build_racial_traits.py` (stránky ras, cache `build/race-cache`,
   Python AoN ověří) → `RacialTraitTable.kt` (výchozí traity 77 ras) + `files/RacialTraits.json` (632 alternativních, líně). `Character.racialTraits`
   (`RacialTraitPick`), dialog `RacialTraitsDialog` pod rasou, `PrereqRules.racialTrait` (vybraný ✓, nahrazený ✗), human Bonus Feat / Skilled,
   přísný režim `StrictBlock.RacialTraitReplaced`, export `CharacterDto.racialTraits`; úpravy atributů z traitů (`ABILITY_VARIANTS`,
   volba v `RacialTraitPick.abilities`, `Character.raceMod`; +2 k jednomu atributu se pak skryje – `RacialTraits.replacesRaceBonus`).
   Testy 115 zelené, náhledy Pip / Aria v `PreviewRender`. Další traity měnící atributy → doplnit ručně do `ABILITY_VARIANTS` (text AoN nejde spolehlivě číst).
   Desktop appku při nedostatku paměti systém zabíjí – znovu ji spouštět jen na požádání.
+- ✅ 26. 11. 2026 (v1.5.0): **další podtřídy z Foundry** – `build_class_abilities.py` navíc generuje
+  `SUBCLASS_SPELL_TABLE` (kouzla 51 patronů, 17 spiritů, 22 bloodline bloodragera, 23 disciplín z popisů, jména spárovaná se SpellList.json)
+  a `BLESSING_DOMAINS` + schopnosti 47 blessingů (`blessing:x`). `SubclassType` PATRON / SPIRIT / BLOODRAGER_BLOODLINE / DISCIPLINE /
+  BLESSINGS / INQUISITOR_DOMAIN, `SubclassIndex(spells, table)`, sloty `patron`, `spirit`, `discipline`, `blessing1/2` (bloodrager sdílí `bloodline`).
+  Spirit magic v herním režimu pod klíčem `castKey(classId, "spirit:N")`. Warpriest / inquisitor podle božstva (`DEITY_DOMAIN_CLASSES`,
+  `blessingAllowed`, `deityConflicts`). Dialog podtřídy ukazuje „Schopnosti podtřídy“. Testy 119 zelené, náhledy Kaya / Brannoc.
+  Lokální ZIP Foundry pro generátor: curl do scratchpadu (Python neověří certifikát GitLabu).
+- ✅ 26. 11. 2026 (v1.5.0): **schopnosti podtříd z AoN** – `tools/build_subclass_abilities.py` (stránky spiritů, bloodline
+  bloodragera, disciplín, Inquisitions; cache `build/subclass-cache`, Python AoN ověří) → `SubclassAbilityTable.kt`
+  (`AON_SUBCLASS_POWER_TABLE` 371 schopností, `DISCIPLINE_POOL_ABILITY`, `INQUISITION_DEITIES`) + `files/SubclassAbilities.json`
+  (82 hexů duchů, `ClassAbility.spirits`, `AbilityRules.matchesSpirit`). Inquisitor: `SubclassSlot.INQUISITION` místo domény
+  (`inquisitionAllowed`), psychic preset Phrenic Pool, `AbilityRules.slots(c, e)` + Extra Hex / Extra Revelation, kouzla patrona
+  připravitelná (`ClassEntry.spellLevelFor` / `patronSpellLevel` – detail postavy, přísný režim, detail kouzla).
+  Wandering spirit šamana (`SubclassSlot.WANDERING_SPIRIT`, klíč `wspirit:x` = schopnosti ducha posunuté na 4. / 12. / 20.,
+  `AbilityRules.wanderingHexes`, `matchesSpirits`); `BLOODLINE_BONUS_FEATS` (bloodrager + čaroděj, `SubclassPowers.bonusFeats`),
+  schopnosti bloodline čaroděje z AoN tam, kde je Foundry nemá (Foundry má přednost; air/earth/fire/water → elemental). Testy 125 zelené.
 - Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
 - Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
   a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
@@ -74,7 +93,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ Android: release APK se staví, otestováno na skutečném zařízení.
 - ✅ iOS: Kotlin část ověřena v CI (`linkDebugFrameworkIosSimulatorArm64` na macOS runneru), Xcode build na Macu otestován
   (návod pro kamarády: `docs/ios-install.md`).
-- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\ms-21.0.10` (Microsoft OpenJDK; systémová Java je 8), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
+- Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\temurin-21.0.11` (systémová Java je 8; Android Studio má JBR 25,
+  které Gradle 8.10.2 neumí → Gradle JDK pro Studio v `.gradle/config.properties` `java.home`, mimo git), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
   Docker ani `gh` nejsou nainstalované. Port 8080 drží služba NI Application Web Server (National Instruments) – pro lokální test webu jiný port.
 - 
 ## Stack
@@ -83,6 +103,7 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Ktor client 3.0.3 (OkHttp – Android/desktop, Darwin – iOS, Js – web), material-icons-core
 - Targety: `androidTarget`, `jvm("desktop")`, `iosX64/iosArm64/iosSimulatorArm64` (framework `ComposeApp`, static), `wasmJs` (web)
 - Verze v `gradle/libs.versions.toml`; verze appky `-PappVersion=X.Y.Z`, Android `-PversionCode=N` (CI z tagu / čísla běhu)
+
 
 ## Struktura
 ```
@@ -111,7 +132,8 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/Races.kt          RaceInfo, RaceGroup, RaceCatalog, `Character.raceInfo`; data/RaceTable.kt GENEROVANÉ `tools/build_races.py` (Foundry packs/races, 80 ras)
   data/RacialTraits.kt   alternativní rasové traity: RacialTrait, RacialTraitPick, RacialTraits (defaults, replaced, conflicts), keepsRacialTrait;
                          data/RacialTraitTable.kt GENEROVANÉ `tools/build_racial_traits.py` (AoN); ui/RacialTraitsUi.kt RacialTraitsLink + RacialTraitsDialog
-  data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, SUBDOMAIN_DOMAINS (subdoména → doména, AoN), DRUID_DOMAINS, withSubclass, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka
+  data/Subclasses.kt     podtřídy: SubclassKind/Type/Slot, SUBDOMAIN_DOMAINS (subdoména → doména, AoN), DRUID_DOMAINS, withSubclass, domainSpells, bonusSpellsByLevel, školní slot a opoziční školy kouzelníka,
+                         patron / spirit / bloodline bloodragera / disciplína (SUBCLASS_SPELL_TABLE), blessingy warpriesta (BLESSINGS, blessingAllowed)
   data/CharacterTransfer.kt  export/import postav (`pf-spellbook-characters`) a featů (`pf-spellbook-feats`), import starých decků
   data/ClassFeatures.kt  FeaturePresets (Smite Evil, Rage, Ki Pool… – vzorce max použití), Resource, Character.resources()
                          (+ schopnosti podtříd z `SubclassPowers`, vybrané hexy / zjevení s počtem použití)
@@ -119,6 +141,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
                          `school:element:fire`), FoundryFormula (vzorce Foundry), ClassAbility / AbilityPick / AbilityRules (počty hexů a zjevení),
                          ClassAbilityRepository (ClassAbilities.json, líně – AppState.ensureClassAbilities)
   data/ClassAbilityTable.kt  GENEROVANÉ `tools/build_class_abilities.py` (Foundry packs/class-abilities)
+  data/SubclassAbilityTable.kt  GENEROVANÉ `tools/build_subclass_abilities.py` (AoN: spirity, bloodline bloodragera, disciplíny, inquisitions)
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
   data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
@@ -151,7 +174,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/DatabaseScreen.kt    stav a aktualizace databáze spellů i itemů
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
-  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
+  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), SubclassAbilities.json (hexy duchů z AoN), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
   font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
@@ -164,6 +187,7 @@ tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/f
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
 tools/build_racial_traits.py [--cache DIR]   RacialTraitTable.kt + RacialTraits.json (AoN stránky ras, ~80 req po 1 s)
+tools/build_subclass_abilities.py [--cache DIR]   SubclassAbilityTable.kt + SubclassAbilities.json (AoN spirity, bloodline bloodragera, disciplíny, inquisitions)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml
 ```

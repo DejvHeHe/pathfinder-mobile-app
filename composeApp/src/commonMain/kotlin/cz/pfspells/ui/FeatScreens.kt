@@ -98,6 +98,14 @@ fun FeatsPanel(state: AppState, c: Character, wide: Boolean, selectedPick: Int?)
                 CountStepper(c.extraFeats, { state.setExtraFeats(c.id, it) }, min = -20, max = 40, size = 28.dp, numberSize = 13.sp)
             }
         }
+        // bonusové featy čaroděje / bloodragera se vybírají ze seznamu bloodline (AoN)
+        c.classes.filter { (slots.bonus[it.classId] ?: 0) > 0 }.forEach { e ->
+            val feats = cz.pfspells.data.SubclassPowers.bonusFeats(e)
+            if (feats.isNotEmpty()) Text(
+                "${s.classNameOf(e.classId)}: " + s.bloodlineBonusFeats(feats.joinToString(", ")),
+                fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 2.dp),
+            )
+        }
         if (c.feats.isEmpty()) {
             Text(s.noFeats, color = Nb.inkMuted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp))
         }

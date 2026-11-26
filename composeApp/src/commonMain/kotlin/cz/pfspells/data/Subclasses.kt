@@ -1,19 +1,35 @@
 package cz.pfspells.data
 
-/** Druh podtřídy podle `access_ways` v `SpellList.json`. */
-enum class SubclassKind(val sourceKey: String, val prefix: String) {
+/**
+ * Druh podtřídy: podle `access_ways` v `SpellList.json` ([sourceKey]), nebo z Foundry ([sourceKey] null –
+ * kouzla patronů, spiritů, bloodrager bloodlines a disciplín v [SUBCLASS_SPELL_TABLE]).
+ */
+enum class SubclassKind(val sourceKey: String?, val prefix: String) {
     DOMAIN("Domain", "domain"),
     SUBDOMAIN("Subdomain", "subdomain"),
     MYSTERY("Mystery", "mystery"),
     BLOODLINE("Bloodline", "bloodline"),
     ELEMENT("Elemental School", "element"),
+    PATRON(null, "patron"),
+    SPIRIT(null, "spirit"),
+    BLOODRAGER_BLOODLINE(null, "brbloodline"),
+    DISCIPLINE(null, "discipline"),
 }
 
-/** Index: podtřída → spelly po spell levelech (z [Spell.subLevels]). Počítá se jednou pro databázi. */
-class SubclassIndex(spells: List<Spell>) {
+/**
+ * Index: podtřída → spelly po spell levelech (z [Spell.subLevels] a z [table] – jména kouzel po spell levelech,
+ * index 0 = 1. level). Počítá se jednou pro databázi.
+ */
+class SubclassIndex(spells: List<Spell>, table: Map<String, List<String>> = SUBCLASS_SPELL_TABLE) {
     private val byKey: Map<String, Map<Int, List<Spell>>> = buildMap<String, MutableMap<Int, MutableList<Spell>>> {
         for (s in spells) for ((key, lvl) in s.subLevels) {
             getOrPut(key) { mutableMapOf() }.getOrPut(lvl) { mutableListOf() } += s
+        }
+        val byName = HashMap<String, Spell>()
+        for (s in spells) byName.getOrPut(s.name.lowercase()) { s }
+        for ((key, names) in table) names.forEachIndexed { i, n ->
+            val spell = byName[n.lowercase()] ?: return@forEachIndexed
+            getOrPut(key) { mutableMapOf() }.getOrPut(i + 1) { mutableListOf() } += spell
         }
     }.mapValues { (_, m) -> m.toList().sortedBy { it.first }.toMap() }
 
@@ -38,10 +54,20 @@ object SubclassSlot {
     const val DOMAIN2 = "domain2"
     const val SUBDOMAIN2 = "subdomain2"
     const val MYSTERY = "mystery"
+    /** bloodline čaroděje i bloodragera */
     const val BLOODLINE = "bloodline"
     const val SCHOOL = "school"
     const val OPPOSITION1 = "opposition1"
     const val OPPOSITION2 = "opposition2"
+    const val PATRON = "patron"
+    const val SPIRIT = "spirit"
+    /** shaman: wandering spirit (od 4. úrovně, mění se denně) */
+    const val WANDERING_SPIRIT = "wandering_spirit"
+    const val DISCIPLINE = "discipline"
+    const val BLESSING1 = "blessing1"
+    const val BLESSING2 = "blessing2"
+    /** inquisitor: inquisition místo domény */
+    const val INQUISITION = "inquisition"
 }
 
 /** Jak classa pracuje s podtřídou. */
@@ -56,6 +82,18 @@ enum class SubclassType {
     BLOODLINE,
     /** wizard: specializace (škola / elementární škola) + opoziční školy, školní slot 1 / spell level */
     SCHOOL,
+    /** witch: patron – kouzla patrona přibývají familiárovi na sudých úrovních (připravují se do běžných slotů) */
+    PATRON,
+    /** shaman: spirit – spirit magic, 1 spontánní seslání za den na každém spell levelu, který umí */
+    SPIRIT,
+    /** bloodrager: bloodline – bonusová známá kouzla na 7., 10., 13. a 16. úrovni */
+    BLOODRAGER_BLOODLINE,
+    /** psychic: disciplína – bonusová známá kouzla na 1. úrovni a pak na sudých */
+    DISCIPLINE,
+    /** warpriest: 2 blessingy (jen schopnosti, bez kouzel) */
+    BLESSINGS,
+    /** inquisitor: 1 doména (+ subdoména) – jen schopnosti, bez doménových kouzel a slotu */
+    INQUISITOR_DOMAIN,
 }
 
 fun subclassType(classId: String): SubclassType? = when (classId) {
@@ -64,8 +102,54 @@ fun subclassType(classId: String): SubclassType? = when (classId) {
     "oracle" -> SubclassType.MYSTERY
     "sorcerer" -> SubclassType.BLOODLINE
     "wizard" -> SubclassType.SCHOOL
+    "witch" -> SubclassType.PATRON
+    "shaman" -> SubclassType.SPIRIT
+    "bloodrager" -> SubclassType.BLOODRAGER_BLOODLINE
+    "psychic" -> SubclassType.DISCIPLINE
+    "warpriest" -> SubclassType.BLESSINGS
+    "inquisitor" -> SubclassType.INQUISITOR_DOMAIN
     else -> null
 }
+
+/** Podtřída s doménami (výběr domény + subdomény). */
+val SubclassType.hasDomains: Boolean
+    get() = this == SubclassType.TWO_DOMAINS || this == SubclassType.ONE_DOMAIN || this == SubclassType.INQUISITOR_DOMAIN
+
+/** Podtřída dává bonusová kouzla (sekce pod kouzly classy); kouzelník a classy jen se schopnostmi ne. */
+val SubclassType.hasBonusSpells: Boolean
+    get() = this != SubclassType.SCHOOL && this != SubclassType.BLESSINGS && this != SubclassType.INQUISITOR_DOMAIN
+
+/** Blessingy warpriesta (jména malými písmeny, z Foundry). */
+val BLESSINGS: List<String> get() = BLESSING_DOMAINS.keys.sorted()
+
+/**
+ * Blessing, který warpriest s daným božstvem smí vybrat: blessing domény božstva, blessing subdomény
+ * (Cooperation, Freedom…) jen když ji božstvo dává (neznámé subdomény božstva → podle domény). Bez božstva vše.
+ */
+fun blessingAllowed(blessing: String, deity: DeityInfo?): Boolean {
+    if (deity == null || deity.domains.isEmpty()) return true
+    val d = BLESSING_DOMAINS[blessing] ?: return true
+    if (d in deity.domains) return true
+    val parents = subdomainParents(d)
+    // doména, kterou tabulka nezná (Godclaw) → nabídnout
+    if (parents.isEmpty()) return d !in KNOWN_DOMAINS
+    return deity.subdomains?.let { d in it } ?: parents.any { it in deity.domains }
+}
+
+private val KNOWN_DOMAINS: Set<String> by lazy { SUBDOMAIN_DOMAINS.values.flatten().toSet() + DRUID_DOMAINS }
+
+/** Inquisitions (AoN, jména malými písmeny). */
+val INQUISITIONS: List<String> get() = INQUISITION_DEITIES.keys.sorted()
+
+/** Inquisition, kterou inquisitor s daným božstvem smí vybrat (seznam božstev z AoN; prázdný = jakékoli). Bez božstva vše. */
+fun inquisitionAllowed(inquisition: String, deity: DeityInfo?): Boolean {
+    if (deity == null) return true
+    val gods = INQUISITION_DEITIES[inquisition] ?: return true
+    return gods.isEmpty() || deity.name.lowercase() in gods
+}
+
+/** Atribut phrenic poolu psychica podle disciplíny (AoN); null = neznámá disciplína. */
+fun disciplinePoolAbility(discipline: String?): Ability? = discipline?.let { DISCIPLINE_POOL_ABILITY[it.lowercase()] }
 
 /**
  * Subdoména → domény, ke kterým patří (zdroj spellů vazbu neobsahuje). Podle tabulky na
@@ -164,15 +248,68 @@ fun ClassEntry.bonusSpellsByLevel(index: SubclassIndex): Map<Int, List<Spell>> {
         SubclassType.BLOODLINE -> subclass[SubclassSlot.BLOODLINE]?.let { b ->
             index.spells(SubclassKind.BLOODLINE, b).filterKeys { level >= 2 * it + 1 }
         } ?: emptyMap()
-        SubclassType.SCHOOL, null -> emptyMap()
+        SubclassType.PATRON -> fromTable(index, SubclassKind.PATRON, SubclassSlot.PATRON, SubclassType.PATRON)
+        SubclassType.SPIRIT -> {
+            // wandering spirit (od 4. úrovně) přidává svá kouzla do magie ducha
+            val main = fromTable(index, SubclassKind.SPIRIT, SubclassSlot.SPIRIT, SubclassType.SPIRIT)
+            val wandering = if (level >= SubclassPowers.WANDERING_SPIRIT_LEVEL) fromTable(index, SubclassKind.SPIRIT, SubclassSlot.WANDERING_SPIRIT, SubclassType.SPIRIT) else emptyMap()
+            (main.keys + wandering.keys).associateWith { (main[it].orEmpty() + wandering[it].orEmpty()).distinctBy { s -> s.id } }
+        }
+        SubclassType.BLOODRAGER_BLOODLINE -> fromTable(index, SubclassKind.BLOODRAGER_BLOODLINE, SubclassSlot.BLOODLINE, SubclassType.BLOODRAGER_BLOODLINE)
+        SubclassType.DISCIPLINE -> fromTable(index, SubclassKind.DISCIPLINE, SubclassSlot.DISCIPLINE, SubclassType.DISCIPLINE)
+        SubclassType.SCHOOL, SubclassType.BLESSINGS, SubclassType.INQUISITOR_DOMAIN, null -> emptyMap()
     }
     return all.filterKeys { it in 1..max }.filterValues { it.isNotEmpty() }
 }
 
-/** Úroveň classy, od které má oracle / sorcerer bonusové kouzlo daného spell levelu. */
+private fun ClassEntry.fromTable(index: SubclassIndex, kind: SubclassKind, slot: String, type: SubclassType): Map<Int, List<Spell>> =
+    subclass[slot]?.let { v -> index.spells(kind, v).filterKeys { lvl -> level >= (bonusSpellClassLevel(type, lvl) ?: 1) } } ?: emptyMap()
+
+/**
+ * Úroveň classy, od které má classa bonusové kouzlo daného spell levelu: oracle 2N, sorcerer 2N + 1, witch 2N,
+ * psychic 1 / 2N, bloodrager 3N + 4 (7., 10., 13., 16.), shaman od úrovně, kdy spell level umí sesílat (2N − 1).
+ */
 fun bonusSpellClassLevel(type: SubclassType, spellLevel: Int): Int? = when (type) {
     SubclassType.MYSTERY -> 2 * spellLevel
     SubclassType.BLOODLINE -> 2 * spellLevel + 1
+    SubclassType.PATRON -> 2 * spellLevel
+    SubclassType.DISCIPLINE -> if (spellLevel <= 1) 1 else 2 * spellLevel
+    SubclassType.BLOODRAGER_BLOODLINE -> 3 * spellLevel + 4
+    SubclassType.SPIRIT -> 2 * spellLevel - 1
+    else -> null
+}
+
+/**
+ * Spell level kouzla pro classu postavy: ze spell listu classy, jinak kouzlo patrona čarodějnice (od úrovně 2N) –
+ * kouzla patrona se připravují do běžných slotů, i když na spell listu čarodějnice nejsou.
+ */
+fun ClassEntry.spellLevelFor(cls: CasterClass, spell: Spell, index: SubclassIndex?): Int? =
+    cls.spellLevelOf(spell) ?: index?.let { patronSpellLevel(spell, it) }
+
+/** Spell level kouzla patrona, které čarodějnice na své úrovni má (null = není kouzlo jejího patrona). */
+fun ClassEntry.patronSpellLevel(spell: Spell, index: SubclassIndex): Int? {
+    if (subclassType(classId) != SubclassType.PATRON) return null
+    val patron = subclass[SubclassSlot.PATRON] ?: return null
+    return index.spells(SubclassKind.PATRON, patron).entries
+        .firstOrNull { (lvl, list) -> level >= 2 * lvl && list.any { it.id == spell.id } }?.key
+}
+
+/** Volby podtřídy z tabulky Foundry pro classu (patron, spirit, bloodrager bloodline, disciplína). */
+fun SubclassIndex.tableNames(type: SubclassType): List<String> = when (type) {
+    SubclassType.PATRON -> names(SubclassKind.PATRON)
+    SubclassType.SPIRIT -> names(SubclassKind.SPIRIT)
+    SubclassType.BLOODRAGER_BLOODLINE -> names(SubclassKind.BLOODRAGER_BLOODLINE)
+    SubclassType.DISCIPLINE -> names(SubclassKind.DISCIPLINE)
+    else -> emptyList()
+}
+
+/** Klíč v [SubclassSlot] pro podtřídu s jednou volbou (mystérium, bloodline, patron…). */
+fun singleSlotOf(type: SubclassType): String? = when (type) {
+    SubclassType.MYSTERY -> SubclassSlot.MYSTERY
+    SubclassType.BLOODLINE, SubclassType.BLOODRAGER_BLOODLINE -> SubclassSlot.BLOODLINE
+    SubclassType.PATRON -> SubclassSlot.PATRON
+    SubclassType.SPIRIT -> SubclassSlot.SPIRIT
+    SubclassType.DISCIPLINE -> SubclassSlot.DISCIPLINE
     else -> null
 }
 
@@ -208,6 +345,11 @@ fun Map<String, String>.withSubclass(key: String, value: String?): Map<String, S
     if (value == null && key == SubclassSlot.DOMAIN1) sub = sub - SubclassSlot.SUBDOMAIN1
     if (value == null && key == SubclassSlot.DOMAIN2) sub = sub - SubclassSlot.SUBDOMAIN2
     if (key == SubclassSlot.SCHOOL) sub = sub - SubclassSlot.OPPOSITION1 - SubclassSlot.OPPOSITION2
+    // šaman: wandering spirit musí být jiný než hlavní duch
+    if (key == SubclassSlot.SPIRIT && value != null && sub[SubclassSlot.WANDERING_SPIRIT] == value) sub = sub - SubclassSlot.WANDERING_SPIRIT
+    // inquisitor: inquisition nahrazuje doménu (a naopak)
+    if (key == SubclassSlot.INQUISITION && value != null) sub = sub - SubclassSlot.DOMAIN1 - SubclassSlot.SUBDOMAIN1
+    if (key == SubclassSlot.DOMAIN1 && value != null) sub = sub - SubclassSlot.INQUISITION
     // jiná doména → subdoména, která k ní nepatří, odpadne
     for ((d, sd) in listOf(SubclassSlot.DOMAIN1 to SubclassSlot.SUBDOMAIN1, SubclassSlot.DOMAIN2 to SubclassSlot.SUBDOMAIN2)) {
         val domain = sub[d]

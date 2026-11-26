@@ -21,8 +21,13 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 - [x] Oracle mystérium, sorcerer bloodline – bonusová známá kouzla podle úrovně
 - [x] Wizard specializace / elementární škola + opoziční školy: školní slot, upozornění u opozičních kouzel
 - [x] Uložení v postavě (`ClassEntry.subclass`) a v exportu postavy
-- [ ] Witch – **patron**, Shaman – **spirit**, Bloodrager – **bloodline**, Psychic – **discipline** (ve zdroji spellů nejsou data)
-- [ ] Warpriest / inquisitor – domény a blessingy (bez bonusových kouzel – jen schopnosti)
+- [x] Witch – **patron**, Shaman – **spirit**, Bloodrager – **bloodline**, Psychic – **discipline** (kouzla z popisů ve Foundry,
+  `SUBCLASS_SPELL_TABLE`; patron jen přehled, spirit magic 1× za den na spell level)
+  - [x] schopnosti spiritů, bloodline bloodragera a disciplín z AoN (`tools/build_subclass_abilities.py`), phrenic pool psychica
+  - [x] bonusové featy bloodline bloodragera i čaroděje (AoN, seznam u featů a v dialogu podtřídy), schopnosti bloodline čaroděje, které Foundry nemá
+  - [x] kouzla patrona připravitelná i mimo spell list čarodějnice
+- [x] Warpriest – 2 **blessingy** (Foundry, menší 1. / větší 10. úroveň), inquisitor – **doména** (+ subdoména), obojí podle božstva
+  - [x] inquisitor – inquisitions (AoN, podle božstva) místo domény
 - [x] **Lepší rozdělení podtříd:**
   - [x] druid jen domény Nature Bond (Air, Animal, Earth, Fire, Plant, Water, Weather + jejich subdomény kromě Metal)
   - [x] subdomény jen ke zvolené doméně (`SUBDOMAIN_DOMAINS` podle AoN; boreal a sleep v tabulce chybí)
@@ -48,7 +53,8 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
     – bloodline z pozdějších knih a domény Jungle / Inevitable Foundry nemá → obecná schopnost 1. úrovně
   - [x] hexy (witch, shaman) a revelations (oracle): výběr ze seznamu u classy postavy + počet použití, kde ho mají
   - [x] nový zdroj dat → `NOTICE.md`, OGL Section 15, About
-  - [ ] hexy patrona / spiritu, featy Extra Hex / Extra Revelation do počtu (teď jen podle úrovně)
+  - [x] hexy duchů šamana (AoN), featy Extra Hex / Extra Revelation do počtu
+  - [x] wandering spirit šamana (schopnost od 4. / 12. / 20., kouzla magie ducha, wandering hex od 6. / 14.)
 
 ### 4. Zvýraznění aktuálního zatížení (load) v inventáři
 - [x] Výrazný štítek aktuálního stavu: **Light / Medium / Heavy / Overloaded** s barvou (např. olivová → okrová → rezavá → červená)

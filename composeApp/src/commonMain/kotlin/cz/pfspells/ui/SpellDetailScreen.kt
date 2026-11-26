@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.data.CasterClasses
 import cz.pfspells.data.Metamagic
+import cz.pfspells.data.patronSpellLevel
+import cz.pfspells.data.spellLevelFor
 import cz.pfspells.data.SpellDatabase
 
 /**
@@ -51,7 +53,9 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
     val cls = deck?.let { CasterClasses.get(it.classId) }
     val inDeck = deck?.spells?.get(spell.id) ?: 0
     // spontánní classa: známé kouzlo podruhé nepřidává
-    val canAdd = deck != null && cls != null && cls.canCast(spell, deck.classLevel) && !(cls.distinctSpells && inDeck > 0)
+    // kouzlo patrona čarodějnice jde připravit, i když není na jejím spell listu
+    val patronSpell = deck != null && deck.entry.patronSpellLevel(spell, db.subclasses) != null
+    val canAdd = deck != null && cls != null && (cls.canCast(spell, deck.classLevel) || patronSpell) && !(cls.distinctSpells && inDeck > 0)
     val add = { state.addSpell(deck!!.id, deck.classId, spell.id) }
 
     Box(Modifier.fillMaxSize()) {
@@ -113,7 +117,7 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
                     // metamagické featy postavy: výsledná úroveň slotu pro toto kouzlo
                     val owner = charId?.let { state.character(it) }
                     LaunchedEffect(charId) { if (charId != null) state.ensureFeats() }
-                    val spellLevel = cls?.spellLevelOf(spell)
+                    val spellLevel = cls?.let { deck?.entry?.spellLevelFor(it, spell, db.subclasses) ?: it.spellLevelOf(spell) }
                     val meta = if (owner != null) Metamagic.ofCharacter(owner, state.featDb) else emptyList()
                     if (deck != null && cls != null && spellLevel != null && meta.isNotEmpty()) {
                         SectionHeader(s.metamagicHeader, Modifier.padding(top = 0.dp))

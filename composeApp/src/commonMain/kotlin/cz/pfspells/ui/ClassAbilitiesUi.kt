@@ -61,7 +61,7 @@ fun ClassAbilitiesPanel(state: AppState, c: Character) {
 private fun ClassAbilitySection(state: AppState, c: Character, e: ClassEntry, group: AbilityGroup) {
     val s = str
     val fonts = LocalNbFonts.current
-    val total = AbilityRules.slots(e.classId, e.level)
+    val total = AbilityRules.slots(c, e)
     var picking by remember { mutableStateOf(false) }
     var showing by remember { mutableStateOf<String?>(null) }
     Column(Modifier.padding(top = 4.dp)) {
@@ -129,15 +129,17 @@ internal fun ClassAbilityPickerDialog(
     var allMysteries by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf<String?>(null) }
     val mystery = e.subclass[SubclassSlot.MYSTERY]?.takeIf { group == AbilityGroup.REVELATIONS }
+    // šaman: hexy svého ducha (přepínač „hexy všech duchů“)
+    val spirit = e.subclass[SubclassSlot.SPIRIT]?.takeIf { e.classId == "shaman" }
     val db = state.abilityDb
     val list = remember(db, query, allMysteries, e) {
         val q = query.trim().lowercase()
         val chosen = e.abilities.map { it.id }.toSet()
         db?.forClass(e.classId).orEmpty()
             .filter { it.id !in chosen }
-            .filter { allMysteries || AbilityRules.matchesMystery(it, mystery) }
+            .filter { allMysteries || (AbilityRules.matchesMystery(it, mystery) && AbilityRules.matchesSpirits(it, e)) }
             .filter { q.isEmpty() || it.searchName.contains(q) || it.text.lowercase().contains(q) }
-            .sortedWith(compareBy({ it.minLevel > e.level }, { q.isNotEmpty() && !it.searchName.contains(q) }, { it.kind }, { it.searchName }))
+            .sortedWith(compareBy({ it.minLevel > e.level }, { q.isNotEmpty() && !it.searchName.contains(q) }, { it.spirits.isEmpty() }, { it.kind }, { it.searchName }))
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -152,6 +154,7 @@ internal fun ClassAbilityPickerDialog(
                     )
                     NbSearchField(query, { query = it }, s.searchAbilities, Modifier.fillMaxWidth())
                     if (mystery != null) NbCheck(allMysteries, s.allMysteries) { allMysteries = it }
+                    if (spirit != null) NbCheck(allMysteries, s.allSpirits) { allMysteries = it }
                     when (val st = state.abilityDbState) {
                         is AbilityDbState.Failed -> Text(st.message, color = Nb.error, modifier = Modifier.padding(vertical = 12.dp))
                         !is AbilityDbState.Ready -> Text(s.loadingAbilities, color = Nb.inkMuted, modifier = Modifier.padding(vertical = 12.dp))
@@ -192,6 +195,7 @@ private fun AbilityCard(s: Strings, c: Character, e: ClassEntry, a: ClassAbility
                         abilityLine(s, c, e, s.abilityKind(a.kind), a.type, a.uses, a.unit),
                         a.minLevel.takeIf { it > 1 }?.let { s.fromClassLevel(it) },
                         a.mysteries.takeIf { it.isNotEmpty() }?.joinToString(", ") { cz.pfspells.data.SubclassPowers.title(it) },
+                        a.spirits.takeIf { it.isNotEmpty() }?.joinToString(", ") { cz.pfspells.data.SubclassPowers.title(it) },
                     ).joinToString(" · "),
                     fontSize = 12.sp, color = if (locked) Nb.error else Nb.rust, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )

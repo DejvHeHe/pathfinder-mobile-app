@@ -140,6 +140,24 @@ class PreviewRender {
             state.setRacialTraitAbility(h.id, "human:dual-talent", 0, cz.pfspells.data.Ability.CHA)
             state.character(h.id)!!
         }
+        // podtřídy z Foundry: patron (Morgana), spirit, blessingy warpriesta, doména inquisitora
+        val kaya = withContext(Dispatchers.Main) {
+            state.setSubclass(morgana.id, "witch", cz.pfspells.data.SubclassSlot.PATRON, "agility")
+            val k = state.createCharacter("Kaya", "shaman", 5)
+            state.setAbility(k.id, cz.pfspells.data.Ability.WIS, 16)
+            state.setSubclass(k.id, "shaman", cz.pfspells.data.SubclassSlot.SPIRIT, "flame")
+            state.setSubclass(k.id, "shaman", cz.pfspells.data.SubclassSlot.WANDERING_SPIRIT, "life")
+            state.character(k.id)!!
+        }
+        val brannoc = withContext(Dispatchers.Main) {
+            val b = state.createCharacter("Brannoc", "warpriest", 10)
+            state.setDeity(b.id, "Iomedae")
+            state.setSubclass(b.id, "warpriest", cz.pfspells.data.SubclassSlot.BLESSING1, "glory")
+            state.setSubclass(b.id, "warpriest", cz.pfspells.data.SubclassSlot.BLESSING2, "war")
+            state.addClass(b.id, "inquisitor", 3)
+            state.setSubclass(b.id, "inquisitor", cz.pfspells.data.SubclassSlot.DOMAIN1, "sun")
+            state.character(b.id)!!
+        }
         val out = File("build/previews").apply { mkdirs() }
 
         suspend fun shot(name: String, w: Int, h: Int, overlay: (@Composable () -> Unit)? = null, nav: AppState.() -> Unit) {
@@ -263,6 +281,42 @@ class PreviewRender {
         }) { switchSection(Section.SPELLBOOK); openRoot(Screen.Decks) }
         shot("cs-phone-racepicker", 390, 844, overlay = { RacePickerDialog("dwarf", onDismiss = {}) { } }) { openRoot(Screen.Decks) }
         shot("cs-desktop-racepicker", 1440, 1000, overlay = { RacePickerDialog(null, onDismiss = {}) { } }) { openRoot(Screen.Decks) }
+        val spellDb = (state.db as DbState.Ready).db
+        shot("cs-phone-spirit", 390, 2900) { gameMode = false; openRoot(Screen.CharacterDetail(kaya.id)) }
+        shot("cs-phone-spirit-game", 390, 2900) {
+            gameMode = true
+            setCast(kaya.id, cz.pfspells.data.Character.castKey("shaman", "spirit:1"), 1)
+            openRoot(Screen.CharacterDetail(kaya.id))
+        }
+        shot("cs-phone-warpriest-subclass", 390, 844, overlay = {
+            val b = state.character(brannoc.id)!!
+            cz.pfspells.ui.SubclassDialog(state, spellDb, b, b.classes[0]) { }
+        }) { gameMode = false; openRoot(Screen.Decks) }
+        shot("cs-phone-inquisitor-subclass", 390, 844, overlay = {
+            val b = state.character(brannoc.id)!!
+            cz.pfspells.ui.SubclassDialog(state, spellDb, b, b.classes[1]) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-warpriest", 390, 1200) { openRoot(Screen.CharacterDetail(brannoc.id)) }
+        shot("cs-phone-spirit-hexpicker", 390, 844, overlay = {
+            val k = state.character(kaya.id)!!
+            cz.pfspells.ui.ClassAbilityPickerDialog(state, k, k.classes[0], cz.pfspells.data.AbilityGroup.HEXES, onDismiss = {}) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-inquisition", 390, 844, overlay = {
+            val b = state.character(brannoc.id)!!
+            val e = b.classes[1].copy(subclass = mapOf(cz.pfspells.data.SubclassSlot.INQUISITION to "banishment"))
+            cz.pfspells.ui.SubclassDialog(state, spellDb, b, e) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-witch-patron", 390, 2400) { openRoot(Screen.CharacterDetail(morgana.id)) }
+        shot("cs-phone-shaman-subclass", 390, 1000, overlay = {
+            val k = state.character(kaya.id)!!
+            cz.pfspells.ui.SubclassDialog(state, spellDb, k, k.classes[0]) { }
+        }) { openRoot(Screen.Decks) }
+        shot("cs-phone-classpicker-witch", 390, 844, overlay = {
+            ClassPickerDialog(
+                "Nová postava", "Vytvořit", withName = false, subclasses = subIdx, initialClassId = "witch",
+                initialSubclass = mapOf(cz.pfspells.data.SubclassSlot.PATRON to "agility"), onDismiss = {},
+            ) { }
+        }) { openRoot(Screen.Decks) }
         shot("desktop-classpicker-wizard", 1440, 1000, overlay = {
             ClassPickerDialog("New character", "Create", withName = true, subclasses = subIdx, initialClassId = "wizard", onDismiss = {}) { }
         }) { changeLang(Lang.EN); openRoot(Screen.Decks) }

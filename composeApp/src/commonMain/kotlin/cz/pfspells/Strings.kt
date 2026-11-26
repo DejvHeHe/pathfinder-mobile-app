@@ -166,11 +166,13 @@ interface Strings {
     /** „od 7. úrovně“ */
     fun fromClassLevel(n: Int): String
     val allMysteries: String
+    val allSpirits: String
     val removeAbility: String
     val searchAbilities: String
     val loadingAbilities: String
     fun abilitiesHint(g: AbilityGroup): String
     val sourceClassAbilities: String
+    val sourceSubclassAbilities: String
 
     // featy
     val featsHeader: String
@@ -244,6 +246,23 @@ interface Strings {
     val oppositionWarn: String
     val oppositionShort: String
     val subclassNotAvailable: String
+    fun blessingN(n: Int): String
+    val blessingHint: String
+    fun deityBlessingsHint(deity: String): String
+    val inquisitorDomainHint: String
+    val inquisitionLabel: String
+    fun inquisitionName(name: String): String
+    val patronPrepareHint: String
+    val wanderingSpirit: String
+    val wanderingSpiritHint: String
+    fun bloodlineBonusFeats(feats: String): String
+    val patronHint: String
+    val patronSpellsNote: String
+    val spiritHint: String
+    val spiritSlot: String
+    val bloodragerBloodlineHint: String
+    val disciplineHint: String
+    val subclassPowersHeader: String
     val includeInventory: String
     fun withInventory(name: String): String
     val exportFeats: String
@@ -766,14 +785,16 @@ object EnStrings : Strings {
     }
     override fun fromClassLevel(n: Int) = "from level $n"
     override val allMysteries = "All mysteries"
+    override val allSpirits = "Hexes of all spirits"
     override val removeAbility = "Remove"
     override val searchAbilities = "Search by name or text"
     override val loadingAbilities = "Loading…"
     override fun abilitiesHint(g: AbilityGroup) = when (g) {
-        AbilityGroup.HEXES -> "The count follows the class level – hexes from a patron, spirit or Extra Hex aren't included."
-        AbilityGroup.REVELATIONS -> "The count follows the class level – Extra Revelation isn't included; the final revelation comes at level 20."
+        AbilityGroup.HEXES -> "The count follows the class level plus each Extra Hex feat. A shaman can also pick the hexes of her spirit."
+        AbilityGroup.REVELATIONS -> "The count follows the class level plus each Extra Revelation feat; the final revelation comes at level 20."
     }
     override val sourceClassAbilities = "Domain, bloodline and school powers, hexes, revelations"
+    override val sourceSubclassAbilities = "Spirit, bloodrager bloodline, discipline and inquisition powers, spirit hexes"
     override val featsHeader = "Feats"
     override fun featCount(have: Int, total: Int) = "$have / $total"
     override fun featSlotsGeneral(n: Int) = "Levels $n"
@@ -834,6 +855,12 @@ object EnStrings : Strings {
         SubclassType.MYSTERY -> "Mystery"
         SubclassType.BLOODLINE -> "Bloodline"
         SubclassType.SCHOOL -> "Arcane school"
+        SubclassType.PATRON -> "Patron"
+        SubclassType.SPIRIT -> "Spirit"
+        SubclassType.BLOODRAGER_BLOODLINE -> "Bloodline"
+        SubclassType.DISCIPLINE -> "Discipline"
+        SubclassType.BLESSINGS -> "Blessings"
+        SubclassType.INQUISITOR_DOMAIN -> "Domain"
     }
     override fun domainN(n: Int) = "Domain $n"
     override val subdomain = "Subdomain"
@@ -852,6 +879,11 @@ object EnStrings : Strings {
         SubclassType.MYSTERY -> "Mystery spells"
         SubclassType.BLOODLINE -> "Bloodline spells"
         SubclassType.SCHOOL -> "School spells"
+        SubclassType.PATRON -> "Patron spells"
+        SubclassType.SPIRIT -> "Spirit magic"
+        SubclassType.BLOODRAGER_BLOODLINE -> "Bloodline spells"
+        SubclassType.DISCIPLINE -> "Discipline spells"
+        SubclassType.BLESSINGS, SubclassType.INQUISITOR_DOMAIN -> "Subclass powers"
     }
     override fun domainSlot(chosen: Int) = "$chosen / 1 domain slot"
     override fun knownFromLevel(n: Int) = "from class level $n"
@@ -860,6 +892,23 @@ object EnStrings : Strings {
     override val oppositionWarn = "Opposition school – takes 2 slots"
     override val oppositionShort = "opposition"
     override val subclassNotAvailable = "Not yet available at this level."
+    override fun blessingN(n: Int) = "Blessing $n"
+    override val blessingHint = "Two blessings from the domains of the warpriest's deity: the minor power at 1st level, the major at 10th. All blessings share one daily pool (Blessings, 3 + ½ level)."
+    override fun deityBlessingsHint(deity: String) = "Only blessings of the domains granted by $deity are offered (without a deity, or with a custom one, all blessings)."
+    override val inquisitorDomainHint = "An inquisitor picks one domain (or subdomain) of the deity, or an inquisition instead – she gains its powers, but no domain spells or domain slot."
+    override val inquisitionLabel = "Inquisition"
+    override fun inquisitionName(name: String) = "$name Inquisition"
+    override val patronPrepareHint = "Prepare them in normal slots with the stepper – they then appear among the witch's spells."
+    override val wanderingSpirit = "Wandering spirit"
+    override val wanderingSpiritHint = "From 4th level the shaman bonds daily with a second spirit: she gains its spirit ability (greater at 12th, true at 20th) and its spirit magic spells; from 6th level one of its hexes (two from 14th) as a wandering hex."
+    override fun bloodlineBonusFeats(feats: String) = "Bloodline bonus feats: $feats"
+    override val patronHint = "Patron spells are added to the familiar at every even level (2nd, 4th…); the witch prepares them in her normal slots."
+    override val patronSpellsNote = "added to the familiar, prepared in normal slots"
+    override val spiritHint = "Spirit magic: the shaman has one extra slot per spell level she can cast and spontaneously casts any spirit magic spell of that level from it."
+    override val spiritSlot = "1 spirit magic slot / day"
+    override val bloodragerBloodlineHint = "Bonus spells known at 7th, 10th, 13th and 16th level."
+    override val disciplineHint = "Bonus spells known at 1st level and then at every even level."
+    override val subclassPowersHeader = "Subclass powers"
     override val includeInventory = "Include linked inventory"
     override fun withInventory(name: String) = "+ inventory $name"
     override val exportFeats = "Export"
@@ -1579,14 +1628,16 @@ object CsStrings : Strings {
     }
     override fun fromClassLevel(n: Int) = "od $n. úrovně"
     override val allMysteries = "Všechna mystéria"
+    override val allSpirits = "Hexy všech duchů"
     override val removeAbility = "Odebrat"
     override val searchAbilities = "Hledat v názvu nebo textu"
     override val loadingAbilities = "Načítám…"
     override fun abilitiesHint(g: AbilityGroup) = when (g) {
-        AbilityGroup.HEXES -> "Počet podle úrovně classy – hexy z patrona, spiritu nebo featu Extra Hex v něm nejsou."
-        AbilityGroup.REVELATIONS -> "Počet podle úrovně classy – feat Extra Revelation v něm není; finální zjevení přijde na 20. úrovni."
+        AbilityGroup.HEXES -> "Počet podle úrovně classy plus každý feat Extra Hex. Šaman může vybírat i hexy svého ducha."
+        AbilityGroup.REVELATIONS -> "Počet podle úrovně classy plus každý feat Extra Revelation; finální zjevení přijde na 20. úrovni."
     }
     override val sourceClassAbilities = "Schopnosti domén, bloodline a škol, hexy, zjevení"
+    override val sourceSubclassAbilities = "Schopnosti duchů, bloodline bloodragera, disciplín a inquisitions, hexy duchů"
     override val featsHeader = "Featy"
     override fun featCount(have: Int, total: Int) = "$have / $total"
     override fun featSlotsGeneral(n: Int) = "Za úrovně $n"
@@ -1647,6 +1698,12 @@ object CsStrings : Strings {
         SubclassType.MYSTERY -> "Mystérium"
         SubclassType.BLOODLINE -> "Bloodline"
         SubclassType.SCHOOL -> "Škola magie"
+        SubclassType.PATRON -> "Patron"
+        SubclassType.SPIRIT -> "Duch (spirit)"
+        SubclassType.BLOODRAGER_BLOODLINE -> "Bloodline"
+        SubclassType.DISCIPLINE -> "Disciplína"
+        SubclassType.BLESSINGS -> "Požehnání (blessings)"
+        SubclassType.INQUISITOR_DOMAIN -> "Doména"
     }
     override fun domainN(n: Int) = "Doména $n"
     override val subdomain = "Subdoména"
@@ -1674,6 +1731,11 @@ object CsStrings : Strings {
         SubclassType.MYSTERY -> "Kouzla mystéria"
         SubclassType.BLOODLINE -> "Kouzla bloodline"
         SubclassType.SCHOOL -> "Kouzla školy"
+        SubclassType.PATRON -> "Kouzla patrona"
+        SubclassType.SPIRIT -> "Magie ducha"
+        SubclassType.BLOODRAGER_BLOODLINE -> "Kouzla bloodline"
+        SubclassType.DISCIPLINE -> "Kouzla disciplíny"
+        SubclassType.BLESSINGS, SubclassType.INQUISITOR_DOMAIN -> "Schopnosti podtřídy"
     }
     override fun domainSlot(chosen: Int) = "$chosen / 1 doménový slot"
     override fun knownFromLevel(n: Int) = "od úrovně classy $n"
@@ -1682,6 +1744,23 @@ object CsStrings : Strings {
     override val oppositionWarn = "Opoziční škola – zabere 2 sloty"
     override val oppositionShort = "opoziční"
     override val subclassNotAvailable = "Na této úrovni zatím nedostupné."
+    override fun blessingN(n: Int) = "Požehnání $n"
+    override val blessingHint = "Dvě požehnání z domén božstva warpriesta: menší schopnost na 1. úrovni, větší na 10. Všechna požehnání čerpají ze společného denního počtu (Blessings, 3 + ½ úrovně)."
+    override fun deityBlessingsHint(deity: String) = "Nabízí se jen požehnání domén božstva $deity (bez božstva nebo s vlastním všechna)."
+    override val inquisitorDomainHint = "Inquisitor volí jednu doménu (nebo subdoménu) božstva, případně místo ní inquisition – získá její schopnosti, ale ne doménová kouzla ani doménový slot."
+    override val inquisitionLabel = "Inquisition"
+    override fun inquisitionName(name: String) = "Inquisition $name"
+    override val patronPrepareHint = "Připravte je do běžných slotů tlačítky +/− – pak se objeví mezi kouzly čarodějnice."
+    override val wanderingSpirit = "Toulavý duch (wandering spirit)"
+    override val wanderingSpiritHint = "Od 4. úrovně se šaman každý den spojí s dalším duchem: získá jeho schopnost (větší od 12., pravou od 20. úrovně) a jeho kouzla magie ducha; od 6. úrovně jeden jeho hex (od 14. dva) jako wandering hex."
+    override fun bloodlineBonusFeats(feats: String) = "Bonusové featy bloodline: $feats"
+    override val patronHint = "Kouzla patrona přibývají familiárovi na každé sudé úrovni (2., 4.…); čarodějnice je připravuje do běžných slotů."
+    override val patronSpellsNote = "přibývají familiárovi, připravují se do běžných slotů"
+    override val spiritHint = "Magie ducha: šaman má na každé úrovni kouzel, kterou umí sesílat, slot navíc a spontánně z něj sesílá libovolné kouzlo ducha té úrovně."
+    override val spiritSlot = "1 slot magie ducha / den"
+    override val bloodragerBloodlineHint = "Bonusová známá kouzla na 7., 10., 13. a 16. úrovni."
+    override val disciplineHint = "Bonusová známá kouzla na 1. úrovni a pak na každé sudé."
+    override val subclassPowersHeader = "Schopnosti podtřídy"
     override val includeInventory = "Včetně propojeného inventáře"
     override fun withInventory(name: String) = "+ inventář $name"
     override val exportFeats = "Export"

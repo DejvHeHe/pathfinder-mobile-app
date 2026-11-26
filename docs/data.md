@@ -44,11 +44,22 @@ v bloodline) se zahodí. Výsledek: 37 domén, 113 subdomén, 34 mystérií, 25 
 | oracle | mystérium | známé kouzlo levelu N od úrovně 2N |
 | sorcerer | bloodline | známé kouzlo levelu N od úrovně 2N + 1 |
 | wizard | škola / elementární škola + opoziční školy | +1 slot na spell level pro kouzla školy; opoziční kouzla s upozorněním (2 sloty) |
+| witch | patron (51, Foundry) | kouzlo patrona levelu N od úrovně 2N (familiár, běžné sloty – jen přehled) |
+| shaman | spirit (17, Foundry) | magie ducha: 1 spontánní seslání za den na každém spell levelu, který umí |
+| bloodrager | bloodline (22, Foundry) | známé kouzlo levelu N od úrovně 3N + 4 (7., 10., 13., 16.) |
+| psychic | disciplína (23, Foundry) | známé kouzlo 1. levelu od 1. úrovně, levelu N od 2N |
+| warpriest | 2 blessingy (47, Foundry) – jen domény božstva | žádná; schopnosti menší (1.) a větší (10.) |
+| inquisitor | 1 doména (+ subdoména) – jen domény božstva | žádná; schopnosti domény |
+
+Patroni, spirity, bloodline bloodragera a disciplíny ve zdroji kouzel nejsou – kouzla se čtou z popisů ve Foundry
+(`tools/build_class_abilities.py` → `SUBCLASS_SPELL_TABLE`, jména kouzel spárovaná se `SpellList.json`, „X, Mass“ ↔ „Mass X“,
+římské číslice) a `SubclassIndex` je přidá k podtřídám ze zdroje (klíče `patron:`, `spirit:`, `brbloodline:`, `discipline:`).
+Blessing → doména (`BLESSING_DOMAINS`) z tagů Foundry; Death a Evil mají ve Foundry chybný tag, proto má přednost jméno blessingu.
 
 Subdoména nahrazuje kouzla své domény na levelech, které uvádí. Vazbu subdoména → doména zdroj neobsahuje – je ručně
 v `Subclasses.kt` (`SUBDOMAIN_DOMAINS`, podle tabulky [aonprd.com/ClericDomains.aspx](https://aonprd.com/ClericDomains.aspx)).
 Nabízí se jen subdomény zvolené domény (archon, azata, devil… patří ke dvěma doménám); změna domény zruší subdoménu,
-která k nové doméně nepatří. Boreal a sleep v tabulce AoN nejsou, takže se nenabízí. Patron (witch), spirit (shaman), bloodline bloodragera a psychic discipline ve zdroji nejsou.
+která k nové doméně nepatří. Boreal a sleep v tabulce AoN nejsou, takže se nenabízí.
 
 ## Itemy
 
@@ -117,7 +128,7 @@ Stáhne tři CSV z GitHubu (`raw.githubusercontent.com/Vireche/randomitemgenerat
 - Classy s více listy berou nižší level: hunter = hunter/druid/ranger, warpriest = warpriest/cleric,
   skald = skald/bard, investigator = investigator/alchemist, arcanist = sorcerer/wizard, oracle = cleric/oracle.
 - Medium (Occult Adventures, Table 1-2): knacky od 1. úrovně, 1st na 4, 2nd na 7, 3rd na 10, 4th na 13.
-- Vynechané: adept (NPC classa). Podtřídy viz výše (patroni, spirity zatím ne).
+- Vynechané: adept (NPC classa). Podtřídy viz výše.
 
 ### Lektvary, svitky a hůlky ze spellu (`SpellItemKind`)
 Cena podle Core Rulebooku: lektvar 50 gp × SL × CL (max 3. level), svitek 25 gp × SL × CL, hůlka 750 gp × SL × CL
@@ -191,6 +202,19 @@ ze seznamu volí domény jen z `DeityInfo.domains` a subdomény jen z `DeityInfo
 `DeityDisplay.aspx`, ~460 požadavků po 1 s, cache `build/deity-cache`; subdomény podmíněné traitem, „*“, se počítají).
 `subdomains = null` = stránka chybí → nabídnou se všechny subdomény domény.
 
+### Schopnosti podtříd z AoN (`SubclassAbilityTable.kt`, `SubclassAbilities.json`)
+`python tools/build_subclass_abilities.py [--cache DIR]` stáhne stránky spiritů šamana, bloodline bloodragera, disciplín psychica
+a Inquisitions (~70 požadavků, 1 za sekundu, cache `build/subclass-cache`) – Foundry tyto schopnosti s podtřídou nepropojuje:
+
+- **`SubclassAbilityTable.kt`** – `AON_SUBCLASS_POWER_TABLE` (371 schopností: spirit ability 1., greater 8., true 16., manifestation 20.;
+  u bloodline, disciplín a inquisitions úroveň z „At Nth level“), počet použití z textu („a number of times per day equal to
+  3 + your Wisdom modifier“, „once per day“; s „…, plus 1 round…“ se vzorec vynechá). `DISCIPLINE_POOL_ABILITY` (atribut phrenic
+  poolu), `INQUISITION_DEITIES` (prázdné = jakékoli božstvo, i „n/a“).
+- **`BLOODLINE_BONUS_FEATS`** – bonusové featy 75 bloodline bloodragera a čaroděje; ze stránek bloodline čaroděje
+  (SorcererBloodlines.aspx) i jejich schopnosti – appka je bere jen pro bloodline, které Foundry nemá.
+- **`SubclassAbilities.json`** – 82 hexů duchů s textem (formát `ClassAbilities.json`, pole `spirits`); hex se stejným jménem jako
+  běžný hex šamana appka vynechá.
+
 ### Schopnosti class (`ClassAbilityTable.kt`, `ClassAbilities.json`)
 `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` (pyyaml) zpracuje Foundry VTT PF1
 `packs/class-abilities` (~4 700 YAML) a názvy knih z `module/registry/sources.mjs` (kód „PZO1115“ → „Advanced Player's Guide“):
@@ -201,7 +225,7 @@ ze seznamu volí domény jen z `DeityInfo.domains` a subdomény jen z `DeityInfo
   `subdomain:archon@good` (subdoména pod dvěma doménami), `bloodline:draconic`, `school:evocation`, `school:element:fire`.
   325 schopností ze 136 podtříd, 240 s počtem použití. Kde Foundry vzorec nemá, ale text ho uvádí („number of rounds per day
   equal to 3 + your Charisma modifier“), skript ho doplní. Druh jednotky: „rounds per day“ v textu → kola.
-- **`ClassAbilities.json`** – hexy (tagy Hex / Major Hex / Grand Hex, classy witch a shaman, bez hexů spiritů) a zjevení
+- **`ClassAbilities.json`** – hexy (tagy Hex / Major Hex / Grand Hex, classy witch a shaman; hexy duchů jsou z AoN – viz výše) a zjevení
   (tag Revelation, oracle, mystéria z tagů „X Mystery“, bez finálních zjevení): text z HTML (odkazy `@UUID[…]{Jméno}` → jméno),
   vzorec použití, Ex / Su / Sp, zdroj, minimální úroveň (velký hex 10, nejvyšší 18, zjevení z textu „must be at least 7th
   level“). 420 položek (117 hexů, 303 zjevení), načítá se líně.

@@ -76,8 +76,9 @@ composeApp/src/
       RacialTraitTable.kt     GENERATED: default racial traits (AoN, tools/build_racial_traits.py)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       subclass powers (SubclassPowers), Foundry formulas (FoundryFormula), hexes and revelations (ClassAbility, AbilityPick, AbilityRules)
-      ClassAbilityTable.kt    GENERATED: domain, bloodline and school powers with level and formula (Foundry, tools/build_class_abilities.py)
-      Subclasses.kt           domains, mysteries, bloodlines, schools – SubclassIndex, bonus spells, subdomain → domain table
+      ClassAbilityTable.kt    GENERATED: domain, bloodline, school and blessing powers, patron / spirit / discipline spells (Foundry, tools/build_class_abilities.py)
+      SubclassAbilityTable.kt GENERATED: spirit, bloodrager bloodline, discipline and inquisition powers (AoN, tools/build_subclass_abilities.py)
+      Subclasses.kt           domains, mysteries, bloodlines, schools, patrons, spirits, disciplines, blessings – SubclassIndex, bonus spells, subdomain → domain table
       Feats.kt                Feat, FeatDatabase, FeatRepository, FeatPrereqs, featSlots
       CharacterTransfer.kt    export/import of characters and feats (+ old decks)
       CustomItems.kt          own item catalog, potions/scrolls/wands from spells (SpellItemKind)
@@ -226,7 +227,7 @@ version (`characters_v2`…) and a migration (example: `CharacterStore` converts
 - **Spells** load at start (`SpellRepository.load` on `Dispatchers.Default`, ~0.35 s). Until then "Loading spells…" is shown.
 - **Feats** (`Feats.json`, bundled only) load **lazily** when a character or the feat picker is first opened (`ensureFeats`).
 - **Alternate racial traits** (`RacialTraits.json`) load **lazily** when their dialog opens (`ensureRacialTraits`).
-- **Hexes and revelations** (`ClassAbilities.json`) load **lazily** when a character has a witch / shaman / oracle class (`ensureClassAbilities`).
+- **Hexes and revelations** (`ClassAbilities.json` + spirit hexes `SubclassAbilities.json`) load **lazily** when a character has a witch / shaman / oracle class (`ensureClassAbilities`).
 - **Items** load **lazily** – when an inventory, an inventory import or the database screen is opened (`ensureItems`, ~0.3 s).
 - Both repositories first try the downloaded version in `AppFiles`; if it is missing or corrupt, they delete it and use the bundled one.
 - **Download:** HTTP GET → parse it all (validation) → only then write it to the cache. A failed download breaks nothing.
@@ -336,7 +337,7 @@ The "Ruled notebook" design (from the author's design in Claude Design):
 | `AnimalCompanionTest` | animal companion table against "animal" HD, wolf advancement at 7th level, species abilities, specials, suggested level |
 | `StrictModeTest` | strict mode: prepared copies (slots + bonus), known limit, ability and spell level, feat count and prerequisites, animal companion |
 | `BundledDataTest` | bundled spells load, every class has spells, unique ids; hexes and revelations (text, formulas, the app's mysteries and domains); alternate racial traits (races, replaced traits) |
-| `SubclassTest` | domains, bloodlines, mysteries and schools from `access_ways`, bonus spells by level, subclass changes, subdomain → domain |
+| `SubclassTest` | domains, bloodlines, mysteries and schools from `access_ways`, patrons / spirits / bloodrager bloodlines / disciplines from Foundry, blessings and inquisitor domain (deity), bonus spells by level, subclass changes, subdomain → domain |
 | `CharacterStoreTest` | migration of old decks to characters |
 | `CharacterTransferTest` | character export → import (with and without inventory, race, skills, defense and HP, equipped gear, hexes and revelations, racial traits), companions with owner, feats only, old decks, errors |
 | `DeckTransferTest` | old deck format: export → import, name matching, rejecting garbage |
