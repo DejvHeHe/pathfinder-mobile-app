@@ -43,6 +43,8 @@ fun DatabaseScreen(state: AppState, db: SpellDatabase, wide: Boolean = false) {
                 .widthIn(max = 640.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // aktualizace appky nahoře (jen Android a desktop), pod ní databáze
+            AppUpdateSection(state)
             SectionHeader(s.spellsHeader, size = 22.sp)
             NbPanel(Modifier.fillMaxWidth(), color = Nb.inset) {
                 MonoLabel(if (db.source == SpellSource.BUNDLED) s.bundledVersion else s.downloadedVersion)
@@ -80,7 +82,6 @@ fun DatabaseScreen(state: AppState, db: SpellDatabase, wide: Boolean = false) {
             Text(s.charactersKept, fontSize = 13.sp, color = Nb.inkMuted)
 
             ItemDatabaseSection(state)
-            AppUpdateSection(state)
         }
     }
 }

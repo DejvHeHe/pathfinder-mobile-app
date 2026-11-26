@@ -287,7 +287,7 @@ Funguje pro postavy, featy i inventáře. Výsledkem je čitelný text (JSON), k
 
 ## Aktualizace databází
 
-Menu **⋮ → Spell & item database / update**:
+Menu **⋮ → Databáze a aktualizace** (EN: Databases & updates):
 
 - **Download latest spell database** – stáhne aktuální seznam spellů.
 - **Download latest item database** – stáhne aktuální tabulky zbraní, munice a magických itemů.
@@ -298,7 +298,7 @@ spelly se párují podle id a jména, položky inventáře si nesou vlastní ná
 
 ## Aktualizace appky
 
-Na stejné obrazovce je dole sekce **Aktualizace appky** (jen Android a desktop): nainstalovaná verze a tlačítko
+Na stejné obrazovce je nahoře sekce **Aktualizace appky** (jen Android a desktop): nainstalovaná verze a tlačítko
 **Zkontrolovat aktualizace**, které se podívá na poslední vydání v GitHub Releases.
 
 - **Android**: **Stáhnout a nainstalovat** stáhne APK přímo v appce (s průběhem) a otevře systémový instalátor. Poprvé je

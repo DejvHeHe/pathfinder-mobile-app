@@ -744,7 +744,7 @@ object EnStrings : Strings {
     override val exportAllCharacters = "Export all characters"
     override val importInventory = "Import inventory"
     override val exportAllInventories = "Export all inventories"
-    override val menuDatabase = "Spell & item database / update"
+    override val menuDatabase = "Databases & updates"
     override val menuAbout = "About & licenses"
 
     override val myCharacters = "My characters"
@@ -1099,7 +1099,7 @@ object EnStrings : Strings {
     override val shortInfo = "Short info (optional)"
     override val shortInfoPlaceholder = "e.g. 1d8+1, CL 1"
 
-    override val databases = "Databases"
+    override val databases = "Databases & updates"
     override val spellsHeader = "Spells"
     override val itemsHeader = "Items"
     override val bundledVersion = "Bundled version"
@@ -1614,7 +1614,7 @@ object CsStrings : Strings {
     override val exportAllCharacters = "Exportovat všechny postavy"
     override val importInventory = "Importovat inventář"
     override val exportAllInventories = "Exportovat všechny inventáře"
-    override val menuDatabase = "Databáze kouzel a předmětů"
+    override val menuDatabase = "Databáze a aktualizace"
     override val menuAbout = "O aplikaci a licence"
 
     override val myCharacters = "Moje postavy"
@@ -2001,7 +2001,7 @@ object CsStrings : Strings {
     override val shortInfo = "Krátké info (nepovinné)"
     override val shortInfoPlaceholder = "např. 1d8+1, CL 1"
 
-    override val databases = "Databáze"
+    override val databases = "Databáze a aktualizace"
     override val spellsHeader = "Kouzla"
     override val itemsHeader = "Předměty"
     override val bundledVersion = "Přibalená verze"

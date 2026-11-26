@@ -300,7 +300,7 @@ Works for characters, feats and inventories. The result is readable text (JSON) 
 
 ## Database updates
 
-Menu **⋮ → Spell & item database / update**:
+Menu **⋮ → Databases & updates**:
 
 - **Download latest spell database** – downloads the current spell list.
 - **Download latest item database** – downloads the current weapon, ammunition and magic item tables.
@@ -311,7 +311,7 @@ spells are matched by id and name, inventory entries carry their own name, price
 
 ## App updates
 
-At the bottom of the same screen is an **App updates** section (Android and desktop only): the installed version and a
+At the top of the same screen is an **App updates** section (Android and desktop only): the installed version and a
 **Check for updates** button that looks at the latest release on GitHub Releases.
 
 - **Android**: **Download and install** downloads the APK right in the app (with progress) and opens the system installer.
