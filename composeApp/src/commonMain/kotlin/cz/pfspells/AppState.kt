@@ -1,6 +1,12 @@
 package cz.pfspells
 
 import cz.pfspells.data.ClassAbility
+import cz.pfspells.data.AppUpdates
+import cz.pfspells.data.UpdateInfo
+import cz.pfspells.data.PreparedUpdate
+import cz.pfspells.data.appUpdater
+import cz.pfspells.data.currentTimeMillis
+import cz.pfspells.data.isSupported
 import cz.pfspells.data.RacialTrait
 import cz.pfspells.data.RacialTraitDatabase
 import cz.pfspells.data.RacialTraitRepository
@@ -171,6 +177,19 @@ sealed interface DbState {
     data object Loading : DbState
     data class Ready(val db: SpellDatabase) : DbState
     data class Failed(val message: String) : DbState
+}
+
+/** Kontrola aktualizací appky (GitHub Releases). */
+sealed interface UpdateState {
+    data object Idle : UpdateState
+    data object Checking : UpdateState
+    data object UpToDate : UpdateState
+    data class Available(val info: UpdateInfo) : UpdateState
+    /** stahování (Android) – [progress] 0–1, null = neznámá velikost */
+    data class Downloading(val info: UpdateInfo, val progress: Float?) : UpdateState
+    /** staženo / připraveno – appka se zeptá (s nabídkou exportu postav), než spustí instalaci */
+    data class ReadyToInstall(val info: UpdateInfo, val prepared: PreparedUpdate) : UpdateState
+    data class Failed(val message: String) : UpdateState
 }
 
 class AppState(
@@ -576,6 +595,99 @@ class AppState(
                 DbState.Failed(e.message ?: e.toString())
             }
         }
+    }
+
+    // ---- aktualizace appky (GitHub Releases) ----
+    var update: UpdateState by mutableStateOf(UpdateState.Idle)
+        internal set // internal kvůli náhledům (PreviewRender)
+
+    /** Nabízí platforma aktualizace? (web a iOS ne) */
+    val updatesSupported: Boolean get() = appUpdater.isSupported
+
+    /** Banner „nová verze“ – jen po automatické kontrole, dokud ho uživatel nezavře. */
+    var updateBanner: UpdateInfo? by mutableStateOf(null)
+        private set
+
+    /**
+     * Automatická kontrola při startu: jen build z CI (vývojový má verzi 1.0.0), jen platforma s aktualizacemi,
+     * nejvýš jednou za 24 h; verze, kterou uživatel přeskočil, se nehlásí.
+     */
+    private fun autoCheckForUpdates() {
+        if (!IS_RELEASE_BUILD || !updatesSupported) return
+        val last = settings.getLong(KEY_UPDATE_CHECKED, 0L)
+        if (currentTimeMillis() - last < UPDATE_INTERVAL_MS) return
+        checkForUpdates(manual = false)
+    }
+
+    /** Zkontroluje poslední release; [manual] = z tlačítka (ukáže i „aktuální“ a chyby, ignoruje přeskočenou verzi). */
+    fun checkForUpdates(manual: Boolean = true) {
+        if (update is UpdateState.Checking || update is UpdateState.Downloading) return
+        if (manual) update = UpdateState.Checking
+        scope.launch {
+            try {
+                val release = AppUpdates.fetchLatest()
+                settings.putLong(KEY_UPDATE_CHECKED, currentTimeMillis())
+                val info = AppUpdates.evaluate(release, APP_VERSION, appUpdater.assetExtensions)
+                update = if (info != null) UpdateState.Available(info) else UpdateState.UpToDate
+                if (!manual && info != null && info.version != settings.getStringOrNull(KEY_UPDATE_SKIPPED)) updateBanner = info
+            } catch (e: Exception) {
+                // automatická kontrola chybu jen tiše zahodí (offline, limit GitHub API…)
+                if (manual) update = UpdateState.Failed(e.message ?: e::class.simpleName ?: "error")
+            }
+        }
+    }
+
+    /**
+     * Připraví aktualizaci (Android stáhne APK a ověří podpis, desktop nic) a přejde do [UpdateState.ReadyToInstall] –
+     * UI se pak zeptá a nabídne export postav; instalaci spustí až [confirmInstall]. Bez souboru otevře stránku release.
+     */
+    fun installUpdate(info: UpdateInfo) {
+        if (update is UpdateState.Downloading) return
+        updateBanner = null
+        val asset = info.asset
+        if (asset == null) {
+            appUpdater.openPage(info.pageUrl)
+            return
+        }
+        update = UpdateState.Downloading(info, null)
+        scope.launch {
+            update = try {
+                val prepared = appUpdater.prepare(asset) { p -> update = UpdateState.Downloading(info, p) }
+                UpdateState.ReadyToInstall(info, prepared)
+            } catch (e: Exception) {
+                UpdateState.Failed(e.message ?: e::class.simpleName ?: "error")
+            }
+        }
+    }
+
+    /** Uživatel potvrdil – spustí instalaci (když se nepodaří, otevře stránku release). */
+    fun confirmInstall() {
+        val ready = update as? UpdateState.ReadyToInstall ?: return
+        if (!appUpdater.install(ready.prepared)) appUpdater.openPage(ready.info.pageUrl)
+        update = UpdateState.Available(ready.info)
+    }
+
+    /** Zrušení v dialogu – aktualizace zůstane nabídnutá. */
+    fun cancelInstall() {
+        val ready = update as? UpdateState.ReadyToInstall ?: return
+        update = UpdateState.Available(ready.info)
+    }
+
+    /** Otevře adresu v prohlížeči (Android: stažení APK, které přežije odinstalaci appky). */
+    fun openInBrowser(url: String) = appUpdater.openPage(url)
+
+    fun openReleasePage(info: UpdateInfo) = appUpdater.openPage(info.pageUrl)
+
+    /** Zavře banner; [skip] = tuto verzi už automaticky nehlásit. */
+    fun dismissUpdateBanner(skip: Boolean) {
+        val info = updateBanner ?: return
+        if (skip) settings.putString(KEY_UPDATE_SKIPPED, info.version)
+        updateBanner = null
+    }
+
+    // až za deklaracemi výše – init bloky a vlastnosti se inicializují v pořadí, v jakém jsou v souboru
+    init {
+        autoCheckForUpdates()
     }
 
     fun downloadSpells() {
@@ -1054,5 +1166,9 @@ class AppState(
         const val LANG_KEY = "ui_lang"
         const val FAVORITES_KEY = "favorite_spells_v1"
         const val STRICT_KEY = "strict_mode"
+        /** čas poslední kontroly aktualizací (ms) a verze, kterou uživatel nechce hlásit */
+        const val KEY_UPDATE_CHECKED = "update_checked_at"
+        const val KEY_UPDATE_SKIPPED = "update_skipped_version"
+        const val UPDATE_INTERVAL_MS = 24L * 60 * 60 * 1000
     }
 }

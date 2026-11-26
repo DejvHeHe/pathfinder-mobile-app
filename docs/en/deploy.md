@@ -26,7 +26,10 @@ GitHub Actions then builds in parallel (~15 min):
 | `PF-Spellbook-1.0.0-web.zip` | static website | ubuntu |
 | Docker image `ghcr.io/dejvhehe/pf-spellbook-web:1.0.0` + `:latest` (workflow `docker.yml`) | web for a server | ubuntu |
 
-The version from the tag goes into the app (`-PappVersion`), the Android `versionCode` = the workflow run number.
+The version from the tag goes into the app (`-PappVersion` → generated `AppVersion.kt`), the Android `versionCode` = the workflow run number.
+On Android and desktop the app looks in the latest Release for a file ending in `.apk` / `.msi` / `.dmg` / `.deb` (update check,
+`data/AppUpdate.kt`) – so keep the file extensions in the Release. The release must be neither a *draft* nor a *pre-release*,
+otherwise the GitHub API `releases/latest` does not return it.
 The desktop installers bundle their own Java – users do not need to install anything else.
 
 **A manual run** (Actions → Release → Run workflow, enter a version) only builds the files as run *artifacts* – it creates

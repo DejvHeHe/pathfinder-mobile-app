@@ -115,7 +115,8 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 
 ## Vydání / infrastruktura
 
-- [ ] Stabilní podpisový klíč pro Android APK (secrets v GitHubu – postup v `docs/deploy.md`)
+- [x] Stabilní podpisový klíč pro Android APK (secrets v GitHubu – postup v `docs/deploy.md`), od v1.6.0
+- [x] Aktualizace appky z GitHub Releases (Android APK v appce s kontrolou podpisu, desktop instalátor, dotaz + export před instalací)
 - [x] Vyzkoušet appku na skutečném Android zařízení
 - [x] Vyzkoušet iOS build na Macu (`docs/ios-install.md`)
 - [x] Web: v `docker/nginx.conf` dát `.js` / `.wasm` místo `max-age=3600` `no-cache` (revalidace přes ETag) – po nové verzi

@@ -261,6 +261,18 @@ class PreviewRender {
         }) { openRoot(Screen.CharacterDetail(morgana.id)) }
         shot("cs-phone-feat-prereqs", 390, 1000) { openRoot(Screen.CharacterDetail(thomasId)); showFeat("cloak-of-stone", thomasId) }
         shot("cs-phone-database", 390, 844) { openRoot(Screen.Decks); push(Screen.Database) }
+        shot("cs-phone-database-updates", 390, 1900) { openRoot(Screen.Decks); push(Screen.Database) }
+        // dotaz před instalací: běžný (podpis sedí) a varování při jiném podpisu APK
+        val apk = cz.pfspells.data.GithubAsset("PF-Spellbook-1.6.0.apk", "https://example/apk")
+        val info = cz.pfspells.data.UpdateInfo("1.6.0", "https://example/release", apk)
+        shot("cs-phone-update-confirm", 390, 844) {
+            openRoot(Screen.Decks)
+            update = UpdateState.ReadyToInstall(info, cz.pfspells.data.PreparedUpdate(apk, "x.apk", signatureMatches = true))
+        }
+        shot("cs-phone-update-mismatch", 390, 844) {
+            update = UpdateState.ReadyToInstall(info, cz.pfspells.data.PreparedUpdate(apk, "x.apk", signatureMatches = false))
+        }
+        withContext(Dispatchers.Main) { state.update = UpdateState.Idle }
         // výběr classy s podtřídou (nová postava – klerik)
         val subIdx = (state.db as DbState.Ready).db.subclasses
         shot("cs-phone-classpicker-subclass", 390, 844, overlay = {

@@ -125,3 +125,17 @@ actual fun trackEvent(name: String, data: Map<String, String>) {
     val json = if (data.isEmpty()) null else JsonObject(data.mapValues { JsonPrimitive(it.value) }).toString()
     umamiTrack(name, json)
 }
+
+private fun jsEpochMillis(): Double = js("Date.now()")
+
+actual fun currentTimeMillis(): Long = jsEpochMillis().toLong()
+
+// ---------- aktualizace ----------
+
+/** Web se natahuje ze serveru (index.html a .wasm s no-cache) → je vždy aktuální, aktualizace se nenabízí. */
+actual val appUpdater: AppUpdater = object : AppUpdater {
+    override val assetExtensions: List<String> = emptyList()
+    override suspend fun prepare(asset: GithubAsset, onProgress: (Float?) -> Unit) = PreparedUpdate(asset)
+    override fun install(update: PreparedUpdate): Boolean = false
+    override fun openPage(url: String) {}
+}

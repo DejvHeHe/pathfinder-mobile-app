@@ -23,10 +23,19 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (26. 11. 2026)
+## Stav (27. 11. 2026)
 - ✅ **Vydáno `v1.5.0`** (26. 11. 2026): schopnosti class z Foundry, alternativní rasové traity, podtřídy patron / spirit /
   bloodline bloodragera / disciplína / blessingy / doména a inquisition inquisitora, schopnosti podtříd z AoN, wandering spirit,
-  bonusové featy bloodline – workflowy Release a Docker po pushi tagu ověřit.
+  bonusové featy bloodline – workflowy Release, Docker i CI zelené (ověřeno 26. 11. 2026).
+- ✅ **Vydáno `v1.6.0`** (27. 11. 2026): **aktualizace appky z GitHub Releases** – `data/AppUpdate.kt` (`AppUpdates`: API
+  `releases/latest`, `parseVersion` / `isNewer` / `pickAsset` / `evaluate`; `expect val appUpdater`): Android stáhne APK do
+  `cache/updates` a otevře instalátor (`AndroidAppUpdater`, FileProvider `${applicationId}.updates`, `REQUEST_INSTALL_PACKAGES`),
+  desktop otevře stažení .msi / .dmg / .deb v prohlížeči, web a iOS nic. `APP_VERSION` / `IS_RELEASE_BUILD` generuje Gradle
+  (`generateAppVersion`); automatická kontrola jen release build, max 1× za 24 h (`update_checked_at`, přeskočená verze
+  `update_skipped_version`), banner `UpdateBanner`, sekce `AppUpdateSection` v Databázích. Soukromí v About doplněné.
+  Instalace přes starou verzi na Androidu vyžaduje stabilní podpisový klíč (zatím debug klíč CI). Před instalací dialog
+  `UpdateConfirmDialog` (stav `UpdateState.ReadyToInstall`, `PreparedUpdate`) s exportem postav / inventářů; Android po stažení
+  porovná podpis APK s nainstalovanou verzí (`signatureMatches`) – při neshodě postup přes odinstalaci místo tlačítka Instalovat.
 - ✅ **Vydáno `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
   inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md`.
   Release a Docker zelené; CI testy padaly na kompilaci (`InventoryLinkTest` bez importu `scores`) – opraveno v `08289c8`,
@@ -83,7 +92,7 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   klerik volí domény i subdomény jen svého božstva (`SubclassFields(deity = …)`, `DeityInfo.subdomains`; nesoulad → `ClassEntry.deityConflicts`, `DeityConflictWarning`), božstvo i v dialogu nové postavy (`ClassPick.deity`).
   `tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` – stránky božstev jde stáhnout curlem (`--rate 1/s -K cfg`), Python neověří certifikát.
 - ✅ **Vydáno `v1.0.1`** (GitHub Release): APK, MSI, DMG, DEB, web zip – všechny joby workflowu Release zelené.
-  APK je podepsané **dočasným debug klíčem CI** (secrets s keystorem zatím nenastavené → aktualizace APK vyžaduje přeinstalaci).
+  (Od `v1.6.0` je APK podepsané stabilním klíčem ze secrets – starší verze s debug klíčem je nutné jednou přeinstalovat.)
   Tag `1.0.0` (bez „v“) je starý ruční release s debug APK – workflow na něj nereaguje.
 - ✅ **Web běží na VPS uživatele** z image `ghcr.io/dejvhehe/pf-spellbook-web:edge` (`.env`: `TAG=edge` + `UMAMI_*`), za jeho nginx na `127.0.0.1:8888`.
   Image `:edge`, `:latest`, `:1.0.1` jsou veřejné.
@@ -150,7 +159,9 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   data/Items.kt           Item, ItemCategory, ItemDatabase, Inventory, InvEntry, CarryingCapacity
   data/ItemParser.kt      ItemsBase.json + CSV → Item; Csv parser; decodeText (UTF-8 / cp1252)
   data/ItemRepository.kt  ItemRepository, InventoryStore, InventoryTransfer
-  data/Platform.kt        expect: AppFiles (suspend), createHttpClient, deckFileIo, nowDisplayText, trackEvent (Umami, jen web)
+  data/Platform.kt        expect: AppFiles (suspend), createHttpClient, deckFileIo, nowDisplayText, currentTimeMillis, trackEvent (Umami, jen web)
+  data/AppUpdate.kt       kontrola aktualizací z GitHub Releases (AppUpdates, expect appUpdater); AppVersion.kt GENEROVANÉ Gradlem (generateAppVersion)
+  ui/UpdateUi.kt          AppUpdateSection (obrazovka Databáze), UpdateBanner (po automatické kontrole)
   ui/Theme.kt             tokeny Nb.*, fonty, PfTheme, modifikátory (ruledPaper, dashedBorder…), NbIcons
   ui/Common.kt            NbScreen (kostra obrazovky) + společné komponenty
   ui/WideLayout.kt        třísloupcové rozložení (hlavička se záložkami | sidebar · hlavní · detail)
@@ -275,7 +286,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
   (hodnoty jen v `.env` na serveru, ne v repu). Události z appky: `trackEvent(name, data)` (no-op mimo web) → `umami.track`;
   posílat jen druh akce a obecné údaje (nikdy jména, texty, id), seznam událostí v `docs/deploy.md` – nová událost → doplnit tam.
   `.gitattributes` drží LF u `*.sh` a `gradlew`; `gradlew` má exec bit.
-- Podpis APK: env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (v CI ze secrets) – zatím nenastaveno.
+- Podpis APK: env `ANDROID_KEYSTORE_FILE/_PASSWORD`, `ANDROID_KEY_ALIAS/_PASSWORD` (v CI ze secrets) – secrets nastavené (27. 11. 2026), keystore `pf-spellbook.jks` jen u uživatele (alias `pfspells`).
 - iOS se do Release nedává (nutný Apple Developer účet) – kamarádi s Macem staví přes Xcode (`docs/ios-install.md`;
   bundle ID = `$(BUNDLE_ID)$(TEAM_ID)`, bez Android SDK si build fáze vytvoří prázdnou složku).
 

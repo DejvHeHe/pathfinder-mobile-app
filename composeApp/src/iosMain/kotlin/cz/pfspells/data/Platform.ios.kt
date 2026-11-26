@@ -13,6 +13,7 @@ import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.create
+import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.writeToFile
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
@@ -51,3 +52,13 @@ actual val edgeSwipeBack: Boolean = true
 
 /** Analytika jen na webu. */
 actual fun trackEvent(name: String, data: Map<String, String>) {}
+
+actual fun currentTimeMillis(): Long = (NSDate().timeIntervalSince1970 * 1000).toLong()
+
+/** iOS se do GitHub Releases nedává (staví se v Xcode) a Apple samoaktualizaci mimo App Store nepovoluje. */
+actual val appUpdater: AppUpdater = object : AppUpdater {
+    override val assetExtensions: List<String> = emptyList()
+    override suspend fun prepare(asset: GithubAsset, onProgress: (Float?) -> Unit) = PreparedUpdate(asset)
+    override fun install(update: PreparedUpdate): Boolean = false
+    override fun openPage(url: String) {}
+}

@@ -296,6 +296,24 @@ Menu **⋮ → Spell & item database / update**:
 Pathfinder 1e je uzavřený systém, takže aktualizace přinese hlavně opravy. Postavy a inventáře zůstávají –
 spelly se párují podle id a jména, položky inventáře si nesou vlastní název, cenu a váhu.
 
+## Aktualizace appky
+
+Na stejné obrazovce je dole sekce **Aktualizace appky** (jen Android a desktop): nainstalovaná verze a tlačítko
+**Zkontrolovat aktualizace**, které se podívá na poslední vydání v GitHub Releases.
+
+- **Android**: **Stáhnout a nainstalovat** stáhne APK přímo v appce (s průběhem) a otevře systémový instalátor. Poprvé je
+  potřeba povolit instalaci z této appky. Aktualizace přes starou verzi funguje jen u APK podepsaných stejným klíčem.
+- **Desktop**: **Stáhnout instalátor** otevře stažení `.msi` / `.dmg` / `.deb` v prohlížeči – appku zavřete a instalátor spusťte.
+- **Co je nového** otevře stránku vydání s popisem změn.
+- Před instalací se appka **zeptá** a nabídne **export postav a inventářů** (záloha). Na Androidu po stažení porovná podpis
+  APK s nainstalovanou verzí: když se liší, Android aktualizaci přes starou verzi nepovolí – appka pak místo instalace ukáže
+  postup (export → stáhnout APK v prohlížeči → odinstalovat → nainstalovat → import), protože odinstalace smaže data.
+
+Appka (build z GitHub Releases) se sama podívá nejvýš jednou denně při startu. Když najde novou verzi, ukáže dole
+banner: stáhnout, **Později**, nebo **Tuto verzi přeskočit** (pak ji už automaticky nehlásí, ruční kontrola ano).
+Webová verze je vždy aktuální ze serveru, na iOS se appka staví v Xcode – tam se aktualizace nenabízí.
+Postavy a inventáře aktualizace nemění.
+
 ## Kde jsou moje data
 
 Vše je jen v zařízení:

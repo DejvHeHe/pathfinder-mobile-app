@@ -43,3 +43,5 @@ actual val edgeSwipeBack: Boolean = false
 
 /** Analytika jen na webu. */
 actual fun trackEvent(name: String, data: Map<String, String>) {}
+
+actual fun currentTimeMillis(): Long = System.currentTimeMillis()

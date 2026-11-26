@@ -76,6 +76,10 @@ private fun AppContent(state: AppState, s: Strings) {
                 }
                 is DbState.Ready -> if (wide) WideLayout(state, db.db) else Router(state, db.db)
             }
+            // nová verze appky (automatická kontrola GitHub Releases) – dole nad toastem
+            cz.pfspells.ui.UpdateBanner(state, Modifier.align(Alignment.BottomCenter).padding(bottom = 84.dp, start = 16.dp, end = 16.dp))
+            // dotaz před instalací aktualizace (s nabídkou exportu postav)
+            (state.db as? DbState.Ready)?.let { cz.pfspells.ui.UpdateConfirmDialog(state, it.db) }
             state.toast?.let { msg ->
                 Text(
                     msg.text(s),

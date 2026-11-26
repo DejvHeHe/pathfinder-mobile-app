@@ -38,3 +38,40 @@ actual val edgeSwipeBack: Boolean = false
 
 /** Analytika jen na webu. */
 actual fun trackEvent(name: String, data: Map<String, String>) {}
+
+actual fun currentTimeMillis(): Long = System.currentTimeMillis()
+
+// ---------- aktualizace ----------
+
+/**
+ * Desktop: instalátor podle systému (Windows .msi, macOS .dmg, Linux .deb) se stáhne v prohlížeči – běžící appka
+ * se sama přepsat nemůže, uživatel instalátor spustí (Windows MSI díky upgradeUuid nahradí starou verzi).
+ */
+actual val appUpdater: AppUpdater = object : AppUpdater {
+    override val assetExtensions: List<String> = run {
+        val os = System.getProperty("os.name").orEmpty().lowercase()
+        when {
+            "win" in os -> listOf(".msi")
+            "mac" in os || "darwin" in os -> listOf(".dmg")
+            "linux" in os -> listOf(".deb")
+            else -> emptyList()
+        }
+    }
+
+    /** Desktop nic předem nestahuje – instalátor stáhne prohlížeč. */
+    override suspend fun prepare(asset: GithubAsset, onProgress: (Float?) -> Unit) = PreparedUpdate(asset)
+
+    override fun install(update: PreparedUpdate): Boolean = browse(update.asset.downloadUrl)
+
+    override fun openPage(url: String) {
+        browse(url)
+    }
+
+    private fun browse(url: String): Boolean = try {
+        if (!java.awt.Desktop.isDesktopSupported()) false
+        else java.awt.Desktop.getDesktop().takeIf { it.isSupported(java.awt.Desktop.Action.BROWSE) }
+            ?.let { it.browse(java.net.URI(url)); true } ?: false
+    } catch (e: Exception) {
+        false
+    }
+}

@@ -88,7 +88,10 @@ composeApp/src/
       Items.kt                Item, ItemCategory, ItemDatabase, Inventory, InvEntry, CarryingCapacity
       ItemParser.kt           ItemsBase.json + CSV → Item; CSV parser; decodeText
       ItemRepository.kt       ItemRepository, InventoryStore, InventoryTransfer
-      Platform.kt             expect: AppFiles, createHttpClient, deckFileIo, nowDisplayText, trackEvent (Umami, jen web)
+      Platform.kt             expect: AppFiles, createHttpClient, deckFileIo, nowDisplayText, currentTimeMillis, trackEvent (Umami, jen web)
+      AppUpdate.kt            kontrola aktualizací z GitHub Releases: AppUpdates (API, porovnání verzí, výběr souboru), expect appUpdater
+                              (Android APK + FileProvider, desktop instalátor v prohlížeči, web / iOS nic); verze APP_VERSION
+                              generuje Gradle úloha generateAppVersion z -PappVersion
     ui/
       Theme.kt                barvy Nb.*, fonty, PfTheme, modifikátory (linkovaný papír, čárkované okraje), ikony
       Common.kt               společné komponenty + NbScreen (kostra obrazovky)

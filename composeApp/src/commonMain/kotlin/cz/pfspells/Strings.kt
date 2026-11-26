@@ -433,6 +433,28 @@ interface Strings {
     val restoreBundled: String
     val charactersKept: String
     val inventoriesKept: String
+    // aktualizace appky (GitHub Releases)
+    val appUpdatesHeader: String
+    fun installedVersion(v: String): String
+    val devBuild: String
+    val checkForUpdates: String
+    val checkingUpdates: String
+    val upToDate: String
+    fun updateAvailable(v: String): String
+    val downloadAndInstall: String
+    val downloadInstaller: String
+    val releaseNotes: String
+    fun updateDownloading(percent: Int?): String
+    fun updateFailed(msg: String): String
+    val updateHintApk: String
+    val updateHintInstaller: String
+    val updateLater: String
+    val updateSkip: String
+    fun updateConfirmTitle(v: String): String
+    val updateBackupHint: String
+    val updateSignatureMismatch: String
+    val installNow: String
+    val downloadApkInBrowser: String
     val itemDbFailed: String
     fun itemsCount(n: Int): String
     fun downloadedSpells(n: Int): String
@@ -1093,6 +1115,32 @@ object EnStrings : Strings {
     override val restoreBundled = "Restore bundled version"
     override val charactersKept = "Characters are kept – spells are matched by id and name."
     override val inventoriesKept = "Inventories are kept – entries store their own name, price and weight."
+    override val appUpdatesHeader = "App updates"
+    override fun installedVersion(v: String) = "Installed version $v"
+    override val devBuild = "development build – the automatic check is off"
+    override val checkForUpdates = "Check for updates"
+    override val checkingUpdates = "Checking…"
+    override val upToDate = "You have the latest version."
+    override fun updateAvailable(v: String) = "Version $v is available"
+    override val downloadAndInstall = "Download and install"
+    override val downloadInstaller = "Download installer"
+    override val releaseNotes = "What's new"
+    override fun updateDownloading(percent: Int?) = "Downloading…" + (percent?.let { " $it %" } ?: "")
+    override fun updateFailed(msg: String) = "Update failed: $msg"
+    override val updateHintApk = "The APK is downloaded and the system installer opens – allow installing from this app the first time. Characters and inventories are kept."
+    override val updateHintInstaller = "The installer downloads in your browser – close the app and run it. Characters and inventories are kept."
+    override val updateLater = "Later"
+    override val updateSkip = "Skip this version"
+    override fun updateConfirmTitle(v: String) = "Install version $v?"
+    override val updateBackupHint = "The update keeps your characters and inventories. To be safe, export them first and save the file outside the app."
+    override val updateSignatureMismatch = "This version is signed with a different key than the installed app, so Android won't install it over it. " +
+        "The old version has to be uninstalled – and that deletes all characters and inventories!\n\n" +
+        "1. Export characters and inventories and save the files outside the app (e.g. Downloads, Drive).\n" +
+        "2. Download the APK in the browser (it stays in Downloads).\n" +
+        "3. Uninstall PF Spellbook and install the downloaded APK.\n" +
+        "4. Import the characters and inventories again (in the main menu choose Import)."
+    override val installNow = "Install"
+    override val downloadApkInBrowser = "Download APK in browser"
     override val itemDbFailed = "Item database failed to load."
     override fun itemsCount(n: Int) = "$n items"
     override fun downloadedSpells(n: Int) = "Downloaded $n spells."
@@ -1420,7 +1468,8 @@ object EnStrings : Strings {
     override val privacyText = "The app collects no personal data. There is no account, no tracking and no ads. Characters, inventories " +
         "and settings are stored only on your device (in the web version in your browser) and never leave it unless you export them yourself. " +
         "The app works fully offline – it connects to the internet only when you tap to download an updated spell or item database " +
-        "(from GitHub). A website hosting the web version may count anonymous visits and app actions (e.g. opening the inventory, " +
+        "(from GitHub), and in the Android and desktop versions at most once a day to check GitHub Releases for a new app version " +
+        "(a plain request to the public GitHub API – GitHub sees your IP address like for any web page; nothing about you is sent). A website hosting the web version may count anonymous visits and app actions (e.g. opening the inventory, " +
         "creating a character, export) with cookie-less analytics (Umami). Only the kind of action is sent – never names, notes " +
         "or the content of your characters; no personal data is collected there either."
     override val licenseHeader = "License"
@@ -1968,6 +2017,32 @@ object CsStrings : Strings {
     override val restoreBundled = "Obnovit přibalenou verzi"
     override val charactersKept = "Postavy zůstanou – kouzla se párují podle id a názvu."
     override val inventoriesKept = "Inventáře zůstanou – položky si nesou vlastní název, cenu a váhu."
+    override val appUpdatesHeader = "Aktualizace appky"
+    override fun installedVersion(v: String) = "Nainstalovaná verze $v"
+    override val devBuild = "vývojový build – automatická kontrola je vypnutá"
+    override val checkForUpdates = "Zkontrolovat aktualizace"
+    override val checkingUpdates = "Kontroluji…"
+    override val upToDate = "Máte nejnovější verzi."
+    override fun updateAvailable(v: String) = "Je dostupná verze $v"
+    override val downloadAndInstall = "Stáhnout a nainstalovat"
+    override val downloadInstaller = "Stáhnout instalátor"
+    override val releaseNotes = "Co je nového"
+    override fun updateDownloading(percent: Int?) = "Stahuji…" + (percent?.let { " $it %" } ?: "")
+    override fun updateFailed(msg: String) = "Aktualizace se nezdařila: $msg"
+    override val updateHintApk = "Stáhne se APK a otevře se systémový instalátor – poprvé povolte instalaci z této appky. Postavy i inventáře zůstanou."
+    override val updateHintInstaller = "Instalátor se stáhne v prohlížeči – zavřete appku a spusťte ho. Postavy i inventáře zůstanou."
+    override val updateLater = "Později"
+    override val updateSkip = "Tuto verzi přeskočit"
+    override fun updateConfirmTitle(v: String) = "Nainstalovat verzi $v?"
+    override val updateBackupHint = "Aktualizace postavy ani inventáře nemaže. Pro jistotu je ale nejdřív exportujte a soubor si uložte mimo appku."
+    override val updateSignatureMismatch = "Tahle verze je podepsaná jiným klíčem než nainstalovaná appka, takže ji Android přes ni nenainstaluje. " +
+        "Starou verzi je nutné odinstalovat – a tím se smažou všechny postavy a inventáře!\n\n" +
+        "1. Exportujte postavy a inventáře a soubory si uložte mimo appku (Stažené soubory, Disk…).\n" +
+        "2. Stáhněte APK v prohlížeči (zůstane ve Stažených souborech).\n" +
+        "3. Odinstalujte PF Spellbook a nainstalujte stažené APK.\n" +
+        "4. Postavy a inventáře znovu importujte (v hlavním menu zvolte Import)."
+    override val installNow = "Instalovat"
+    override val downloadApkInBrowser = "Stáhnout APK v prohlížeči"
     override val itemDbFailed = "Databázi předmětů se nepodařilo načíst."
     override fun itemsCount(n: Int) = cz(n, "předmět", "předměty", "předmětů")
     override fun downloadedSpells(n: Int) = "Staženo: ${spells(n)}."
@@ -2327,7 +2402,9 @@ object CsStrings : Strings {
     override val privacyText = "Appka nesbírá žádné osobní údaje. Nemá účet, sledování ani reklamy. Postavy, inventáře a nastavení " +
         "jsou uložené jen ve vašem zařízení (u webové verze ve vašem prohlížeči) a nikam se neposílají, dokud je sami neexportujete. " +
         "Appka funguje úplně offline – na internet se připojí jen tehdy, když klepnete na stažení aktualizované databáze kouzel " +
-        "nebo předmětů (z GitHubu). Web, na kterém běží webová verze, může počítat anonymní návštěvy analytikou bez cookies " +
+        "nebo předmětů (z GitHubu), a ve verzi pro Android a desktop nejvýš jednou denně kvůli kontrole nové verze appky " +
+        "v GitHub Releases (obyčejný dotaz na veřejné GitHub API – GitHub vidí vaši IP adresu jako u každé webové stránky; nic o vás se " +
+        "neposílá). Web, na kterém běží webová verze, může počítat anonymní návštěvy analytikou bez cookies " +
         "(Umami), včetně anonymních akcí v appce (např. otevření inventáře, vytvoření postavy, export). Posílá se jen druh akce – " +
         "nikdy jména, poznámky ani obsah postav; ani tam se osobní údaje nesbírají."
     override val licenseHeader = "Licence"

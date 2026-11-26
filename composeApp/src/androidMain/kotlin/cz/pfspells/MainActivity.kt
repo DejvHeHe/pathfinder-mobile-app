@@ -7,6 +7,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import cz.pfspells.data.AndroidAppUpdater
 import cz.pfspells.data.AndroidDeckFileIo
 import cz.pfspells.data.AppFiles
 
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
         AppFiles.init(this)
         super.onCreate(savedInstanceState)
         AndroidDeckFileIo.register(this)
+        AndroidAppUpdater.register(this)
         // světlý „papír“ → tmavé ikony stavového řádku i v systémovém tmavém režimu
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),

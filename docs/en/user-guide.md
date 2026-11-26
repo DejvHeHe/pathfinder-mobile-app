@@ -309,6 +309,25 @@ Menu **⋮ → Spell & item database / update**:
 Pathfinder 1e is a finished system, so updates mostly bring fixes. Characters and inventories stay –
 spells are matched by id and name, inventory entries carry their own name, price and weight.
 
+## App updates
+
+At the bottom of the same screen is an **App updates** section (Android and desktop only): the installed version and a
+**Check for updates** button that looks at the latest release on GitHub Releases.
+
+- **Android**: **Download and install** downloads the APK right in the app (with progress) and opens the system installer.
+  The first time you have to allow installs from this app. Updating over an old version only works for APKs signed with the same key.
+- **Desktop**: **Download installer** opens the `.msi` / `.dmg` / `.deb` download in your browser – close the app and run the installer.
+- **What's new** opens the release page with the changes.
+- Before installing, the app **asks** and offers to **export characters and inventories** (backup). On Android it compares
+  the APK signature with the installed version after the download: if they differ, Android refuses the update over the old
+  version – the app then shows the steps instead (export → download the APK in the browser → uninstall → install → import),
+  because uninstalling deletes the data.
+
+The app (a build from GitHub Releases) checks by itself at most once a day on start. When it finds a new version it shows a
+banner at the bottom: download, **Later**, or **Skip this version** (no more automatic notices for it; the manual check still works).
+The web version is always current from the server and iOS is built in Xcode – no updates are offered there.
+Updates do not touch characters or inventories.
+
 ## Where my data lives
 
 Everything stays on the device:

@@ -10,3 +10,7 @@ captures/
 xcuserdata/
 iosApp/Pods/
 __pycache__/
+
+# podpisové klíče Android – nikdy necommitovat
+*.jks
+*.keystore

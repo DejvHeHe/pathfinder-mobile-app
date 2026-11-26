@@ -26,7 +26,10 @@ GitHub Actions pak paralelně sestaví (~15 min):
 | `PF-Spellbook-1.0.0-web.zip` | statický web | ubuntu |
 | Docker image `ghcr.io/dejvhehe/pf-spellbook-web:1.0.0` + `:latest` (workflow `docker.yml`) | web pro server | ubuntu |
 
-Verze z tagu se propíše do appky (`-PappVersion`), Android `versionCode` = číslo běhu workflow.
+Verze z tagu se propíše do appky (`-PappVersion` → vygenerovaný `AppVersion.kt`), Android `versionCode` = číslo běhu workflow.
+Appka na Androidu a desktopu podle této tabulky hledá v poslední Release soubor s příponou `.apk` / `.msi` / `.dmg` / `.deb`
+(kontrola aktualizací, `data/AppUpdate.kt`) – přípony souborů v Release proto neměnit. Release nesmí být *draft* ani *pre-release*,
+jinak ji GitHub API `releases/latest` nevrátí.
 Desktopové instalátory obsahují vlastní Javu – uživatel nic dalšího neinstaluje.
 
 **Ruční běh** (Actions → Release → Run workflow, zadat verzi) jen sestaví buildy jako *artifacts* běhu – Release ani Docker image nevytvoří.

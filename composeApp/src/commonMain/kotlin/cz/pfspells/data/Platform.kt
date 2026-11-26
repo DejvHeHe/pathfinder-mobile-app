@@ -31,6 +31,9 @@ expect val deckFileIo: DeckFileIo
 /** Aktuální datum a čas jako text pro zobrazení (např. „16. 11. 2026 19:30“). */
 expect fun nowDisplayText(): String
 
+/** Aktuální čas v ms od 1. 1. 1970 (UTC) – pro „naposledy zkontrolováno“. */
+expect fun currentTimeMillis(): Long
+
 /** Zpět tažením od levého okraje obrazovky (iOS – nemá systémové tlačítko Zpět). */
 expect val edgeSwipeBack: Boolean
 

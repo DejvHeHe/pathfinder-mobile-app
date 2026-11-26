@@ -80,6 +80,7 @@ fun DatabaseScreen(state: AppState, db: SpellDatabase, wide: Boolean = false) {
             Text(s.charactersKept, fontSize = 13.sp, color = Nb.inkMuted)
 
             ItemDatabaseSection(state)
+            AppUpdateSection(state)
         }
     }
 }
