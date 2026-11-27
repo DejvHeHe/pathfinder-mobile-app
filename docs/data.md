@@ -397,10 +397,31 @@ HD, přirozená zbroj, bonus Str/Dex, triky navíc, zvláštní schopnosti (link
 devotion, multiattack, improved evasion). HD, BAB, záchrany, skill body a featy dává rasová „classa“ `animal`
 (`ClassCatalog.creatures`) – úroveň společníka jen nastaví její úroveň.
 
-- `SpeciesCatalog`: 17 zvířat CRB se startovními atributy, velikostí, rychlostí, útoky a vylepšením na 4. nebo 7. úrovni
-  (velikost, úpravy Str / Dex / Con, přirozená zbroj, útoky).
+- `SpeciesCatalog`: 17 zvířat CRB (ručně, stabilní id) + 140 z `SpeciesTable.kt` (`EXTRA_SPECIES`, GENEROVANÉ
+  `tools/build_companions.py` z d20pfsrd – sekce „Animal Companion Descriptions“, bez obsahu třetích stran – zdroj
+  opengamingstore.com) se startovními atributy, velikostí, rychlostí, útoky a vylepšením na 4. nebo 7. úrovni
+  (velikost, úpravy Str / Dex / Con, přirozená zbroj, útoky). Čtyřnohost odhaduje generátor podle jména.
 - `companionMod` (bonus Str/Dex + vylepšení) jde do `scores`, `naturalArmor` do AC.
 - `suggestedCompanionLevel`: druid a hunter plně, ranger úroveň − 3; jezdecké zvíře i paladin a cavalier.
+
+### Familiár (`Familiars.kt`, `FamiliarTable.kt`)
+`tools/build_companions.py` čte z d20pfsrd tabulku familiárů (89, jméno, bonus pánovi, zdroj). Nepodmíněný bonus
+(„+3 bonus on Stealth checks“, „+2 bonus on Reflex saves“, „+1 natural armor bonus to AC“, „+3 hit points“) → `ItemBonus`
+(skill / záchrana / AC / nový cíl `BonusTarget.HP`), podmíněný (iniciativa, „in bright light“, „to identify“) jen text.
+AppState drží kopii bonusů od familiárů u pána (`Character.familiarBonus`, `syncFamiliarBonus` při změně / smazání
+mazlíčka a importu); `Character.allBonuses` = vybavení + familiár (skilly, záchrany, AC, HP). Progrese podle úrovně pána
+(`companionLevel` familiára, `FamiliarProgression`): přirozená zbroj (úroveň + 1) / 2, Int 5 + (úroveň + 1) / 2,
+SR úroveň + 5 od 11., schopnosti; HD familiára = úroveň pána (rasové HD „animal“).
+
+### Eidolon (`Eidolons.kt`, `EidolonTable.kt`, `Eidolons.json`)
+`python tools/build_eidolons.py [--cache DIR]` (d20pfsrd, stránky eidolonů klasického a unchained summonera):
+tabulky progrese (HD, BAB, záchrany, skilly, featy, zbroj, Str/Dex, body evolucí, max. útoků, schopnosti), základní
+formy (velikost, rychlost, přirozená zbroj, dobré záchrany, útok, atributy, volné evoluce; unchained s id „u_…“),
+podtypy unchained a 79 evolucí s cenou (bez [3PP]) → `Eidolons.json` (líně, `ensureEidolonData`).
+Eidolon = mazlíček s `companion = EIDOLON`, `eidolonForm`, `eidolonSubtype`, `evolutions` (`EvolutionPick` – kopie jména
+a ceny); `companionLevel` = úroveň summonera, rasové HD `eidolon` (plný BAB, d10, 4 skill ranky na HD, dobré záchrany
+podle formy v `Character.stats`). Mechanicky: Str/Dex z tabulky + Ability Increase (+2, `EvolutionPick.ability`),
+přirozená zbroj forma + tabulka + Improved Natural Armor (+2), Large → velikost Large.
 
 ### Metamagie (`Metamagic.kt`)
 Zvýšení slotu se čte z textu featu (AoN): „uses up a spell slot two levels higher“ → 2, „does not use up

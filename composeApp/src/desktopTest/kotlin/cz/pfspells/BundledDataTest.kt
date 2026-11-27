@@ -82,6 +82,20 @@ class BundledDataTest {
         assertTrue(known > all.size * 0.85)
     }
 
+    /** Eidolon (d20pfsrd): evoluce s cenou 1–4, podtypy, formy; jména mechanických evolucí sedí. */
+    @Test
+    fun bundledEidolons() {
+        val d = cz.pfspells.data.EidolonRepository.parse(File("src/commonMain/composeResources/files/Eidolons.json").readText())
+        assertTrue(d.evolutions.size > 70)
+        assertTrue(d.evolutions.all { it.cost in 1..4 && it.text.isNotBlank() })
+        listOf(cz.pfspells.data.Eidolons.ABILITY_INCREASE, cz.pfspells.data.Eidolons.IMPROVED_NATURAL_ARMOR, "large").forEach { id ->
+            assertTrue(d.evolutions.any { it.id == id }, id)
+        }
+        assertEquals(cz.pfspells.data.EIDOLON_SUBTYPES, d.subtypes.map { it.name })
+        assertTrue(cz.pfspells.data.Eidolons.forms.count { it.unchained } >= 3)
+        assertTrue(cz.pfspells.data.FAMILIAR_TABLE.size > 80)
+    }
+
     /** Prestižní classy z AoN: tabulka po úrovních, texty v PrestigeClasses.json, id bez kolize se základními classami. */
     @Test
     fun bundledPrestigeClasses() {

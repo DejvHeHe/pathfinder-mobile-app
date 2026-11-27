@@ -106,7 +106,10 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 
 - [x] **Mazlíčci a společníci** (zvířecí společník, jezdecké zvíře, familiár, eidolon) jako postava s vlastníkem – rasové HD Animal / Magical Beast, velikost → nosnost
   - [x] progrese zvířecího společníka podle úrovně druida (bonus Str/Dex, přirozená zbroj, triky) a 17 zvířat z Core Rulebooku
-  - [ ] další zvířata (APG, Ultimate Magic…), familiáři (bonusy pánovi, přirozená zbroj a Int podle úrovně) a eidolon
+  - [x] další zvířata: 140 z dalších knih Paizo (d20pfsrd, `tools/build_companions.py`), výběr s hledáním
+  - [x] familiáři: 89 druhů, bonus pánovi do jeho listu (skilly, záchrany, AC, HP), přirozená zbroj, Int, SR a schopnosti podle úrovně pána
+  - [x] eidolon: tabulky klasického i unchained summonera, základní formy, podtypy, 79 evolucí s body (`tools/build_eidolons.py`)
+  - [ ] (nápad) archetypy zvířecích společníků a familiárů, statistiky familiárů z bestiáře, další evoluce mechanicky
 
 - [x] Spell sloty za den podle classy/úrovně + bonusové sloty z atributu; režim „hra“ s odškrtáváním seslaných spellů a resetem po odpočinku
 - [x] Spontánní sesilatelé: „spells known“ místo počtu kopií (limit „x / y známých“ z `CastingTable`)

@@ -792,6 +792,8 @@ class AppState(
             val owner = ic.ownerIndex?.takeIf { it in newIds.indices && it != index }?.let { newIds[it] }
             characters.add(withGear.copy(id = newIds[index], name = name, inventoryId = inventoryId, ownerId = owner))
         }
+        // bonusy od importovaných familiárů
+        newIds.forEach { syncFamiliarBonus(it) }
         persistInventories()
         persist()
         return imported.size
@@ -841,9 +843,22 @@ class AppState(
 
     /** Smaže postavu; její mazlíčci zůstanou jako samostatné postavy. */
     fun deleteCharacter(id: String) {
+        val owner = character(id)?.ownerId
         characters.removeAll { it.id == id }
         for (i in characters.indices) if (characters[i].ownerId == id) characters[i] = characters[i].copy(ownerId = null)
+        // smazaný familiár už pánovi bonus nedává
+        owner?.let { syncFamiliarBonus(it) }
         persist()
+    }
+
+    /** Bonusy od familiárů postavy [ownerId] (Cat: +3 Stealth) – kopie v `Character.familiarBonus`. */
+    fun syncFamiliarBonus(ownerId: String) {
+        val owner = character(ownerId) ?: return
+        val bonus = cz.pfspells.data.familiarBonuses(companionsOf(ownerId))
+        if (bonus != owner.familiarBonus) {
+            updateCharacter(ownerId) { it.copy(familiarBonus = bonus) }
+            syncInventory(ownerId)
+        }
     }
 
     // ---- mazlíčci a společníci (postava s ownerId) ----
@@ -859,14 +874,16 @@ class AppState(
     fun createCompanion(
         ownerId: String, name: String, kind: CompanionKind, classId: String, level: Int,
         size: CreatureSize?, quadruped: Boolean, species: String? = null, companionLevel: Int? = null,
+        familiar: String? = null, eidolonForm: String? = null, eidolonSubtype: String? = null,
     ): Character {
         val base = Character(
             newId(), name.trim().ifBlank { cz.pfspells.data.SpeciesCatalog.get(species)?.name ?: strings.companionKind(kind) },
             listOf(ClassEntry(classId, level.coerceIn(1, 20))),
             ownerId = ownerId,
         )
-        val c = base.withCompanion(kind, species, companionLevel, size, quadruped)
+        val c = base.withCompanion(kind, species, companionLevel, size, quadruped, familiar, eidolonForm, eidolonSubtype)
         characters.add(c)
+        syncFamiliarBonus(ownerId)
         persist()
         trackEvent("companion-create", mapOf("kind" to kind.name.lowercase(), "class" to classId, "species" to (species ?: "none")))
         return c
@@ -875,10 +892,51 @@ class AppState(
     /** Druh mazlíčka, druh zvířete, progrese a velikost; velikost a STR se propíšou do propojeného inventáře (nosnost). */
     fun setCompanionInfo(
         charId: String, kind: CompanionKind?, size: CreatureSize?, quadruped: Boolean,
-        species: String? = null, companionLevel: Int? = null,
+        species: String? = null, companionLevel: Int? = null, familiar: String? = null,
+        eidolonForm: String? = null, eidolonSubtype: String? = null,
     ) {
-        updateCharacter(charId) { it.withCompanion(kind, species, companionLevel, size, quadruped) }
+        updateCharacter(charId) { it.withCompanion(kind, species, companionLevel, size, quadruped, familiar, eidolonForm, eidolonSubtype) }
         syncInventory(charId)
+        character(charId)?.ownerId?.let { syncFamiliarBonus(it) }
+    }
+
+    // ---- eidolon: evoluce (Eidolons.json – texty, líně) ----
+    var eidolonData: cz.pfspells.data.EidolonData? by mutableStateOf(null)
+        private set
+    private var eidolonLoading = false
+
+    fun ensureEidolonData() {
+        if (eidolonData != null || eidolonLoading) return
+        eidolonLoading = true
+        scope.launch {
+            eidolonData = try {
+                cz.pfspells.data.EidolonRepository.load()
+            } catch (e: Exception) {
+                cz.pfspells.data.EidolonData()
+            }
+            eidolonLoading = false
+        }
+    }
+
+    /** Přidá evoluci (jde i víckrát – Ability Increase, Improved Natural Armor…); Large přepočítá velikost. */
+    fun addEvolution(charId: String, evo: cz.pfspells.data.Evolution) {
+        updateCharacter(charId) { it.copy(evolutions = it.evolutions + cz.pfspells.data.EvolutionPick(evo.id, evo.name, evo.cost)) }
+        refreshEidolon(charId)
+    }
+
+    fun removeEvolution(charId: String, index: Int) {
+        updateCharacter(charId) { c -> c.copy(evolutions = c.evolutions.filterIndexed { i, _ -> i != index }) }
+        refreshEidolon(charId)
+    }
+
+    /** Atribut u evoluce Ability Increase (+2). */
+    fun setEvolutionAbility(charId: String, index: Int, ability: Ability?) = updateCharacter(charId) { c ->
+        c.copy(evolutions = c.evolutions.mapIndexed { i, p -> if (i == index) p.copy(ability = ability) else p })
+    }
+
+    private fun refreshEidolon(charId: String) {
+        val c = character(charId) ?: return
+        if (c.companion == CompanionKind.EIDOLON) setCompanionInfo(charId, c.companion, c.size, c.quadruped, null, c.companionLevel, null, c.eidolonForm, c.eidolonSubtype)
     }
 
     /** Rarita a vlastní pravidla pro návrat po smrti (prázdný text = výchozí podle druhu). */
@@ -888,7 +946,7 @@ class AppState(
     /** Úroveň zvířecího společníka (stepper v listu mazlíčka). */
     fun setCompanionLevel(charId: String, level: Int) {
         val c = character(charId) ?: return
-        setCompanionInfo(charId, c.companion, c.size, c.quadruped, c.species, level)
+        setCompanionInfo(charId, c.companion, c.size, c.quadruped, c.species, level, c.familiar, c.eidolonForm, c.eidolonSubtype)
     }
 
     /** Úprava jedné classy postavy (null = hlavní classa). */

@@ -167,6 +167,22 @@ class PreviewRender {
             state.addClass(z.id, "eldritch_knight", 3)
             state.character(z.id)!!
         }
+        // familiár (kočka: +3 Stealth pánovi) a eidolon summonera s evolucemi
+        val mittens = withContext(Dispatchers.Main) {
+            state.createCompanion(ezren.id, "Mittens", cz.pfspells.data.CompanionKind.FAMILIAR, "animal", 1,
+                cz.pfspells.data.CreatureSize.TINY, true, companionLevel = 5, familiar = "cat")
+        }
+        withContext(Dispatchers.Main) { state.ensureEidolonData() }
+        while (state.eidolonData == null) delay(50)
+        val doloran = withContext(Dispatchers.Main) {
+            val b = state.createCharacter("Balazar", "summoner", 6)
+            val e = state.createCompanion(b.id, "Doloran", cz.pfspells.data.CompanionKind.EIDOLON, "eidolon", 1, null, false,
+                companionLevel = 6, eidolonForm = "serpentine")
+            val evo = state.eidolonData!!.evolutions
+            listOf("ability_increase", "improved_natural_armor", "reach", "constrict").forEach { id -> evo.firstOrNull { it.id == id }?.let { state.addEvolution(e.id, it) } }
+            state.setEvolutionAbility(e.id, 0, cz.pfspells.data.Ability.STR)
+            state.character(e.id)!!
+        }
         // podtřídy z Foundry: patron (Morgana), spirit, blessingy warpriesta, doména inquisitora
         val kaya = withContext(Dispatchers.Main) {
             state.setSubclass(morgana.id, "witch", cz.pfspells.data.SubclassSlot.PATRON, "agility")
@@ -274,6 +290,8 @@ class PreviewRender {
         }) { openRoot(Screen.CharacterDetail(pip.id)) }
         shot("cs-phone-race-panel", 390, 1000) { openRoot(Screen.CharacterDetail(pip.id)) }
         shot("cs-phone-archetypes-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(seelah.id)) }
+        shot("cs-phone-familiar", 390, 1100) { gameMode = false; openRoot(Screen.CharacterDetail(mittens.id)) }
+        shot("cs-phone-eidolon", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(doloran.id)) }
         shot("cs-phone-prestige-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
         shot("cs-phone-prestige-spells", 390, 2600) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
         shot("cs-phone-prestige-dialog", 390, 844, overlay = {

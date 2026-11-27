@@ -106,7 +106,7 @@ fun AboutScreen(state: AppState, wide: Boolean = false) {
                 Source(s.sourceClassAbilities, "Foundry VTT PF1 packs/class-abilities (GPL-3.0, content OGL)")
                 Source(s.sourceSubclassAbilities, "Archives of Nethys (aonprd.com) – shaman spirits, bloodrager and sorcerer bloodlines, psychic disciplines, inquisitions – OGL / Paizo Community Use Policy")
                 Source(s.sourceDeities, "Archives of Nethys (aonprd.com) – Paizo Community Use Policy (deity names are Paizo Product Identity)")
-                Source(s.sourceCompanions, "Core Rulebook – Animal Companions (d20pfsrd.com, OGL)")
+                Source(s.sourceCompanions, "Core Rulebook and other Paizo books – Animal Companions, Familiar, Eidolons (d20pfsrd.com, OGL)")
                 // MIT vyžaduje přiložit copyright a text licence (SpellList.json)
                 Text(MIT_SPELLTABLE, fontFamily = fonts.mono, fontSize = 11.sp, lineHeight = 15.sp, color = Nb.inkMuted)
 

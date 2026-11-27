@@ -80,6 +80,7 @@ class AnimalCompanionTest {
         assertEquals(5, owner("druid" to 5).suggestedCompanionLevel(CompanionKind.ANIMAL_COMPANION))
         assertEquals(2, owner("ranger" to 5).suggestedCompanionLevel(CompanionKind.ANIMAL_COMPANION))
         assertEquals(6, owner("paladin" to 6).suggestedCompanionLevel(CompanionKind.MOUNT))
-        assertEquals(1, owner("wizard" to 3).suggestedCompanionLevel(CompanionKind.FAMILIAR))
+        // familiár: úroveň pána (classy, které familiára dávají)
+        assertEquals(3, owner("wizard" to 3).suggestedCompanionLevel(CompanionKind.FAMILIAR))
     }
 }

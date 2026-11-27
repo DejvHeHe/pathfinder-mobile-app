@@ -58,7 +58,10 @@ composeApp/src/
     data/
       Model.kt                Spell, Deck (migration and old export only)
       Character.kt            Character (+ companion: ownerId, CompanionKind, size), ClassEntry, Abilities, Alignment, FeatPick, Tracker, Spellbook, CharacterStore (+ deck migration)
-      AnimalCompanions.kt     animal companion: CompanionProgression (CRB table), SpeciesCatalog (17 animals), companionMod, withCompanion
+      AnimalCompanions.kt     animal companion: CompanionProgression (CRB table), SpeciesCatalog (157 animals), companionMod, withCompanion
+      SpeciesTable.kt         GENERATED: 140 further animal companions (d20pfsrd, tools/build_companions.py)
+      Familiars.kt            familiars: FamiliarCatalog, FamiliarProgression, familiarBonuses (master's bonus); FamiliarTable.kt GENERATED
+      Eidolons.kt             eidolon: progression, forms, evolutions (EvolutionPick), EidolonRepository; EidolonTable.kt GENERATED (tools/build_eidolons.py)
       Equipment.kt            equipped gear: ItemSlot, ItemBonus, stackBonuses (PF1 rules), ItemBonusGuess, loadBonuses, gearMod / gearSkill / gearSave
       Defense.kt              AC / touch / flat-footed (defense, sizeAcMod), HP (maxHp, currentHp)
       Metamagic.kt            slot increase from the metamagic feat text
@@ -79,6 +82,8 @@ composeApp/src/
       ArchetypeMods.kt        hand-entered effects of known archetypes (ARCHETYPE_MODS)
       Prestige.kt             prestige classes (PrestigeInfo, Prestige – classes to advance, Character.casterLevel, PrestigeRequirements, PrestigeTextRepository)
       PrestigeTable.kt        GENERATED: 118 prestige classes (AoN, tools/build_prestige_classes.py)
+tools/build_companions.py   further animal companions and familiars (d20pfsrd)
+tools/build_eidolons.py   eidolon – progression, forms, evolutions (d20pfsrd)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       subclass powers (SubclassPowers), Foundry formulas (FoundryFormula), hexes and revelations (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENERATED: domain, bloodline, school and blessing powers, patron / spirit / discipline spells (Foundry, tools/build_class_abilities.py)
@@ -241,6 +246,7 @@ version (`characters_v2`…) and a migration (example: `CharacterStore` converts
 - **Alternate racial traits** (`RacialTraits.json`) load **lazily** when their dialog opens (`ensureRacialTraits`).
 - **Archetypes** (`Archetypes.json`) load **lazily** when the archetype dialog opens (`ensureArchetypes`).
 - **Prestige classes** – description and features (`PrestigeClasses.json`) load **lazily** when a prestige class detail opens (`ensurePrestigeTexts`).
+- **Eidolon evolutions and subtypes** (`Eidolons.json`) load **lazily** when picking an evolution (`ensureEidolonData`).
 - **Hexes and revelations** (`ClassAbilities.json` + spirit hexes `SubclassAbilities.json`) load **lazily** when a character has a witch / shaman / oracle class (`ensureClassAbilities`).
 - **Items** load **lazily** – when an inventory, an inventory import or the database screen is opened (`ensureItems`, ~0.3 s).
 - Both repositories first try the downloaded version in `AppFiles`; if it is missing or corrupt, they delete it and use the bundled one.
@@ -349,6 +355,7 @@ The "Ruled notebook" design (from the author's design in Claude Design):
 | `EquipmentTest` | bonus type stacking, bonus guess by name, only equipped and only what fits the slot, slot conflicts |
 | `DefenseTest` | AC / touch / flat-footed, max Dex, size, armor check and load penalty, HP (Toughness, rolled, creatures), current HP, metamagic, domain and bloodline powers |
 | `AnimalCompanionTest` | animal companion table against "animal" HD, wolf advancement at 7th level, species abilities, specials, suggested level |
+| `FamiliarTest`, `EidolonTest` | familiar: progression, master's bonus (skill, save, HP), HD; eidolon: tables, form, saves, evolutions (Ability Increase, Improved Natural Armor, Large), subtype |
 | `PrestigeTest` | prestige classes: table, BAB and saves from the table, caster level, classes to advance, bonus feats, requirements |
 | `ArchetypesTest`, `ArchetypeEffectsTest` | archetypes: conflicts, unchained, NPC; replaced abilities, subclasses, hexes and bonus feats by level, cantrips, hand-entered effects (no spells, one fewer spell, one domain, Sacred Servant, Insinuator) |
 | `StrictModeTest` | strict mode: prepared copies (slots + bonus), known limit, ability and spell level, feat count and prerequisites, animal companion |

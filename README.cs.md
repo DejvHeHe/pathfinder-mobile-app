@@ -19,6 +19,7 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Featy | 3 442 featů (Archives of Nethys), automatické ověření prerekvizit (atributy, skilly, class features, rasa, přesvědčení, božstvo, proficience…) ✓ / ✗ / ?, ruční potvrzení, počet featů podle úrovně a rasy, vlastní featy |
 | Schopnosti | Smite Evil, Rage, Ki Pool, schopnosti domén / bloodline / škol všech úrovní… s počtem použití podle úrovně, vlastní počítadla |
 | Rasové traity | ~630 alternativních traitů z Archives of Nethys; nahrazené výchozí traity přestanou platit pro prerekvizity |
+| Mazlíčci | 157 zvířecích společníků, 89 familiárů (bonus pánovi se počítá na jeho listu), eidolon s body evolucí |
 | Prestižní classy | 118 z Archives of Nethys; ověření požadavků, zvýšení sesílací úrovně vybrané classy |
 | Archetypy | ~1 300 archetypů z Archives of Nethys s plným textem; nahrazené schopnosti, podtřídy a sesílání se podle nich upraví |
 | Hexy a zjevení | ~120 hexů čarodějnice a šamana, ~300 zjevení orákula s plným textem, počet podle úrovně classy |

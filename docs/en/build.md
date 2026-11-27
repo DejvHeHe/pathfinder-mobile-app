@@ -108,6 +108,8 @@ Output: `composeApp/build/previews/*.png`.
 | Races | `python tools/build_races.py [races.zip]` |
 | Deities | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 deity pages, 1 per second) |
 | Racial traits | `python tools/build_racial_traits.py [--cache DIR]` (~80 race pages, 1 per second) |
+| Animal companions, familiars | `python tools/build_companions.py [--cache DIR]` (2 d20pfsrd pages) |
+| Eidolon | `python tools/build_eidolons.py [--cache DIR]` (2 d20pfsrd pages) |
 | Prestige classes | `python tools/build_prestige_classes.py [--cache DIR]` (~120 pages, 1 per second) |
 | Archetypes | `python tools/build_archetypes.py [--cache DIR]` (~1300 pages, 1 per second, ~25 min, resumable) |
 | Class abilities, hexes, revelations | `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` |

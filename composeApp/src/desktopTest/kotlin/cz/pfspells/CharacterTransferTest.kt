@@ -170,6 +170,29 @@ class CharacterTransferTest {
     }
 
     @Test
+    fun familiarRoundTrip() {
+        val m = Character("m", "Ezren", listOf(ClassEntry("wizard", 5)))
+        val f = Character("f", "Mittens", listOf(ClassEntry("animal", 5)), ownerId = "m", companion = cz.pfspells.data.CompanionKind.FAMILIAR,
+            companionLevel = 5, familiar = "cat")
+        val out = CharacterTransfer.parse(CharacterTransfer.export(listOf(m, f), db) { null }, db, featDb, null)
+        val fam = out.single { it.character.name == "Mittens" }.character
+        assertEquals("cat", fam.familiar)
+        assertEquals(5, fam.companionLevel)
+    }
+
+    @Test
+    fun eidolonRoundTrip() {
+        val m = Character("m", "Balazar", listOf(ClassEntry("summoner", 5)))
+        val e = Character("e", "Doloran", listOf(ClassEntry("eidolon", 4)), ownerId = "m", companion = cz.pfspells.data.CompanionKind.EIDOLON,
+            companionLevel = 5, eidolonForm = "serpentine",
+            evolutions = listOf(cz.pfspells.data.EvolutionPick("ability_increase", "Ability Increase", 2, ability = cz.pfspells.data.Ability.STR)))
+        val out = CharacterTransfer.parse(CharacterTransfer.export(listOf(m, e), db) { null }, db, featDb, null)
+        val eid = out.single { it.character.name == "Doloran" }.character
+        assertEquals("serpentine", eid.eidolonForm)
+        assertEquals(e.evolutions, eid.evolutions)
+    }
+
+    @Test
     fun withoutInventory() {
         val text = CharacterTransfer.export(listOf(thomas), db) { null }
         assertNull(CharacterTransfer.parse(text, db, featDb, null).single().inventory)

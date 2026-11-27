@@ -44,7 +44,7 @@ enum class ItemSlot(val capacity: Int = 1) {
  * [MAX_DEX] (max. bonus Obratnosti k AC – platí nejnižší) a [ARMOR_CHECK] (postih zbroje ke skillům Síly / Obratnosti)
  * nesou zbroje a štíty; zatížení inventáře je do `Character.gear` přidá jako typ UNTYPED (viz [loadBonuses]).
  */
-enum class BonusTarget { STR, DEX, CON, INT, WIS, CHA, FORT, REF, WILL, AC, SKILL, MAX_DEX, ARMOR_CHECK }
+enum class BonusTarget { STR, DEX, CON, INT, WIS, CHA, FORT, REF, WILL, AC, SKILL, MAX_DEX, ARMOR_CHECK, HP }
 
 enum class BonusType {
     ENHANCEMENT, RESISTANCE, DEFLECTION, NATURAL_ARMOR, ARMOR, SHIELD, COMPETENCE, INSIGHT, LUCK, MORALE,
@@ -81,18 +81,21 @@ fun Ability.bonusTarget(): BonusTarget = when (this) {
 }
 
 /** Bonus k atributu z nasazeného vybavení. */
-fun Character.gearMod(a: Ability): Int = stackBonuses(gear.filter { it.target == a.bonusTarget() })
+/** Bonusy vybavení a familiárů (Cat: +3 Stealth pánovi). */
+val Character.allBonuses: List<ItemBonus> get() = if (familiarBonus.isEmpty()) gear else gear + familiarBonus
+
+fun Character.gearMod(a: Ability): Int = stackBonuses(allBonuses.filter { it.target == a.bonusTarget() })
 
 /** Bonus ke skillu z vybavení (klíč [Skills.key]; „knowledge.arcana“ bere i bonus ke všem Knowledge – „knowledge“). */
 fun Character.gearSkill(key: String): Int =
-    stackBonuses(gear.filter { it.target == BonusTarget.SKILL && (it.skill == key || it.skill == key.substringBefore('.').substringBefore(':')) })
+    stackBonuses(allBonuses.filter { it.target == BonusTarget.SKILL && (it.skill == key || it.skill == key.substringBefore('.').substringBefore(':')) })
 
 /** Bonus k záchraně z vybavení ([BonusTarget.FORT] / REF / WILL). */
-fun Character.gearSave(target: BonusTarget): Int = stackBonuses(gear.filter { it.target == target })
+fun Character.gearSave(target: BonusTarget): Int = stackBonuses(allBonuses.filter { it.target == target })
 
 /** Bonusy k AC z vybavení po typech (souhrn – AC appka nepočítá): typ → výsledná hodnota. */
 fun Character.gearAc(): Map<BonusType, Int> =
-    gear.filter { it.target == BonusTarget.AC }.groupBy { it.type }.mapValues { (_, bs) -> stackBonuses(bs) }.filterValues { it != 0 }
+    allBonuses.filter { it.target == BonusTarget.AC }.groupBy { it.type }.mapValues { (_, bs) -> stackBonuses(bs) }.filterValues { it != 0 }
 
 /**
  * Nasazené položky, které opravdu platí: ve slotu jen tolik, kolik se vejde (první v pořadí inventáře),

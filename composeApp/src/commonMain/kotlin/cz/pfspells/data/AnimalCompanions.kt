@@ -80,6 +80,7 @@ data class AnimalSpecies(
 )
 
 object SpeciesCatalog {
+    /** Core Rulebook (ručně, ověřeno) + další z d20pfsrd ([EXTRA_SPECIES], tools/build_companions.py) */
     private fun ab(str: Int, dex: Int, con: Int, int: Int, wis: Int, cha: Int) = Abilities(str, dex, con, int, wis, cha)
     private const val LL_SCENT = "low-light vision, scent"
 
@@ -121,7 +122,7 @@ object SpeciesCatalog {
             ab(8, 17, 11, 1, 12, 2), LL_SCENT, 4, CreatureSize.MEDIUM, 0, "bite (1d4 plus poison)", 4, -2, 2),
         AnimalSpecies("wolf", "Wolf", CreatureSize.MEDIUM, true, "50 ft.", 2, "bite (1d6 plus trip)",
             ab(13, 15, 15, 2, 12, 6), LL_SCENT, 7, CreatureSize.LARGE, 2, "bite (1d8 plus trip)", 8, -2, 4),
-    )
+    ) + EXTRA_SPECIES
     private val byId = all.associateBy { it.id }
 
     fun get(id: String?): AnimalSpecies? = id?.let { byId[it] }
@@ -131,7 +132,7 @@ object SpeciesCatalog {
 val Character.speciesInfo: AnimalSpecies? get() = SpeciesCatalog.get(species)
 
 /** Řádek progrese zvířecího společníka (null = bez progrese – HD a vše ostatní ručně). */
-val Character.companionRow: CompanionLevelRow? get() = companionLevel?.let { CompanionProgression.at(it) }
+val Character.companionRow: CompanionLevelRow? get() = if (isFamiliar || isEidolon) null else companionLevel?.let { CompanionProgression.at(it) }
 
 /** Zvíře už prošlo vylepšením druhu (4. / 7. úroveň společníka). */
 val Character.speciesAdvanced: Boolean
@@ -142,6 +143,9 @@ val Character.speciesAdvanced: Boolean
 
 /** Úprava atributu ze společníka: Str/Dex bonus z tabulky + vylepšení druhu (Str, Dex, Con). */
 fun Character.companionMod(a: Ability): Int {
+    // familiár: Int aspoň podle tabulky (6 na 1.–2. úrovni pána … 15)
+    familiarLevel?.let { lvl -> return if (a == Ability.INT) maxOf(0, FamiliarProgression.intelligence(lvl) - abilities.int) else 0 }
+    if (isEidolon) return eidolonMod(a)
     val row = companionRow ?: return 0
     val sp = speciesInfo
     val adv = speciesAdvanced && sp != null
@@ -162,6 +166,8 @@ fun companionSize(species: AnimalSpecies?, companionLevel: Int?): CreatureSize? 
 /** Přirozená zbroj celkem: druh (+ vylepšení) + bonus z tabulky společníka; null = bez šablony i progrese. */
 val Character.naturalArmor: Int?
     get() {
+        familiarLevel?.let { return FamiliarProgression.naturalArmor(it) }
+        if (isEidolon) return eidolonNaturalArmor
         val sp = speciesInfo
         val row = companionRow
         if (sp == null && row == null) return null
@@ -173,6 +179,8 @@ val Character.naturalArmor: Int?
  * u jezdeckého zvířete paladin a cavalier / samurai. Vždy aspoň 1.
  */
 fun Character.suggestedCompanionLevel(kind: CompanionKind): Int {
+    if (kind == CompanionKind.FAMILIAR) return suggestedFamiliarLevel()
+    if (kind == CompanionKind.EIDOLON) return suggestedEidolonLevel()
     fun lvl(id: String) = classes.firstOrNull { it.classId == id }?.level ?: 0
     val nature = lvl("druid") + lvl("hunter") + maxOf(0, lvl("ranger") - 3)
     val mount = lvl("paladin") + lvl("cavalier") + lvl("samurai")
@@ -194,19 +202,27 @@ fun Character.withCompanion(
     companionLevel: Int?,
     size: CreatureSize?,
     quadruped: Boolean,
+    familiar: String? = null,
+    eidolonForm: String? = null,
+    eidolonSubtype: String? = null,
 ): Character {
+    if (kind == CompanionKind.EIDOLON) return withEidolon(companionLevel, eidolonForm, eidolonSubtype, size, quadruped)
     val sp = SpeciesCatalog.get(species)
     val lvl = companionLevel?.coerceIn(1, 20)
     var classes = classes
     if (lvl != null) {
-        val hd = CompanionProgression.at(lvl).hd
+        // familiár má HD podle úrovně pána, zvířecí společník podle tabulky
+        val hd = if (kind == CompanionKind.FAMILIAR) lvl else CompanionProgression.at(lvl).hd
         classes = if (classes.any { it.classId == "animal" }) classes.map { if (it.classId == "animal") it.copy(level = hd) else it }
         else listOf(ClassEntry("animal", hd)) + classes
     }
     val newSize = companionSize(sp, lvl) ?: size
     return copy(
+        eidolonForm = null,
+        eidolonSubtype = null,
         companion = kind,
         species = sp?.id,
+        familiar = FamiliarCatalog.get(familiar)?.id?.takeIf { kind == CompanionKind.FAMILIAR },
         companionLevel = lvl,
         size = newSize,
         quadruped = (sp?.quadruped ?: quadruped) && newSize != null,
@@ -214,3 +230,33 @@ fun Character.withCompanion(
         classes = classes,
     )
 }
+
+/**
+ * Eidolon: základní forma (startovní atributy při změně formy, velikost, čtyřnohý = quadruped / tauric), progrese podle
+ * úrovně summonera – HD z tabulky jako úroveň „classy“ eidolon (chybí-li, přidá se jako první).
+ */
+private fun Character.withEidolon(companionLevel: Int?, formId: String?, subtype: String?, size: CreatureSize?, quadruped: Boolean): Character {
+    val form = Eidolons.form(formId)
+    val lvl = companionLevel?.coerceIn(1, 20)
+    var classes = classes
+    if (lvl != null) {
+        val hd = Eidolons.row(lvl, form?.unchained == true).hd
+        classes = if (classes.any { it.classId == "eidolon" }) classes.map { if (it.classId == "eidolon") it.copy(level = hd) else it }
+        else listOf(ClassEntry("eidolon", hd)) + classes.filterNot { it.classId == "animal" && it.level <= 1 }
+    }
+    val large = evolutions.any { it.id == "large" }
+    val newSize = form?.let { if (large) CreatureSize.LARGE else it.size } ?: size
+    return copy(
+        companion = CompanionKind.EIDOLON,
+        species = null,
+        familiar = null,
+        companionLevel = lvl,
+        eidolonForm = form?.id,
+        eidolonSubtype = subtype?.takeIf { form?.unchained != false && it in EIDOLON_SUBTYPES },
+        size = newSize,
+        quadruped = if (form != null) form.id.removePrefix("u_") in setOf("quadruped", "tauric") else quadruped && newSize != null,
+        abilities = if (form != null && form.id != this.eidolonForm) form.abilities else abilities,
+        classes = classes,
+    )
+}
+

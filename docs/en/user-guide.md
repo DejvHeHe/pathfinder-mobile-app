@@ -120,8 +120,9 @@ The old "decks" were converted to characters (with all their spells) on the firs
   own instead, **Default text** restores it.
 - **Custom companion**: animal *Custom* with progression off = abilities, size, creature type and HD by hand.
 - Exporting a character includes its companions (they stay linked after import).
-- An **animal** from the list (17 Core Rulebook animal companions – wolf, horse, pony, dog, big cat, bear…) fills in the
-  starting abilities, size, four legs, speed, attacks and special qualities. **Custom** = everything by hand.
+- An **animal** from the list (157 animal companions – 17 from the Core Rulebook and 140 from other Paizo books:
+  dinosaurs, elephants, sharks, birds…; searchable picker) fills in the starting abilities, size, four legs, speed,
+  attacks and special qualities. **Custom** = everything by hand.
 - **Animal companion progression** (default for animal companions and mounts): from the **effective druid level**
   (suggested from the owner's classes – druid and hunter in full, ranger −3, for a mount also paladin and cavalier) the app
   derives HD, BAB, saves, feats, skill points, the **Str/Dex bonus**, **natural armor**, **bonus tricks** and special
@@ -130,6 +131,17 @@ The old "decks" were converted to characters (with all their spells) on the firs
 - Change the level with the stepper at the top of the companion's sheet; the bonuses are shown with the abilities
   ("Includes companion bonuses"). Add the **ability score increase** (+1 at 4th, 9th, 14th and 20th level) to the base
   score of your choice yourself.
+- **Familiar**: one of 89 familiars (cat, toad, raven, owl…; searchable picker) and the **master's class level**
+  (suggested from wizard, witch, sorcerer, arcanist and shaman levels). The familiar's sheet shows the **master's bonus**
+  (Cat: +3 Stealth, Toad: +3 HP, Rat: +2 Fortitude…), which **counts on the master's sheet** (skills, saves, AC, HP – like
+  gear); conditional bonuses ("in bright light") are text only. By the master's level: natural armor (+1 per 2 levels),
+  Int (6–15), spell resistance from 11th level and special abilities (alertness, share spells, speak with master…); HD =
+  master's level. Enter the familiar's own ability scores from the Bestiary.
+- **Eidolon**: the **base form** (biped, quadruped, serpentine, aquatic, avian, tauric; for an unchained summoner the
+  unchained forms including aberrant and a **subtype** – angel, demon, devil…) and the **summoner level**. From the
+  summoner / unchained summoner table: HD, BAB, saves by form, Str / Dex bonus, natural armor, max attacks and special
+  abilities. **Evolutions** from 79 (1–4 points, search, text) with an **evolution points** counter (red when exceeded);
+  Ability Increase (+2 to a chosen ability), Improved Natural Armor (+2) and Large (size) are counted, others are text.
 
 ### Subclasses (domains, bloodline, mystery, school)
 - The subclass can be chosen already when creating the character or adding a class (see above).

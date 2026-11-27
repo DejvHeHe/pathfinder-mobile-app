@@ -134,8 +134,18 @@ data class Character(
     val quadruped: Boolean = false,
     /** druh zvířete ([SpeciesCatalog] id) – startovní atributy, velikost, útoky */
     val species: String? = null,
-    /** efektivní úroveň druida zvířecího společníka (null = bez progrese) – HD, Str/Dex bonus, přirozená zbroj, triky */
+    /** efektivní úroveň druida zvířecího společníka / úroveň pána familiára (null = bez progrese) */
     val companionLevel: Int? = null,
+    /** druh familiára ([FamiliarCatalog] id) – bonus pánovi */
+    val familiar: String? = null,
+    /** bonusy od vlastních familiárů (kopie – drží ji AppState při změně mazlíčků), počítají se jako bonusy vybavení */
+    val familiarBonus: List<ItemBonus> = emptyList(),
+    /** eidolon: základní forma ([Eidolons] id, unchained „u_…“) */
+    val eidolonForm: String? = null,
+    /** eidolon unchained summonera: podtyp (angel, demon…) */
+    val eidolonSubtype: String? = null,
+    /** eidolon: vybrané evoluce (body z tabulky) */
+    val evolutions: List<EvolutionPick> = emptyList(),
     /** rarita mazlíčka (štítek, null = nezadaná) */
     val rarity: CompanionRarity? = null,
     /** vlastní pravidla pro návrat / náhradu po smrti (null = výchozí text podle druhu – `Strings.defaultRespawn`) */

@@ -600,6 +600,26 @@ interface Strings {
     fun speciesName(sp: AnimalSpecies): String
     val companionProgression: String
     val companionLevelLabel: String
+    val familiarLabel: String
+    val familiarLevelLabel: String
+    val masterBonusLabel: String
+    val masterBonusConditional: String
+    val familiarNoteLabel: String
+    fun familiarSpecial(sp: cz.pfspells.data.FamiliarSpecial): String
+    fun familiarStats(naturalArmor: Int, int: Int, sr: Int?): String
+    val familiarHint: String
+    val eidolonFormLabel: String
+    val specialsLabel: String
+    val eidolonSubtypeLabel: String
+    val summonerLevelLabel: String
+    fun eidolonStats(hd: Int, naturalArmor: Int?, strDex: Int, maxAttacks: Int): String
+    fun evolutionPool(used: Int, total: Int?): String
+    val evolutionsOver: String
+    val evolutionsHeader: String
+    val addEvolution: String
+    fun evolutionCost(n: Int): String
+    val freeEvolutionsLabel: String
+    val eidolonHint: String
     fun companionSpecial(sp: CompanionSpecial): String
     /** „Přirozená zbroj +4 · Str/Dex +1 · triky navíc 2“ */
     fun companionStats(naturalArmor: Int?, strDex: Int?, tricks: Int?): String
@@ -1341,6 +1361,38 @@ object EnStrings : Strings {
     override fun speciesName(sp: AnimalSpecies) = sp.name
     override val companionProgression = "Animal companion progression"
     override val companionLevelLabel = "Effective druid level"
+    override val familiarLabel = "Familiar"
+    override val familiarLevelLabel = "Master's class level"
+    override val masterBonusLabel = "Master's bonus"
+    override val masterBonusConditional = "conditional – not counted automatically"
+    override val familiarNoteLabel = "Statistics"
+    override fun familiarSpecial(sp: cz.pfspells.data.FamiliarSpecial) = when (sp) {
+        cz.pfspells.data.FamiliarSpecial.ALERTNESS -> "alertness (master)"
+        cz.pfspells.data.FamiliarSpecial.IMPROVED_EVASION -> "improved evasion"
+        cz.pfspells.data.FamiliarSpecial.SHARE_SPELLS -> "share spells"
+        cz.pfspells.data.FamiliarSpecial.EMPATHIC_LINK -> "empathic link"
+        cz.pfspells.data.FamiliarSpecial.DELIVER_TOUCH_SPELLS -> "deliver touch spells"
+        cz.pfspells.data.FamiliarSpecial.SPEAK_WITH_MASTER -> "speak with master"
+        cz.pfspells.data.FamiliarSpecial.SPEAK_WITH_ANIMALS -> "speak with animals of its kind"
+        cz.pfspells.data.FamiliarSpecial.SPELL_RESISTANCE -> "spell resistance"
+        cz.pfspells.data.FamiliarSpecial.SCRY_ON_FAMILIAR -> "scry on familiar"
+    }
+    override fun familiarStats(naturalArmor: Int, int: Int, sr: Int?) =
+        listOfNotNull("natural armor +$naturalArmor", "Int $int", sr?.let { "SR $it" }).joinToString(" · ")
+    override val eidolonFormLabel = "Base form"
+    override val specialsLabel = "Special"
+    override val eidolonSubtypeLabel = "Subtype"
+    override val summonerLevelLabel = "Summoner level"
+    override fun eidolonStats(hd: Int, naturalArmor: Int?, strDex: Int, maxAttacks: Int) =
+        listOfNotNull("HD $hd", naturalArmor?.let { "natural armor +$it" }, "Str/Dex +$strDex", "max attacks $maxAttacks").joinToString(" · ")
+    override fun evolutionPool(used: Int, total: Int?) = "Evolution points: $used" + (total?.let { " / $it" } ?: "")
+    override val evolutionsOver = "More points spent than the evolution pool allows."
+    override val evolutionsHeader = "Evolutions"
+    override val addEvolution = "Add evolution"
+    override fun evolutionCost(n: Int) = "$n pt"
+    override val freeEvolutionsLabel = "Free evolutions"
+    override val eidolonHint = "Ability Increase (+2) and Improved Natural Armor (+2) are counted, Large changes the size; other evolutions are text only."
+    override val familiarHint = "The master's bonus counts on the master's sheet (skills, saves, AC, HP). HD = master's level; the familiar uses the master's BAB and base saves if better. Enter its own ability scores from the Bestiary."
     override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
         CompanionSpecial.LINK -> "Link"
         CompanionSpecial.SHARE_SPELLS -> "Share spells"
@@ -1411,6 +1463,7 @@ object EnStrings : Strings {
         BonusTarget.SKILL -> "Skill"
         BonusTarget.MAX_DEX -> "Max Dex"
         BonusTarget.ARMOR_CHECK -> "Armor check penalty"
+        BonusTarget.HP -> "Hit points"
     }
     override val bonusTypeLabel = "Bonus type"
     override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
@@ -1554,7 +1607,7 @@ object EnStrings : Strings {
     override val sourceClasses = "Classes (spells per day, BAB, saves)"
     override val sourceRaces = "Races (size, speed, ability modifiers)"
     override val sourceDeities = "Deities (alignment, domains, favored weapon)"
-    override val sourceCompanions = "Animal companions (progression, animals)"
+    override val sourceCompanions = "Animal companions, familiars and eidolons"
     override val privacyHeader = "Privacy"
     override val privacyText = "The app collects no personal data. There is no account, no tracking and no ads. Characters, inventories " +
         "and settings are stored only on your device (in the web version in your browser) and never leave it unless you export them yourself. " +
@@ -2311,6 +2364,38 @@ object CsStrings : Strings {
     override fun speciesName(sp: AnimalSpecies) = csSpecies[sp.id]?.let { "$it (${sp.name})" } ?: sp.name
     override val companionProgression = "Progrese zvířecího společníka"
     override val companionLevelLabel = "Efektivní úroveň druida"
+    override val familiarLabel = "Familiár"
+    override val familiarLevelLabel = "Úroveň pána"
+    override val masterBonusLabel = "Bonus pánovi"
+    override val masterBonusConditional = "podmíněný – nepočítá se automaticky"
+    override val familiarNoteLabel = "Statistiky"
+    override fun familiarSpecial(sp: cz.pfspells.data.FamiliarSpecial) = when (sp) {
+        cz.pfspells.data.FamiliarSpecial.ALERTNESS -> "alertness (pán)"
+        cz.pfspells.data.FamiliarSpecial.IMPROVED_EVASION -> "improved evasion"
+        cz.pfspells.data.FamiliarSpecial.SHARE_SPELLS -> "sdílení kouzel"
+        cz.pfspells.data.FamiliarSpecial.EMPATHIC_LINK -> "empatické pouto"
+        cz.pfspells.data.FamiliarSpecial.DELIVER_TOUCH_SPELLS -> "doručení dotykových kouzel"
+        cz.pfspells.data.FamiliarSpecial.SPEAK_WITH_MASTER -> "řeč s pánem"
+        cz.pfspells.data.FamiliarSpecial.SPEAK_WITH_ANIMALS -> "řeč se zvířaty svého druhu"
+        cz.pfspells.data.FamiliarSpecial.SPELL_RESISTANCE -> "odolnost vůči kouzlům"
+        cz.pfspells.data.FamiliarSpecial.SCRY_ON_FAMILIAR -> "věštění přes familiára"
+    }
+    override fun familiarStats(naturalArmor: Int, int: Int, sr: Int?) =
+        listOfNotNull("přirozená zbroj +$naturalArmor", "Int $int", sr?.let { "SR $it" }).joinToString(" · ")
+    override val eidolonFormLabel = "Základní forma"
+    override val specialsLabel = "Schopnosti"
+    override val eidolonSubtypeLabel = "Podtyp"
+    override val summonerLevelLabel = "Úroveň summonera"
+    override fun eidolonStats(hd: Int, naturalArmor: Int?, strDex: Int, maxAttacks: Int) =
+        listOfNotNull("HD $hd", naturalArmor?.let { "přirozená zbroj +$it" }, "Str/Obr +$strDex", "max. útoků $maxAttacks").joinToString(" · ")
+    override fun evolutionPool(used: Int, total: Int?) = "Body evolucí: $used" + (total?.let { " / $it" } ?: "")
+    override val evolutionsOver = "Utraceno víc bodů, než dovoluje tabulka."
+    override val evolutionsHeader = "Evoluce"
+    override val addEvolution = "Přidat evoluci"
+    override fun evolutionCost(n: Int) = "$n b."
+    override val freeEvolutionsLabel = "Volné evoluce"
+    override val eidolonHint = "Počítá se Ability Increase (+2) a Improved Natural Armor (+2), Large mění velikost; ostatní evoluce jsou jen text."
+    override val familiarHint = "Bonus pánovi se počítá na listu pána (skilly, záchrany, AC, HP). HD = úroveň pána; familiár má BAB a základní záchrany pána, jsou-li lepší. Vlastní atributy zadejte podle bestiáře."
     override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
         CompanionSpecial.LINK -> "Pouto (Link)"
         CompanionSpecial.SHARE_SPELLS -> "Sdílení kouzel"
@@ -2392,6 +2477,7 @@ object CsStrings : Strings {
         BonusTarget.SKILL -> "Skill"
         BonusTarget.MAX_DEX -> "Max. Obratnost"
         BonusTarget.ARMOR_CHECK -> "Postih zbroje"
+        BonusTarget.HP -> "Životy"
     }
     override val bonusTypeLabel = "Typ bonusu"
     override fun bonusType(t: BonusType) = t.name.lowercase().replace('_', ' ')
@@ -2536,7 +2622,7 @@ object CsStrings : Strings {
     override val sourceClasses = "Classy (kouzla za den, ZÚB, záchrany)"
     override val sourceRaces = "Rasy (velikost, rychlost, úpravy atributů)"
     override val sourceDeities = "Božstva (přesvědčení, domény, oblíbená zbraň)"
-    override val sourceCompanions = "Zvířecí společníci (progrese, zvířata)"
+    override val sourceCompanions = "Zvířecí společníci, familiáři a eidoloni"
     override val privacyHeader = "Soukromí"
     override val privacyText = "Appka nesbírá žádné osobní údaje. Nemá účet, sledování ani reklamy. Postavy, inventáře a nastavení " +
         "jsou uložené jen ve vašem zařízení (u webové verze ve vašem prohlížeči) a nikam se neposílají, dokud je sami neexportujete. " +

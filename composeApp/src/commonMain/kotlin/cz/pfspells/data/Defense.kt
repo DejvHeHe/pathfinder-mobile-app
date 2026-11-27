@@ -82,7 +82,9 @@ fun Character.maxHp(): Int {
         }
     }
     hp += creatureHalf / 2
-    return (hp + toughnessHp() + hpBonus).coerceAtLeast(1)
+    // HP z vybavení / familiára (Toad: +3 HP)
+    val bonusHp = stackBonuses(allBonuses.filter { it.target == BonusTarget.HP })
+    return (hp + toughnessHp() + hpBonus + bonusHp).coerceAtLeast(1)
 }
 
 /** Aktuální HP (může být i záporné – v bezvědomí / umírá). */

@@ -24,15 +24,24 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (27. 11. 2026)
-- ✅ **Vydáno `v1.7.0`** (27. 11. 2026, commit `f7664bb`): archetypy (viz níže) – workflowy Release / Docker po tagu ověřit.
-- ✅ 27. 11. 2026 (nevydáno): **prestižní classy z AoN** – `tools/build_prestige_classes.py` (PrestigeClasses.aspx + stránky,
+- ✅ 27. 11. 2026 (nevydáno): **mazlíčci** – `tools/build_companions.py` (d20pfsrd, 2 stránky, cache `build/companion-cache`):
+  `SpeciesTable.kt` (`EXTRA_SPECIES`, 140 zvířat Paizo, bez opengamingstore.com = 3PP; 17 CRB ručně zůstává) + `FamiliarTable.kt`
+  (89 familiárů, nepodmíněný bonus pánovi → `ItemBonus`, nový `BonusTarget.HP`). Familiár: `Character.familiar`, `companionLevel` =
+  úroveň pána (`FamiliarProgression`), bonus u pána `Character.familiarBonus` (AppState `syncFamiliarBonus`) → `Character.allBonuses`
+  (vybavení + familiár, skilly / záchrany / AC / HP). `tools/build_eidolons.py` → `EidolonTable.kt` (progrese klasická / unchained,
+  formy „u_…“, podtypy) + `files/Eidolons.json` (79 evolucí, líně `ensureEidolonData`); eidolon: `eidolonForm`, `eidolonSubtype`,
+  `evolutions` (`EvolutionPick`), rasové HD `eidolon` (záchrany podle formy v `stats`), Ability Increase / Improved Natural Armor / Large
+  mechanicky. UI: výběr zvířete / familiára s hledáním (`SearchPickDialog`), `EidolonPanel`, `EvolutionPickerDialog`. Testy 176 zelené.
+- ✅ **Vydáno `v1.8.0`** (27. 11. 2026, commit `cc0c580`): prestižní classy – workflowy Release, Docker i CI zelené, uživatel otestoval.
+- ✅ **Vydáno `v1.7.0`** (27. 11. 2026, commit `f7664bb`): archetypy – workflowy Release, Docker i CI zelené.
+- ✅ 27. 11. 2026 (v1.8.0): **prestižní classy z AoN** – `tools/build_prestige_classes.py` (PrestigeClasses.aspx + stránky,
   cache `build/prestige-cache`; Foundry je nemá) → `PrestigeTable.kt` (118 class: HD, skilly, class skills, BAB / záchrany po
   úrovních, sesílání po úrovních `arcane` / `divine` / `any` / `class:witch`, bonusové featy, požadavky) + `files/PrestigeClasses.json`
   (popis a schopnosti, líně `ensurePrestigeTexts`). `ClassInfo.prestige` / `maxLevel`, `ClassGroup.PRESTIGE` (jen při přidání classy),
   `Character.stats` z tabulky, `ClassEntry.advances` (druh → classId) → **`Character.casterLevel(e)`** – používat místo `e.level`
   všude, kde jde o kouzla (sloty `e.levelSlots(…, casterLevel)`, `bonusSpellsByLevel(index, casterLevel)`, `Spellbook.classLevel`).
   Požadavky `PrestigeRequirements` (přes `FeatPrereqs`), přísný režim `PrestigeRequirementUnmet`, UI `ui/PrestigeUi.kt`. Testy 164 zelené.
-- ✅ 27. 11. 2026 (nevydáno): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
+- ✅ 27. 11. 2026 (v1.7.0): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
   archetypů, cache `build/archetype-cache`, ~25 min) → `files/Archetypes.json` (líně, `ensureArchetypes`). `ClassEntry.archetypes`
   (`ArchetypePick`), `ArchetypesLink` pod classou + `ArchetypesDialog`, konflikty `Archetypes.conflicts` (stejná položka `replaces`),
   přísný režim `StrictBlock.ArchetypeConflict`, export `ClassDto.archetypes`; unchained → archetypy základní classy, NPC žádné.
@@ -144,8 +153,10 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   Strings.kt              texty UI: interface Strings, EnStrings, CsStrings, Lang, LocalStrings / `str`
   data/Model.kt           Spell, Deck (jen migrace a starý exportní formát)
   data/Character.kt       Character (+ mazlíček: ownerId, CompanionKind, size, quadruped), ClassEntry, Abilities, FeatPick, Spellbook (pohled postava + classa), CharacterStore + migrace
-  data/AnimalCompanions.kt  CompanionProgression (tabulka CRB podle efektivní úrovně druida), SpeciesCatalog (17 zvířat CRB, vylepšení na 4./7. úrovni),
+  data/AnimalCompanions.kt  CompanionProgression (tabulka CRB podle efektivní úrovně druida), SpeciesCatalog (17 zvířat CRB + 140 v SpeciesTable.kt, vylepšení na 4./7. úrovni),
                           `Character.withCompanion`, companionMod (do `scores`), naturalArmor, suggestedCompanionLevel
+  data/Familiars.kt      familiáři (FamiliarCatalog z FamiliarTable.kt, FamiliarProgression, familiarBonuses → Character.familiarBonus)
+  data/Eidolons.kt       eidolon (EidolonTable.kt: progrese, formy, podtypy; Eidolons.json evoluce; EvolutionPick, eidolonMod)
   data/Equipment.kt       nasazené vybavení: ItemSlot, ItemBonus (BonusTarget/BonusType), stackBonuses (pravidla PF1), ItemBonusGuess (podle jména),
                           zbroj/štít: AC + MAX_DEX + ARMOR_CHECK (ItemBonusGuess.of(Item)), zatížení → loadBonuses (UNTYPED) v `Character.gear`
                           `InvEntry.equipped/slot/bonuses` → `Character.gear` (AppState.updateInventory/linkInventory) → gearMod (do `scores`), gearSkill, gearSave, gearAc

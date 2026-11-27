@@ -107,6 +107,8 @@ Výstup: `composeApp/build/previews/*.png`.
 | Rasy | `python tools/build_races.py [races.zip]` |
 | Božstva | `python tools/build_deities.py [DeitiesByGroup.html] [--cache DIR]` (~460 stránek božstev po 1 s) |
 | Rasové traity | `python tools/build_racial_traits.py [--cache DIR]` (~80 stránek ras po 1 s) |
+| Zvířecí společníci, familiáři | `python tools/build_companions.py [--cache DIR]` (2 stránky d20pfsrd) |
+| Eidolon | `python tools/build_eidolons.py [--cache DIR]` (2 stránky d20pfsrd) |
 | Prestižní classy | `python tools/build_prestige_classes.py [--cache DIR]` (~120 stránek po 1 s) |
 | Archetypy | `python tools/build_archetypes.py [--cache DIR]` (~1300 stránek po 1 s, ~25 min, přerušitelný) |
 | Schopnosti class, hexy, zjevení | `python tools/build_class_abilities.py [class-abilities.zip] [sources.mjs]` |

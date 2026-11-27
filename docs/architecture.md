@@ -58,7 +58,10 @@ composeApp/src/
     data/
       Model.kt                Spell, Deck (jen migrace a starý export)
       Character.kt            Character (+ mazlíček: ownerId, CompanionKind, size), ClassEntry, Abilities, FeatPick, Tracker, Spellbook, CharacterStore (+ migrace decků)
-      AnimalCompanions.kt     zvířecí společník: CompanionProgression (tabulka CRB), SpeciesCatalog (17 zvířat), companionMod, withCompanion
+      AnimalCompanions.kt     zvířecí společník: CompanionProgression (tabulka CRB), SpeciesCatalog (157 zvířat), companionMod, withCompanion
+      SpeciesTable.kt         GENEROVANÉ: 140 dalších zvířecích společníků (d20pfsrd, tools/build_companions.py)
+      Familiars.kt            familiáři: FamiliarCatalog, FamiliarProgression, familiarBonuses (bonus pánovi); FamiliarTable.kt GENEROVANÉ
+      Eidolons.kt             eidolon: progrese, formy, evoluce (EvolutionPick), EidolonRepository; EidolonTable.kt GENEROVANÉ (tools/build_eidolons.py)
       Equipment.kt            nasazené vybavení: ItemSlot, ItemBonus, stackBonuses (pravidla PF1), ItemBonusGuess, loadBonuses, gearMod / gearSkill / gearSave
       Defense.kt              AC / dotyk / zaskočený (defense, sizeAcMod), HP (maxHp, currentHp)
       Metamagic.kt            zvýšení slotu z textu metamagického featu
@@ -79,6 +82,8 @@ composeApp/src/
       ArchetypeMods.kt        ručně zadané efekty známých archetypů (ARCHETYPE_MODS)
       Prestige.kt             prestižní classy (PrestigeInfo, Prestige – classy ke zvýšení, Character.casterLevel, PrestigeRequirements, PrestigeTextRepository)
       PrestigeTable.kt        GENEROVANÉ: 118 prestižních class (AoN, tools/build_prestige_classes.py)
+tools/build_companions.py   další zvířecí společníci a familiáři (d20pfsrd)
+tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       schopnosti podtříd (SubclassPowers), vzorce Foundry (FoundryFormula), hexy a zjevení (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENEROVANÉ: schopnosti domén, bloodline, škol a blessingů, kouzla patronů / spiritů / disciplín (Foundry, tools/build_class_abilities.py)
@@ -242,6 +247,7 @@ staré decky z `decks_v1`, starý klíč nechává jako zálohu).
 - **Alternativní rasové traity** (`RacialTraits.json`) se načtou **líně** při otevření jejich dialogu (`ensureRacialTraits`).
 - **Archetypy** (`Archetypes.json`) se načtou **líně** při otevření dialogu archetypů (`ensureArchetypes`).
 - **Prestižní classy** – popis a schopnosti (`PrestigeClasses.json`) se načtou **líně** při otevření detailu prestižní classy (`ensurePrestigeTexts`).
+- **Evoluce a podtypy eidolona** (`Eidolons.json`) se načtou **líně** při výběru evoluce (`ensureEidolonData`).
 - **Hexy a zjevení** (`ClassAbilities.json` + hexy duchů `SubclassAbilities.json`) se načtou **líně**, když má postava witch / shaman / oracle (`ensureClassAbilities`).
 - **Itemy** se načtou **líně** – až při otevření inventáře, importu inventáře nebo obrazovky databází (`ensureItems`, ~0,3 s).
 - Obě repository nejdřív zkusí staženou verzi z `AppFiles`; když chybí nebo je poškozená, smažou ji a použijí přibalenou z resources.
@@ -344,6 +350,7 @@ Design „Linkovaný zápisník“ (podle návrhu uživatele v Claude Design):
 | `EquipmentTest` | sčítání typů bonusů, odhad bonusu podle jména, jen nasazené a jen co se vejde do slotu, konflikty slotů |
 | `DefenseTest` | AC / dotyk / zaskočený, max Dex, velikost, postih zbroje a zatížení, HP (Toughness, házené, tvorové), aktuální HP, metamagie, doménové a bloodline schopnosti |
 | `AnimalCompanionTest` | tabulka zvířecího společníka proti HD „animal“, vylepšení vlka na 7. úrovni, atributy druhu, zvláštní schopnosti, navržená úroveň |
+| `FamiliarTest`, `EidolonTest` | familiár: progrese, bonus pánovi (skill, záchrana, HP), HD; eidolon: tabulky, forma, záchrany, evoluce (Ability Increase, Improved Natural Armor, Large), podtyp |
 | `PrestigeTest` | prestižní classy: tabulka, BAB a záchrany z tabulky, sesílací úroveň, classy ke zvýšení, bonusové featy, požadavky |
 | `ArchetypesTest`, `ArchetypeEffectsTest` | archetypy: konflikty, unchained, NPC; nahrazené schopnosti, podtřídy, hexy a bonusové featy podle úrovní, triky, ručně zadané efekty (bez kouzel, o kouzlo méně, jedna doména, Sacred Servant, Insinuator) |
 | `StrictModeTest` | přísný režim: připravené kopie (sloty + bonus), limit známých, atribut a spell level, počet featů a prerekvizity, zvířecí společník |

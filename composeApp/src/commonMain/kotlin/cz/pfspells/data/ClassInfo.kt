@@ -71,6 +71,11 @@ object ClassCatalog {
     val creatures: List<ClassInfo> = listOf(
         ClassInfo("animal", "Animal", Bab.MED, fort = true, ref = true, will = false, hd = 8, skills = 2, classSkills = CREATURE_SKILLS, creature = true),
         ClassInfo("magical_beast", "Magical Beast", Bab.HIGH, fort = true, ref = true, will = false, hd = 10, skills = 2, classSkills = CREATURE_SKILLS, creature = true),
+        // eidolon (outsider): plný BAB, d10, 4 skill ranky na HD; dobré záchrany dává základní forma (Character.stats)
+        ClassInfo(
+            "eidolon", "Eidolon", Bab.HIGH, fort = true, ref = false, will = true, hd = 10, skills = 4,
+            classSkills = setOf("bluff", "craft", "knowledge.planes", "perception", "senseMotive", "stealth"), creature = true,
+        ),
     )
 
     val prestige: List<ClassInfo> = PRESTIGE_TABLE.map { it.info }
@@ -97,10 +102,12 @@ fun Character.stats(): CharacterStats {
             will += p.at(p.wills, e.level)
             continue
         }
+        // eidolon: dobré záchrany podle základní formy (biped Fort + Will, quadruped Fort + Ref…)
+        val good = if (e.classId == "eidolon") eidolonFormInfo?.goodSaves else null
         bab += info.bab.at(e.level)
-        fort += ClassInfo.save(info.fort, e.level)
-        ref += ClassInfo.save(info.ref, e.level)
-        will += ClassInfo.save(info.will, e.level)
+        fort += ClassInfo.save(good?.contains(BonusTarget.FORT) ?: info.fort, e.level)
+        ref += ClassInfo.save(good?.contains(BonusTarget.REF) ?: info.ref, e.level)
+        will += ClassInfo.save(good?.contains(BonusTarget.WILL) ?: info.will, e.level)
     }
     return CharacterStats(level, bab, fort, ref, will)
 }

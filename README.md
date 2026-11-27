@@ -40,6 +40,7 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
 - **Limited-use abilities** – Smite Evil, Rage, Ki Pool, domain / bloodline / school powers of every level… with uses
   per day by level, plus custom counters.
 - **Alternate racial traits** – ~630 from Archives of Nethys; replaced default traits stop counting for prerequisites.
+- **Companions** – 157 animal companions, 89 familiars (the master's bonus counts on the master's sheet) and eidolons with evolution points.
 - **Prestige classes** – 118 from Archives of Nethys; requirements checked, caster level of the advanced class goes up.
 - **Archetypes** – ~1,300 from Archives of Nethys with full text; replaced features, subclasses and spellcasting change accordingly.
 - **Hexes and revelations** – ~120 witch / shaman hexes and ~300 oracle revelations with full text, counted by class level.

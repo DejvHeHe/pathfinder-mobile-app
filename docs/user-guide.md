@@ -115,8 +115,9 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   **Výchozí text** ho vrátí.
 - **Vlastní mazlíček**: zvíře *Vlastní* a vypnutá progrese = atributy, velikost, druh tvora i HD ručně.
 - Export postavy přibalí i její mazlíčky (po importu zůstanou propojení).
-- **Zvíře** ze seznamu (17 zvířecích společníků z Core Rulebooku – vlk, kůň, poník, pes, velká kočka, medvěd…) doplní
-  startovní atributy, velikost, čtyřnohost, rychlost, útoky a zvláštní schopnosti. **Vlastní** = vše ručně.
+- **Zvíře** ze seznamu (157 zvířecích společníků – 17 z Core Rulebooku a 140 z dalších knih Paizo: dinosauři, sloni,
+  žraloci, ptáci…; výběr s hledáním) doplní startovní atributy, velikost, čtyřnohost, rychlost, útoky a zvláštní
+  schopnosti. **Vlastní** = vše ručně.
 - **Progrese zvířecího společníka** (výchozí u zvířecího společníka a jezdeckého zvířete): z **efektivní úrovně druida**
   (navrhne se z class vlastníka – druid a hunter plně, ranger −3, u jezdeckého zvířete i paladin a cavalier) se
   dopočítají HD, BAB, záchrany, featy, skill body, **bonus k Síle a Obratnosti**, **přirozená zbroj**, **triky navíc**
@@ -124,6 +125,17 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   **vylepší** (např. vlk na 7. úrovni: Large, Síla +8, Obratnost −2, Odolnost +4, silnější kousnutí).
 - Úroveň jde měnit stepperem nahoře v listu mazlíčka; bonusy se ukazují u atributů („Včetně bonusů společníka“).
   **Zvýšení atributu** (+1 na 4., 9., 14. a 20. úrovni) přičtěte ručně k základní hodnotě, kterou chcete.
+- **Familiár**: druh z 89 familiárů (kočka, ropucha, krkavec, sova…; výběr s hledáním) a **úroveň pána** (navrhne se
+  z úrovní wizard, witch, sorcerer, arcanist a shaman). List familiára ukáže **bonus pánovi** (Cat: +3 Stealth, Toad: +3 HP,
+  Rat: +2 Fortitude…), který se **počítá na listu pána** (skilly, záchrany, AC, HP – jako vybavení); podmíněné bonusy
+  („in bright light“) jsou jen text. Podle úrovně pána přirozená zbroj (+1 za každé 2 úrovně), Int (6–15), odolnost vůči
+  kouzlům od 11. úrovně a schopnosti (alertness, sdílení kouzel, řeč s pánem…); HD = úroveň pána. Vlastní atributy
+  familiára zadejte podle bestiáře.
+- **Eidolon**: **základní forma** (biped, quadruped, serpentine, aquatic, avian, tauric; u unchained summonera unchained
+  formy včetně aberrant a **podtyp** – angel, demon, devil…) a **úroveň summonera**. Z tabulky klasického / unchained
+  summonera HD, BAB, záchrany podle formy, bonus Str / Obr, přirozená zbroj, max. útoků a schopnosti. **Evoluce** z 79
+  (body 1–4, hledání, text) s počítadlem **bodů evolucí** (červeně při překročení); Ability Increase (+2 k vybranému
+  atributu), Improved Natural Armor (+2) a Large (velikost) se počítají, ostatní jsou text.
 
 ### Podtřídy (domény, bloodline, mystérium, škola)
 - Podtřídu jde vybrat už při vytvoření postavy nebo přidání classy (viz výše).
