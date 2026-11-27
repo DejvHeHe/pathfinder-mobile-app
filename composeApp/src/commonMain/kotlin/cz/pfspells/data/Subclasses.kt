@@ -234,10 +234,11 @@ fun domainSpells(index: SubclassIndex, domain: String?, subdomain: String?): Map
  * domény (cleric, druid), mystérium (oracle, spell level N od úrovně 2N), bloodline (sorcerer, od úrovně 2N + 1).
  * Kouzelník bonusová kouzla nemá (školní slot se řeší zvlášť).
  */
-fun ClassEntry.bonusSpellsByLevel(index: SubclassIndex): Map<Int, List<Spell>> {
+fun ClassEntry.bonusSpellsByLevel(index: SubclassIndex, casterLevel: Int = level): Map<Int, List<Spell>> {
     val cls = caster ?: return emptyMap()
     if (archetypes.isNotEmpty() && archetypeEffect.noSubclassSpells) return emptyMap()
-    val max = cls.maxSpellLevel(level)
+    // nejvyšší level podle sesílací úrovně (prestižní classa), prahy mystéria / bloodline podle úrovně classy
+    val max = cls.maxSpellLevel(casterLevel)
     val all: Map<Int, List<Spell>> = when (subclassKind) {
         SubclassType.TWO_DOMAINS -> {
             val a = domainSpells(index, subclass[SubclassSlot.DOMAIN1], subclass[SubclassSlot.SUBDOMAIN1])

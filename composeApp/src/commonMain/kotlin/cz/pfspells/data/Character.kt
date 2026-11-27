@@ -56,8 +56,10 @@ data class ClassEntry(
     val bonusSpells: Map<String, Int> = emptyMap(),
     /** vybrané hexy (witch, shaman) / revelations (oracle) */
     val abilities: List<AbilityPick> = emptyList(),
-    /** vybrané archetypy (jen evidence – nic se nepočítá) */
+    /** vybrané archetypy (mechanika v ArchetypeEffects.kt) */
     val archetypes: List<ArchetypePick> = emptyList(),
+    /** prestižní classa: druh sesílání („arcane“, „divine“, „psychic“, „any“) → classId, jejíž sesílání zvyšuje */
+    val advances: Map<String, String> = emptyMap(),
 )
 
 enum class ResourceUnit { PER_DAY, ROUNDS, POINTS }
@@ -183,7 +185,8 @@ data class Spellbook(val character: Character, val entry: ClassEntry) {
     val id: String get() = character.id
     val name: String get() = character.name
     val classId: String get() = entry.classId
-    val classLevel: Int get() = entry.level
+    /** sesílací úroveň (úroveň classy + prestižní classy, které ji zvyšují) – jen pro kouzla */
+    val classLevel: Int get() = character.casterLevel(entry)
     val spells: Map<String, Int> get() = entry.spells
 }
 

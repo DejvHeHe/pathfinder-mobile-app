@@ -20,6 +20,8 @@ sealed interface StrictBlock {
     data class RacialTraitReplaced(val trait: String) : StrictBlock
     /** class feature už nahrazuje jiný vybraný archetyp */
     data class ArchetypeConflict(val feature: String) : StrictBlock
+    /** nesplněný požadavek prestižní classy (✗; neověřitelné „?“ se nepočítají) */
+    data class PrestigeRequirementUnmet(val requirement: String) : StrictBlock
 }
 
 /**
@@ -35,8 +37,8 @@ object StrictRules {
         // známé kouzlo se podruhé nepřidává – nic se nemění
         if (cls.distinctSpells && spell.id in e.spells) return null
         // kouzlo patrona (mimo spell list) má úroveň ověřenou už v spellLevelFor
-        if (cls.spellLevelOf(spell) != null && !cls.canCast(spell, e.level)) return StrictBlock.SpellNotAvailable
-        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl)
+        if (cls.spellLevelOf(spell) != null && !cls.canCast(spell, c.casterLevel(e))) return StrictBlock.SpellNotAvailable
+        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl, c.casterLevel(e))
         if (lvl == 0 && slots.limit == 0) return StrictBlock.SpellNotAvailable
         if (!slots.abilityOk) return StrictBlock.AbilityTooLow(lvl)
         val base = slots.limit ?: return null

@@ -33,7 +33,12 @@ data class ClassInfo(
     val weaponProf: Set<String> = emptySet(),
     /** rasové HD tvora (zvíře, magická bestie) – pro mazlíčky a společníky */
     val creature: Boolean = false,
+    /** prestižní classa (AoN): tabulka po úrovních, sesílání, požadavky */
+    val prestige: PrestigeInfo? = null,
 ) {
+    /** nejvyšší úroveň classy (prestižní obvykle 10, některé 5 nebo 3) */
+    val maxLevel: Int get() = prestige?.maxLevel ?: 20
+
     val caster: CasterClass? get() = CasterClasses.get(id)
 
     companion object {
@@ -43,10 +48,10 @@ data class ClassInfo(
 }
 
 /** Skupina class ve výběru (podle počtu úrovní kouzel). */
-enum class ClassGroup { FULL, SIX, FOUR, NONE, NPC, CREATURE }
+enum class ClassGroup { FULL, SIX, FOUR, NONE, PRESTIGE, NPC, CREATURE }
 
 val ClassInfo.group: ClassGroup
-    get() = when (caster?.progression) {
+    get() = if (prestige != null) ClassGroup.PRESTIGE else when (caster?.progression) {
         Progression.PREPARED_9, Progression.SPONTANEOUS_9 -> ClassGroup.FULL
         Progression.SIX -> ClassGroup.SIX
         Progression.FOUR, Progression.FOUR_KNACKS -> ClassGroup.FOUR
@@ -68,7 +73,9 @@ object ClassCatalog {
         ClassInfo("magical_beast", "Magical Beast", Bab.HIGH, fort = true, ref = true, will = false, hd = 10, skills = 2, classSkills = CREATURE_SKILLS, creature = true),
     )
 
-    val all: List<ClassInfo> = CLASS_TABLE + creatures
+    val prestige: List<ClassInfo> = PRESTIGE_TABLE.map { it.info }
+
+    val all: List<ClassInfo> = CLASS_TABLE + prestige + creatures
     private val byId = all.associateBy { it.id }
 
     fun get(id: String): ClassInfo? = byId[id]
@@ -81,6 +88,15 @@ fun Character.stats(): CharacterStats {
     var bab = 0; var fort = 0; var ref = 0; var will = 0
     for (e in classes) {
         val info = ClassCatalog.get(e.classId) ?: continue
+        val p = info.prestige
+        if (p != null) {
+            // prestižní classa: hodnoty přímo z tabulky (jiné vzorce záchran než u základních class)
+            bab += p.at(p.babs, e.level)
+            fort += p.at(p.forts, e.level)
+            ref += p.at(p.refs, e.level)
+            will += p.at(p.wills, e.level)
+            continue
+        }
         bab += info.bab.at(e.level)
         fort += ClassInfo.save(info.fort, e.level)
         ref += ClassInfo.save(info.ref, e.level)

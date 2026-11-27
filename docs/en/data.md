@@ -17,6 +17,7 @@ so the app works offline. Part of it can be re-downloaded from the source with a
 | `ClassTable.kt` | 49 classes: BAB, saves, HD, skill points, class skills, proficiencies | Foundry VTT PF1 `packs/classes` – `tools/build_classes.py` | no |
 | `RaceTable.kt` | 80 races: size, speed, ability and skill modifiers, vision | Foundry VTT PF1 `packs/races` – `tools/build_races.py` | no |
 | `ClassAbilityTable.kt`, `ClassAbilities.json` (0.3 MB) | 325 domain / bloodline / school powers; 420 hexes and revelations with text | Foundry VTT PF1 `packs/class-abilities` – `tools/build_class_abilities.py` | no |
+| `PrestigeTable.kt`, `PrestigeClasses.json` (0.8 MB) | 118 prestige classes: table by level, spellcasting, requirements; description and features | [Archives of Nethys](https://aonprd.com/PrestigeClasses.aspx) – `tools/build_prestige_classes.py` | no |
 | `Archetypes.json` (4.0 MB) | 1,252 archetypes of 40 classes (replaced features, summary, source, PFS, text) | [Archives of Nethys](https://aonprd.com/Archetypes.aspx) – `tools/build_archetypes.py` | no |
 | `RacialTraitTable.kt`, `RacialTraits.json` (0.4 MB) | default traits of 77 races; 632 alternate racial traits | Archives of Nethys race pages – `tools/build_racial_traits.py` | no |
 | `DeityTable.kt` | 463 deities: pantheon, alignment, areas, domains, subdomains, favored weapon | [Archives of Nethys](https://aonprd.com/DeitiesByGroup.aspx) – `tools/build_deities.py` | no |
@@ -147,7 +148,7 @@ level from the chosen spell list. Expensive material components are only mention
 `python tools/build_classes.py` (pyyaml) generates `data/ClassTable.kt` from Foundry VTT PF1 `packs/classes`:
 49 classes (core, hybrid, occult, unchained and NPC) with BAB progression (high = L, med = ¾ L, low = ½ L), good saves
 (2 + L/2, otherwise L/3), HD, skill points, class skills and armor / weapon proficiencies. Multiclass = sum over all classes.
-No prestige classes yet.
+Prestige classes see below.
 
 ### Races (`RaceTable.kt`)
 `python tools/build_races.py [races.zip]` (pyyaml) generates `data/RaceTable.kt` from Foundry VTT PF1 `packs/races`: 80 races with
@@ -165,6 +166,27 @@ lists are in the script.
   optionally with "subtype" or a qualifier in parentheses. A race qualifies when its name matches or it has the subtype
   (`RaceInfo.countsAs`): a half-elf counts as an elf and a human, a half-orc as an orc, a drow as an elf, a svirfneblin as a gnome.
   "Human (Varisian)" with race human = check yourself, with another race = not met.
+
+### Prestige classes (`PrestigeTable.kt`, `PrestigeClasses.json`)
+Foundry VTT PF1 has no prestige classes. `python tools/build_prestige_classes.py [--cache DIR]` downloads the list from
+Archives of Nethys ([PrestigeClasses.aspx](https://aonprd.com/PrestigeClasses.aspx)) and the class pages (~120 requests,
+1 per second, cached in `build/prestige-cache`):
+- **`PrestigeTable.kt`** (`PRESTIGE_TABLE`, `PrestigeInfo`) – HD, skill points, class skills (AoN names → app skill ids),
+  BAB and saves per level straight from the table (prestige classes use other save formulas), spellcasting per level from
+  the "Spells per Day" column (or Special): "+1 level of (existing) arcane / divine spellcasting class" → `arcane` /
+  `divine`, no kind → `any`, "+1 level of witch class" → `class:witch`; Mystic Theurge `arcane+divine`; bonus feats
+  (Special "bonus feat"), requirements ("Spells: Able to cast 3rd-level arcane spells."), source, PFS. 118 classes, 60
+  advance spellcasting.
+- **`PrestigeClasses.json`** – description and class features text (lazily, `ensurePrestigeTexts`).
+
+In the app: `ClassCatalog.prestige` (`ClassInfo.prestige`, group `ClassGroup.PRESTIGE`, `maxLevel`), `Character.stats`
+uses the table values, `featSlots` the bonus feats. `ClassEntry.advances` (kind → classId, `Prestige.candidates` by
+`CasterClass.tradition`, `defaultAdvances` = the single fitting class) → **`Character.casterLevel(e)`** = class level +
+levels of prestige classes advancing it; used for spells per day / known, the highest spell level, the spell picker
+(`Spellbook.classLevel`) and prerequisites ("caster level", "able to cast 3rd-level spells") – class features (domains,
+hexes…) still follow the class level. Requirements: `PrestigeRequirements.evaluate` (label + text → prerequisite text →
+`FeatPrereqs.evaluate`; "Base Attack Bonus: +5" → "base attack bonus +5", "… and 2nd-level arcane spells" → two parts),
+strict mode `StrictBlock.PrestigeRequirementUnmet`.
 
 ### Archetypes (`Archetypes.json`)
 `python tools/build_archetypes.py [--cache DIR]` walks the classes of `ClassTable.kt` (without NPC and unchained) and

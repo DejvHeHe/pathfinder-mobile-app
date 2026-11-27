@@ -65,8 +65,8 @@ object Archetypes {
     /** Unchained classy používají archetypy základní classy (AoN je vede u ní). */
     fun baseClass(classId: String): String = classId.removeSuffix("_unchained")
 
-    /** Classa může mít archetypy (NPC classy a rasové HD tvorů je nemají). */
-    fun supports(classId: String): Boolean = ClassCatalog.get(classId)?.let { !it.npc && !it.creature } == true
+    /** Classa může mít archetypy (NPC classy, prestižní classy a rasové HD tvorů je nemají). */
+    fun supports(classId: String): Boolean = ClassCatalog.get(classId)?.let { !it.npc && !it.creature && it.prestige == null } == true
 
     private fun key(feature: String) = feature.trim().lowercase()
 

@@ -160,6 +160,16 @@ class CharacterTransferTest {
     }
 
     @Test
+    fun prestigeRoundTrip() {
+        val p = Character("p", "Ezren", listOf(ClassEntry("wizard", 5), ClassEntry("eldritch_knight", 12, advances = mapOf("arcane" to "wizard", "divine" to "cleric"))))
+        val c = CharacterTransfer.parse(CharacterTransfer.export(listOf(p), db) { null }, db, featDb, null).single().character
+        val ek = c.classes.single { it.classId == "eldritch_knight" }
+        // úroveň nejvýš 10, sesílání jen pro classy, které postava má
+        assertEquals(10, ek.level)
+        assertEquals(mapOf("arcane" to "wizard"), ek.advances)
+    }
+
+    @Test
     fun withoutInventory() {
         val text = CharacterTransfer.export(listOf(thomas), db) { null }
         assertNull(CharacterTransfer.parse(text, db, featDb, null).single().inventory)

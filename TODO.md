@@ -49,7 +49,9 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
 - [x] Postava = seznam class a úrovní (součet max 20), spelly zvlášť pro každou sesílající classu
 - [x] Classy bez spellů (Fighter, Rogue, Swashbuckler…) z Foundry – BAB, záchrany, HD
 - [x] Migrace decků → postav (`characters_v1`), export/import nové verze (`pf-spellbook-characters`)
-- [ ] Prestižní classy, které zvyšují sesílací úroveň existující classy (Eldritch Knight, Mystic Theurge, Arcane Trickster…)
+- [x] Prestižní classy (118 z AoN, `tools/build_prestige_classes.py`): BAB, záchrany, HD, skilly a bonusové featy z tabulky,
+  zvýšení sesílací úrovně vybrané classy (Eldritch Knight, Mystic Theurge, Arcane Trickster…), požadavky ✓ / ✗ / ?, přísný režim
+  - [ ] schopnosti prestižních class s počtem použití (teď jen text), požadavky typu rasa / přesvědčení / „special“ zůstávají „?“
 
 ### 3b. Schopnosti s počtem použití
 - [x] Vlastní počítadla u postavy (název, maximum, jednotka, poznámka), v herním režimu odklikávání, Odpočinek

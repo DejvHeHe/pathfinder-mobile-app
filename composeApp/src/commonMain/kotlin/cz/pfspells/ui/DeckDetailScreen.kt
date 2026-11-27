@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.Screen
 import cz.pfspells.Strings
+import cz.pfspells.data.casterLevel
 import cz.pfspells.data.caster
 import cz.pfspells.data.archetypeEffect
 import cz.pfspells.data.subclassKind
@@ -206,6 +207,8 @@ fun DeckDetailScreen(
             maxLevel = (20 - c.level).coerceAtLeast(1),
             subclasses = db.subclasses,
             characterDeity = c.deity,
+            prestigeStatus = { info -> cz.pfspells.data.PrestigeRequirements.overall(cz.pfspells.data.PrestigeRequirements.evaluate(c, info, state.featDb, db)) },
+            prestigeDialog = { info, close -> PrestigeDialog(state, c, info, close) },
             onDismiss = { addClass = false },
         ) { p ->
             addClass = false
@@ -347,19 +350,30 @@ private fun ClassesPanel(
         MonoLabel(s.classesHeader)
         var archetypesFor by remember { mutableStateOf<String?>(null) }
         archetypesFor?.let { id -> ArchetypesDialog(state, c, id) { archetypesFor = null } }
+        var prestigeFor by remember { mutableStateOf<String?>(null) }
+        prestigeFor?.let { id -> cz.pfspells.data.ClassCatalog.get(id)?.prestige?.let { PrestigeDialog(state, c, it) { prestigeFor = null } } }
         c.classes.forEach { e ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(s.classNameOf(e.classId), fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Nb.ink)
-                    val cls = CasterClasses.get(e.classId)
+                    val cls = e.caster
+                    val prestige = cz.pfspells.data.ClassCatalog.get(e.classId)?.prestige
                     Text(
-                        cls?.let { spellRangeText(s, it, e.level) } ?: s.classGroup(cz.pfspells.data.ClassGroup.NONE).lowercase(),
+                        when {
+                            prestige != null -> prestigeSubtitle(s, prestige)
+                            cls != null -> spellRangeText(s, cls, c.casterLevel(e))
+                            else -> s.classGroup(cz.pfspells.data.ClassGroup.NONE).lowercase()
+                        },
                         fontSize = 12.5.sp, color = Nb.rust,
                     )
+                    // sesílací úroveň zvýšená prestižní classou
+                    if (cls != null) CasterLevelNote(c, e)
                 }
                 CountStepper(
                     e.level, { lvl -> state.setClassLevel(c.id, e.classId, lvl) },
-                    min = 1, max = (20 - (c.level - e.level)).coerceAtLeast(e.level), size = 32.dp, numberSize = 17.sp,
+                    min = 1,
+                    max = minOf(cz.pfspells.data.ClassCatalog.get(e.classId)?.maxLevel ?: 20, (20 - (c.level - e.level)).coerceAtLeast(e.level)),
+                    size = 32.dp, numberSize = 17.sp,
                 )
                 if (c.classes.size > 1) {
                     NbIconButton(NbIcons.Close, s.removeClass, { onRemove(e.classId) }, Nb.inkMuted, 16.dp)
@@ -378,8 +392,9 @@ private fun ClassesPanel(
                 val bad = e.deityConflicts(d)
                 if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad, Modifier.clip(Nb.shape).clickable { onSubclass(e.classId) })
             }
-            // archetypy (Archives of Nethys) – jen evidence
-            ArchetypesLink(e) { archetypesFor = e.classId }
+            // prestižní classa: kterou classu zvyšuje + požadavky a schopnosti; jinak archetypy (Archives of Nethys)
+            if (cz.pfspells.data.ClassCatalog.get(e.classId)?.prestige != null) PrestigeEntryControls(state, c, e) { prestigeFor = e.classId }
+            else ArchetypesLink(e) { archetypesFor = e.classId }
         }
         Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (c.level < 20) NbDashedButton(s.addClass, onAdd, icon = NbIcons.Plus)
@@ -466,7 +481,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
     val game = state.gameMode
     val entries = e.spells.mapNotNull { (id, count) -> db.get(id)?.let { it to count } }
     val byLevel = entries.groupBy { (spell, _) -> e.spellLevelFor(cls, spell, db.subclasses) ?: -1 }
-    val maxLevel = cls.maxSpellLevel(e.level)
+    val casterLevel = c.casterLevel(e)
+    val maxLevel = cls.maxSpellLevel(casterLevel)
     val score = c.scores[cls.ability]
     // všechny dostupné levely (i prázdné – kvůli limitům), pak případné kouzla nad úrovní / mimo list
     val levels = ((if (cls.hasCantrips && !e.archetypeEffect.noCantrips) 0 else 1)..maxLevel).toList() + byLevel.keys.filter { it > maxLevel || it < 0 }.sorted()
@@ -485,7 +501,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                     )
                     Text(
                         buildString {
-                            append(spellRangeText(s, cls, e.level)).append(" · ").append(s.spells(e.spells.size))
+                            append(spellRangeText(s, cls, casterLevel)).append(" · ").append(s.spells(e.spells.size))
                             if (!cls.distinctSpells) append(", ").append(s.copies(e.spells.values.sum()))
                         },
                         fontSize = 12.5.sp, color = Nb.inkMuted,
@@ -514,7 +530,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
             if (level < 0 || level > maxLevel) {
                 SectionHeader(if (level < 0) s.notOnClassList else s.spellLevelLabel(level), size = 16.sp)
             } else {
-                val slots = e.levelSlots(cls, score, level)
+                val slots = e.levelSlots(cls, score, level, casterLevel)
                 if (game) {
                     GameLevelHeader(s, cls, slots, c, e.classId, list) { key, n -> state.setCast(c.id, key, n) }
                 } else {
@@ -534,7 +550,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 })
                 else -> ({
                     val key = Character.slotKey(e.classId, level)
-                    val slots = e.levelSlots(cls, score, level)
+                    val slots = e.levelSlots(cls, score, level, casterLevel)
                     val total = (slots.perDay ?: 0) + slots.bonus
                     val used = c.cast(key)
                     NbDashedButton(str.castSpell, { state.setCast(c.id, key, used + 1) }, enabled = used < total && slots.abilityOk)

@@ -161,6 +161,22 @@ interface Strings {
     fun archetypeConflict(list: String): String
     val noArchetypes: String
     val sourceArchetypes: String
+    fun prestigeTag(maxLevel: Int): String
+    fun prestigeKind(kind: String): String
+    fun prestigeAdvancesTag(kinds: String): String
+    fun advanceLabel(kindName: String): String
+    val advanceNone: String
+    fun advanceSummary(cls: String, n: Int): String
+    fun casterLevelInfo(n: Int): String
+    val missingAdvance: String
+    val prestigeDetails: String
+    val prestigeRequirementsHeader: String
+    val prestigeTableHeader: String
+    val prestigeFeaturesHeader: String
+    val prestigeHint: String
+    val prestigeColumns: List<String>
+    val prestigeUnmet: String
+    val sourcePrestige: String
     fun fxRemoves(list: String): String
     fun fxGains(list: String): String
     fun fxChanges(list: String): String
@@ -819,6 +835,24 @@ object EnStrings : Strings {
     override fun archetypeConflict(list: String) = "Two archetypes replace the same class feature: $list"
     override val noArchetypes = "This class has no archetypes."
     override val sourceArchetypes = "Class archetypes"
+    override fun prestigeTag(maxLevel: Int) = "prestige · max $maxLevel"
+    override fun prestigeKind(kind: String) = when (kind) {
+        "arcane" -> "arcane"; "divine" -> "divine"; "psychic" -> "psychic"; else -> "any"
+    }
+    override fun prestigeAdvancesTag(kinds: String) = "+ spellcasting ($kinds)"
+    override fun advanceLabel(kindName: String) = "Spellcasting ($kindName)"
+    override val advanceNone = "no class"
+    override fun advanceSummary(cls: String, n: Int) = "+$n caster level${if (n == 1) "" else "s"}: $cls"
+    override fun casterLevelInfo(n: Int) = "caster level $n"
+    override val missingAdvance = "Choose which spellcasting class the prestige class advances."
+    override val prestigeDetails = "Requirements and features"
+    override val prestigeRequirementsHeader = "Requirements"
+    override val prestigeTableHeader = "Class table"
+    override val prestigeFeaturesHeader = "Class features"
+    override val prestigeHint = "BAB, saves, hit dice, skills, bonus feats and spellcasting are counted; other class features are text only."
+    override val prestigeColumns = listOf("Lvl", "BAB", "Fort", "Ref", "Will", "Spells")
+    override val prestigeUnmet = "Requirements not met"
+    override val sourcePrestige = "Prestige classes"
     override fun fxRemoves(list: String) = "Removes: $list"
     override fun fxGains(list: String) = "Gains: $list"
     override fun fxChanges(list: String) = "Changes: $list"
@@ -1256,6 +1290,7 @@ object EnStrings : Strings {
         ClassGroup.SIX -> "6 spell levels"
         ClassGroup.FOUR -> "4 spell levels"
         ClassGroup.NONE -> "No spells"
+        ClassGroup.PRESTIGE -> "Prestige classes"
         ClassGroup.NPC -> "NPC classes"
         ClassGroup.CREATURE -> "Creatures (racial hit dice)"
     }
@@ -1282,6 +1317,7 @@ object EnStrings : Strings {
         is StrictBlock.ClassAbilityLevel -> "requires class level ${b.minLevel}"
         is StrictBlock.RacialTraitReplaced -> "\"${b.trait}\" is already replaced by another alternate trait"
         is StrictBlock.ArchetypeConflict -> "\"${b.feature}\" is already replaced by another archetype"
+        is StrictBlock.PrestigeRequirementUnmet -> "prestige class requirement not met – ${b.requirement}"
     }
     override val companionsHeader = "Companions"
     override val companionsHint = "Animal companion, mount, familiar, eidolon or a pet – each with its own sheet, feats, skills and inventory."
@@ -1717,6 +1753,24 @@ object CsStrings : Strings {
     override fun archetypeConflict(list: String) = "Dva archetypy nahrazují stejnou schopnost classy: $list"
     override val noArchetypes = "Tahle classa nemá archetypy."
     override val sourceArchetypes = "Archetypy class"
+    override fun prestigeTag(maxLevel: Int) = "prestižní · max $maxLevel"
+    override fun prestigeKind(kind: String) = when (kind) {
+        "arcane" -> "tajemné"; "divine" -> "božské"; "psychic" -> "psychické"; else -> "libovolné"
+    }
+    override fun prestigeAdvancesTag(kinds: String) = "+ sesílání ($kinds)"
+    override fun advanceLabel(kindName: String) = "Sesílání ($kindName)"
+    override val advanceNone = "žádná classa"
+    override fun advanceSummary(cls: String, n: Int) = "+$n k sesílací úrovni: $cls"
+    override fun casterLevelInfo(n: Int) = "sesílací úroveň $n"
+    override val missingAdvance = "Vyberte, kterou sesílající classu prestižní classa zvyšuje."
+    override val prestigeDetails = "Požadavky a schopnosti"
+    override val prestigeRequirementsHeader = "Požadavky"
+    override val prestigeTableHeader = "Tabulka classy"
+    override val prestigeFeaturesHeader = "Schopnosti classy"
+    override val prestigeHint = "Počítá se BAB, záchrany, kostky životů, skilly, bonusové featy a sesílání; ostatní schopnosti jsou jen text."
+    override val prestigeColumns = listOf("Úr.", "ZÚB", "Odol", "Refl", "Vůle", "Kouzla")
+    override val prestigeUnmet = "Nesplněné požadavky"
+    override val sourcePrestige = "Prestižní classy"
     override fun fxRemoves(list: String) = "Ruší: $list"
     override fun fxGains(list: String) = "Získává: $list"
     override fun fxChanges(list: String) = "Mění: $list"
@@ -2206,6 +2260,7 @@ object CsStrings : Strings {
         ClassGroup.SIX -> "6 úrovní kouzel"
         ClassGroup.FOUR -> "4 úrovně kouzel"
         ClassGroup.NONE -> "Bez kouzel"
+        ClassGroup.PRESTIGE -> "Prestižní classy"
         ClassGroup.NPC -> "NPC classy"
         ClassGroup.CREATURE -> "Tvorové (rasové kostky životů)"
     }
@@ -2232,6 +2287,7 @@ object CsStrings : Strings {
         is StrictBlock.ClassAbilityLevel -> "vyžaduje ${b.minLevel}. úroveň classy"
         is StrictBlock.RacialTraitReplaced -> "„${b.trait}“ už nahrazuje jiný alternativní trait"
         is StrictBlock.ArchetypeConflict -> "„${b.feature}“ už nahrazuje jiný archetyp"
+        is StrictBlock.PrestigeRequirementUnmet -> "nesplněný požadavek prestižní classy – ${b.requirement}"
     }
     override val companionsHeader = "Mazlíčci a společníci"
     override val companionsHint = "Zvířecí společník, jezdecké zvíře, familiár, eidolon nebo mazlíček – každý má vlastní list, featy, skills i inventář."

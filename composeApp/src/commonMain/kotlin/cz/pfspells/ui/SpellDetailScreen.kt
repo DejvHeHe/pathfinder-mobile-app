@@ -110,7 +110,7 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
                     }
 
                     // kouzlo podtřídy (doména, mystérium…) – mimo class list, ale postava ho má
-                    val subclassSpell = deck != null && deck.entry.bonusSpellsByLevel(db.subclasses).values.any { l -> l.any { it.id == spell.id } }
+                    val subclassSpell = deck != null && deck.entry.bonusSpellsByLevel(db.subclasses, deck.classLevel).values.any { l -> l.any { it.id == spell.id } }
                     if (deck != null && cls != null && !canAdd && !subclassSpell && inDeck == 0) {
                         Text(s.cannotCastThis(s.nameOf(cls), deck.classLevel), color = Nb.error, fontSize = 13.sp)
                     }

@@ -10,6 +10,7 @@ Všechna data jsou **přibalená v appce** (`composeApp/src/commonMain/composeRe
 | `SpellList.json` (6 MB) | 3 040 záznamů → 3 030 spellů s class listem | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) `data/SpellList.json` (MIT, data z Archives of Nethys) | ano |
 | `ItemsBase.json` (0,7 MB) | 1 541 položek: výstroj, oblečení, nástroje, jídlo, alchymie, byliny, zvířata, zbroje a štíty | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/items`, `packs/armors-and-shields` (OGL) | ne (jen přibalené) |
 | `ClassAbilities.json` (0,3 MB) | 420 hexů a zjevení s textem; schopnosti podtříd v `ClassAbilityTable.kt` | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/class-abilities` (OGL) – `tools/build_class_abilities.py` | ne (jen přibalené) |
+| `PrestigeTable.kt`, `PrestigeClasses.json` (0,8 MB) | 118 prestižních class: tabulka po úrovních, sesílání, požadavky; popis a schopnosti | [Archives of Nethys](https://aonprd.com/PrestigeClasses.aspx) – `tools/build_prestige_classes.py` | ne (jen přibalené) |
 | `Archetypes.json` (4,0 MB) | 1 252 archetypů 40 class (nahrazené schopnosti, shrnutí, zdroj, PFS, text) | [Archives of Nethys](https://aonprd.com/Archetypes.aspx) – `tools/build_archetypes.py` | ne (jen přibalené) |
 | `RacialTraits.json` (0,4 MB) | 632 alternativních rasových traitů; výchozí traity v `RacialTraitTable.kt` | [Archives of Nethys](https://aonprd.com/Races.aspx) – `tools/build_racial_traits.py` | ne (jen přibalené) |
 | `Weapons.csv` | 243 zbraní | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) `data/weapons.csv` (d20pfsrd/AoN) | ano |
@@ -139,7 +140,7 @@ level podle zvoleného spell listu. Drahé materiální složky appka jen připo
 ### Classy pro multiclass (`ClassTable.kt`)
 `python tools/build_classes.py` (pyyaml) vygeneruje `data/ClassTable.kt` z Foundry VTT PF1 `packs/classes`:
 49 class (základní, hybridní, occult, unchained a NPC) s progresí BAB (high = L, med = ¾ L, low = ½ L), dobrými
-záchranami (2 + L/2, jinak L/3), HD a skill body. Multiclass = součet za každou classu. Prestižní classy zatím ne.
+záchranami (2 + L/2, jinak L/3), HD a skill body. Multiclass = součet za každou classu. Prestižní classy viz níže.
 
 ### Rasy (`RaceTable.kt`)
 `python tools/build_races.py` (pyyaml) vygeneruje `data/RaceTable.kt` z Foundry VTT PF1 `packs/races`: 80 ras s velikostí,
@@ -156,6 +157,25 @@ neobvyklé (14), ostatní (zbytek – Bestiary, Alien…), seznamy jsou ve skrip
   případně s „subtype“ nebo upřesněním v závorce. Rasa splňuje, když se jménem shoduje nebo má daný podtyp
   (`RaceInfo.countsAs`): half-elf platí jako elf i člověk, half-orc jako orc, drow jako elf, svirfneblin jako gnóm.
   „Human (Varisian)“ s rasou human = ověř ručně, s jinou rasou = nesplněno. Rasové traity viz níže.
+
+### Prestižní classy (`PrestigeTable.kt`, `PrestigeClasses.json`)
+Foundry VTT PF1 prestižní classy nemá. `python tools/build_prestige_classes.py [--cache DIR]` stáhne seznam
+z Archives of Nethys ([PrestigeClasses.aspx](https://aonprd.com/PrestigeClasses.aspx)) a stránky class (~120 požadavků
+po 1 s, cache `build/prestige-cache`):
+- **`PrestigeTable.kt`** (`PRESTIGE_TABLE`, `PrestigeInfo`) – HD, skill body, class skills (jména AoN → id skillů appky),
+  BAB a záchrany po úrovních přímo z tabulky (prestižní classy mají jiné vzorce záchran), sesílání po úrovních ze sloupce
+  „Spells per Day“ (případně Special): „+1 level of (existing) arcane / divine spellcasting class“ → `arcane` / `divine`,
+  bez druhu → `any`, „+1 level of witch class“ → `class:witch`; Mystic Theurge `arcane+divine`; bonusové featy (Special
+  „bonus feat“), požadavky („Spells: Able to cast 3rd-level arcane spells.“), zdroj, PFS. 118 class, 60 zvyšuje sesílání.
+- **`PrestigeClasses.json`** – popis a text schopností (líně, `ensurePrestigeTexts`).
+
+V appce: `ClassCatalog.prestige` (`ClassInfo.prestige`, skupina `ClassGroup.PRESTIGE`, `maxLevel`), `Character.stats` bere
+hodnoty z tabulky, `featSlots` bonusové featy. `ClassEntry.advances` (druh → classId, `Prestige.candidates` podle
+`CasterClass.tradition`, `defaultAdvances` = jediná vhodná) → **`Character.casterLevel(e)`** = úroveň classy + úrovně
+prestižních class, které ji zvyšují; platí pro kouzla za den / známá, nejvyšší spell level, výběr kouzel (`Spellbook.classLevel`),
+prerekvizity („caster level“, „able to cast 3rd-level spells“) – schopnosti classy (domény, hexy…) dál podle úrovně classy.
+Požadavky: `PrestigeRequirements.evaluate` (štítek + text → text prerekvizity → `FeatPrereqs.evaluate`; „Base Attack Bonus:
++5“ → „base attack bonus +5“, „… and 2nd-level arcane spells“ → dvě části), přísný režim `StrictBlock.PrestigeRequirementUnmet`.
 
 ### Archetypy (`Archetypes.json`)
 `python tools/build_archetypes.py [--cache DIR]` projde classy z `ClassTable.kt` (bez NPC a unchained) a stáhne

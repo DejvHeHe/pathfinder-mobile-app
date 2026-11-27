@@ -79,6 +79,10 @@ fun ClassPickerDialog(
     initialRace: String? = null,
     /** božstvo postavy (přidání classy) – klerik pak volí jen z jeho domén */
     characterDeity: String = "",
+    /** přidání classy postavě: stav požadavků prestižní classy (null = nová postava – prestižní classy se nenabízejí) */
+    prestigeStatus: ((cz.pfspells.data.PrestigeInfo) -> cz.pfspells.data.PrereqStatus)? = null,
+    /** detail prestižní classy (požadavky, tabulka, schopnosti) */
+    prestigeDialog: (@Composable (cz.pfspells.data.PrestigeInfo, () -> Unit) -> Unit)? = null,
     onPick: (ClassPick) -> Unit,
 ) {
     val s = str
@@ -90,7 +94,7 @@ fun ClassPickerDialog(
     // podtřída patří k vybrané classe – při změně classy se začíná znovu
     var sub by remember(selected?.id) { mutableStateOf(if (selected?.id == initialClassId) initialSubclass else emptyMap()) }
     val subType = selected?.let { subclassType(it.id) }.takeIf { subclasses != null }
-    val rows: List<Any> = remember(query, exclude, s) { classRows(s, query, exclude) }
+    val rows: List<Any> = remember(query, exclude, s) { classRows(s, query, exclude, withPrestige = prestigeStatus != null) }
     var race by remember { mutableStateOf(initialRace) }
     var raceBonus by remember { mutableStateOf<Ability?>(null) }
     var pickRace by remember { mutableStateOf(false) }
@@ -118,7 +122,9 @@ fun ClassPickerDialog(
     }
 
     val sel = selected
-    val lvl = level.coerceAtMost(maxLevel)
+    // prestižní classa má nejvýš 10 (některé 5 nebo 3) úrovní
+    val maxLvl = minOf(maxLevel, sel?.maxLevel ?: 20)
+    val lvl = level.coerceAtMost(maxLvl)
 
     @Composable
     fun classList(modifier: Modifier) {
@@ -152,16 +158,29 @@ fun ClassPickerDialog(
     fun settings() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             MonoLabel(s.levelLabel, Modifier.weight(1f))
-            CountStepper(lvl, { level = it }, min = 1, max = maxLevel, size = 32.dp, numberSize = 17.sp)
+            CountStepper(lvl, { level = it }, min = 1, max = maxLvl, size = 32.dp, numberSize = 17.sp)
         }
         Text(
             when {
                 sel == null -> s.chooseClass
+                sel.prestige != null -> "${s.classNameOf(sel.id)} $lvl · ${prestigeSubtitle(s, sel.prestige!!)}"
                 sel.caster != null -> "${s.classNameOf(sel.id)} $lvl · ${spellRangeText(s, sel.caster!!, lvl)}"
                 else -> "${s.classNameOf(sel.id)} $lvl · ${s.classGroup(sel.group).lowercase()}"
             },
             fontSize = 13.sp, color = if (sel == null) Nb.inkMuted else Nb.rust, fontFamily = fonts.sans,
         )
+        // prestižní classa: požadavky (ověřené u postavy) a odkaz na detail
+        sel?.prestige?.let { p ->
+            var details by remember(p.id) { mutableStateOf(false) }
+            if (prestigeStatus?.invoke(p) == cz.pfspells.data.PrereqStatus.UNMET) TraitWarning(s.prestigeUnmet)
+            p.requirements.forEach { Text(it, fontSize = 12.5.sp, color = Nb.inkMuted) }
+            Text(
+                s.prestigeDetails,
+                Modifier.clip(Nb.shape).clickable { details = true }.padding(vertical = 4.dp),
+                fontSize = 13.sp, color = Nb.accent, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+            )
+            if (details) prestigeDialog?.invoke(p) { details = false }
+        }
         if (sel != null && subType != null && subclasses != null) {
             SectionHeader(s.subclassLabel(subType), size = 15.sp)
             SubclassFields(sel.id, subType, sub, subclasses, deity = DeityCatalog.get(deity)) { key, v -> sub = sub.withSubclass(key, v) }
@@ -236,10 +255,11 @@ fun ClassPickerDialog(
 }
 
 /** Řádky seznamu: nadpis skupiny ([ClassGroup]) a pod ním classy seřazené podle názvu v jazyce rozhraní. */
-private fun classRows(s: Strings, query: String, exclude: Set<String>): List<Any> {
+private fun classRows(s: Strings, query: String, exclude: Set<String>, withPrestige: Boolean): List<Any> {
     val q = query.trim().lowercase()
     val matching = ClassCatalog.all.filter { c ->
-        c.id !in exclude && (q.isEmpty() || s.classNameOf(c.id).lowercase().contains(q) || c.name.lowercase().contains(q))
+        c.id !in exclude && (withPrestige || c.prestige == null) &&
+            (q.isEmpty() || s.classNameOf(c.id).lowercase().contains(q) || c.name.lowercase().contains(q))
     }
     return ClassGroup.entries.flatMap { g ->
         val list = matching.filter { it.group == g }.sortedBy { s.classNameOf(it.id).lowercase() }
@@ -268,6 +288,13 @@ private fun ClassCard(s: Strings, c: ClassInfo, selected: Boolean, onClick: () -
                 append("d").append(c.hd)
             }
             Text(detail, fontSize = 12.sp, color = if (selected) Color.White else Nb.inkMuted, maxLines = 1)
+        }
+        // prestižní classa: počet úrovní a druh sesílání, které zvyšuje
+        c.prestige?.let { p ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ClassTag(s.prestigeTag(p.maxLevel), Nb.inkMuted, selected)
+                if (p.advanceKinds.isNotEmpty()) ClassTag(s.prestigeAdvancesTag(prestigeKinds(s, p)), Nb.accent, selected)
+            }
         }
         // štítky: druh magie (tajemná / božská / psychická / extrakty) a způsob sesílání
         c.caster?.let { cc ->

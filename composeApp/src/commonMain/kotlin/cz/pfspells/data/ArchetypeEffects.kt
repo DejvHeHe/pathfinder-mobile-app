@@ -286,13 +286,13 @@ val ClassEntry.subclassKind: SubclassType?
     }
 
 /**
- * Limity spell levelu s ohledem na archetypy: bez triků; o kouzlo méně za den / známé na každém levelu, který classa má
+ * Limity spell levelu s ohledem na archetypy ([casterLevel] = sesílací úroveň vč. prestižních class): bez triků; o kouzlo méně za den / známé na každém levelu, který classa má
  * (i triky – „a 4th-level survivor can cast three cantrips“); bez limitu (spontánní triky) zůstane bez limitu.
  */
-fun ClassEntry.levelSlots(cls: CasterClass, abilityScore: Int, spellLevel: Int): LevelSlots {
-    if (archetypes.isEmpty()) return cls.levelSlots(level, abilityScore, spellLevel)
+fun ClassEntry.levelSlots(cls: CasterClass, abilityScore: Int, spellLevel: Int, casterLevel: Int = level): LevelSlots {
+    if (archetypes.isEmpty()) return cls.levelSlots(casterLevel, abilityScore, spellLevel)
     val fx = archetypeEffect
-    val s = cls.levelSlots(level, abilityScore + (fx.casting?.abilityBonus ?: 0), spellLevel)
+    val s = cls.levelSlots(casterLevel, abilityScore + (fx.casting?.abilityBonus ?: 0), spellLevel)
     if (spellLevel == 0 && fx.noCantrips) return s.copy(perDay = 0, limit = 0)
     if (fx.perDayDelta == 0 && fx.knownDelta == 0) return s
     if (spellLevel == 0 && !fx.deltaIncludesCantrips) return s

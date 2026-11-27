@@ -248,7 +248,7 @@ object FeatPrereqs {
         BAB.find(t)?.let { return met(c.stats().bab >= it.groupValues[1].toInt()) }
         CHAR_LEVEL.find(t)?.let { return met(c.level >= it.groupValues[1].toInt()) }
         CASTER_LEVEL.find(t)?.let { m ->
-            val cl = c.classes.filter { it.caster != null }.maxOfOrNull { it.level } ?: 0
+            val cl = c.classes.filter { it.caster != null }.maxOfOrNull { c.casterLevel(it) } ?: 0
             return met(cl >= m.groupValues[1].toInt())
         }
         NTH_LEVEL_CLASS.find(t)?.let { m ->
@@ -260,7 +260,7 @@ object FeatPrereqs {
         PrereqRules.spellKind(c, t)?.let { return it }
         CAST_LEVEL.find(t)?.let { m ->
             val n = m.groupValues[1].toInt()
-            val can = c.classes.any { e -> e.caster?.let { it.maxSpellLevel(e.level) >= n } == true }
+            val can = c.classes.any { e -> e.caster?.let { it.maxSpellLevel(c.casterLevel(e)) >= n } == true }
             // arcane / divine rozlišujeme jen zčásti – splněné s typem je „ověř ručně“
             return if (!can) PrereqStatus.UNMET else if (m.groupValues[3].isNotEmpty()) PrereqStatus.UNKNOWN else PrereqStatus.MET
         }
@@ -355,7 +355,9 @@ fun Character.featSlots(): FeatSlots = FeatSlots(
     bonus = classes.mapNotNull { e ->
         // archetyp může bonusové featy nahradit („1st-level bonus feat“, „Bonus Feats“)
         val fx = e.archetypeEffect
-        val n = (BONUS_FEAT_LEVELS[e.classId]?.count { it <= e.level } ?: 0) - fx.lostBonusFeats + fx.gainedBonusFeats
+        // prestižní classa: bonusové featy podle tabulky (sloupec Special)
+        val prestige = ClassCatalog.get(e.classId)?.prestige?.bonusFeats?.count { it <= e.level } ?: 0
+        val n = (BONUS_FEAT_LEVELS[e.classId]?.count { it <= e.level } ?: 0) - fx.lostBonusFeats + fx.gainedBonusFeats + prestige
         if (n > 0) e.classId to n else null
     }.toMap(),
     extra = extraFeats,

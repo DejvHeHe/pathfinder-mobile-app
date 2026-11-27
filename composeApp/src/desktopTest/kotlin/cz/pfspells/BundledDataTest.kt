@@ -82,6 +82,21 @@ class BundledDataTest {
         assertTrue(known > all.size * 0.85)
     }
 
+    /** Prestižní classy z AoN: tabulka po úrovních, texty v PrestigeClasses.json, id bez kolize se základními classami. */
+    @Test
+    fun bundledPrestigeClasses() {
+        val all = cz.pfspells.data.PRESTIGE_TABLE
+        assertTrue(all.size > 100)
+        assertEquals(all.size, all.map { it.id }.toSet().size)
+        assertTrue(all.all { p -> p.maxLevel in 1..10 && listOf(p.forts, p.refs, p.wills).all { it.size == p.maxLevel } && p.castingKinds.size == p.maxLevel })
+        assertTrue(all.none { cz.pfspells.data.CLASS_TABLE.any { c -> c.id == it.id } })
+        assertTrue(all.count { it.advanceKinds.isNotEmpty() } > 50)
+        val texts = cz.pfspells.data.PrestigeTextRepository.parse(File("src/commonMain/composeResources/files/PrestigeClasses.json").readText())
+        assertEquals(all.map { it.id }.toSet(), texts.keys)
+        assertTrue("Spell Critical" in texts.getValue("eldritch_knight").features)
+        assertTrue(all.all { p -> p.classSkills.all { s -> s == "knowledge" || s.startsWith("knowledge.") || cz.pfspells.data.Skills.all.any { it.id == s } } })
+    }
+
     /** Archetypy z AoN: soubor jde načíst, classy existují v appce, texty bez HTML. */
     @Test
     fun bundledArchetypes() {

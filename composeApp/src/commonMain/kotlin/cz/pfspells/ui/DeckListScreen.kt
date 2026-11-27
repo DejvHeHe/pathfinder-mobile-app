@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.casterLevel
 import cz.pfspells.data.caster
 import cz.pfspells.data.Character
 import cz.pfspells.str
@@ -189,7 +190,7 @@ private fun CharacterItem(character: Character, selected: Boolean, onClick: () -
             fontSize = 13.5.sp, color = Nb.inkMuted,
         )
         if (card && cls != null) {
-            Text("${str.nameOf(cls)}: ${spellRangeText(str, cls, casterEntry.level)}", fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
+            Text("${str.nameOf(cls)}: ${spellRangeText(str, cls, character.casterLevel(casterEntry))}", fontSize = 13.sp, color = Nb.rust, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

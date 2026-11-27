@@ -64,6 +64,8 @@ data class ClassDto(
     /** hexy / revelations */
     val abilities: List<AbilityPick> = emptyList(),
     val archetypes: List<ArchetypePick> = emptyList(),
+    /** prestižní classa: druh sesílání → classa, kterou zvyšuje */
+    val advances: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -123,6 +125,7 @@ object CharacterTransfer {
                         bonusSpells = spellDtos(e.bonusSpells, db),
                         abilities = e.abilities,
                         archetypes = e.archetypes,
+                        advances = e.advances,
                     )
                 },
                 abilities = c.abilities,
@@ -196,8 +199,19 @@ object CharacterTransfer {
                     cd.classId, cd.level.coerceIn(1, 20), cd.subclass, match(cd.spells), match(cd.bonusSpells),
                     abilities = cd.abilities.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
                     archetypes = cd.archetypes.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
+                    advances = cd.advances.filterValues { it.isNotBlank() },
                 )
             }.distinctBy { it.classId }
+                // prestižní classa jen do své nejvyšší úrovně; sesílání jen pro classy, které postava má
+                .let { list ->
+                    val ids = list.map { it.classId }.toSet()
+                    list.map { e ->
+                        e.copy(
+                            level = e.level.coerceAtMost(ClassCatalog.get(e.classId)?.maxLevel ?: 20),
+                            advances = e.advances.filterValues { it in ids },
+                        )
+                    }
+                }
             if (classes.isEmpty()) throw DeckImportException(ImportError.Invalid(inventory = false, "no classes"))
             ImportedCharacter(
                 Character(

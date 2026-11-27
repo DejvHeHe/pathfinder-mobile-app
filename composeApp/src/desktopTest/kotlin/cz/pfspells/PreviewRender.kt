@@ -159,6 +159,14 @@ class PreviewRender {
             state.archetypeDb!!.get("magus:eldritch-scion")?.let { state.addArchetype(k.id, "magus", it) }
             state.character(k.id)!!
         }
+        // prestižní classa: wizard 5 / fighter 1 / eldritch knight 3 (zvyšuje sesílání kouzelníka)
+        val ezren = withContext(Dispatchers.Main) {
+            val z = state.createCharacter("Ezren", "wizard", 5)
+            state.setAbility(z.id, cz.pfspells.data.Ability.INT, 18)
+            state.addClass(z.id, "fighter", 1)
+            state.addClass(z.id, "eldritch_knight", 3)
+            state.character(z.id)!!
+        }
         // podtřídy z Foundry: patron (Morgana), spirit, blessingy warpriesta, doména inquisitora
         val kaya = withContext(Dispatchers.Main) {
             state.setSubclass(morgana.id, "witch", cz.pfspells.data.SubclassSlot.PATRON, "agility")
@@ -266,6 +274,14 @@ class PreviewRender {
         }) { openRoot(Screen.CharacterDetail(pip.id)) }
         shot("cs-phone-race-panel", 390, 1000) { openRoot(Screen.CharacterDetail(pip.id)) }
         shot("cs-phone-archetypes-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(seelah.id)) }
+        shot("cs-phone-prestige-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
+        shot("cs-phone-prestige-spells", 390, 2600) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
+        shot("cs-phone-prestige-dialog", 390, 844, overlay = {
+            cz.pfspells.ui.PrestigeDialog(state, state.character(ezren.id)!!, cz.pfspells.data.ClassCatalog.get("eldritch_knight")!!.prestige!!) { }
+        }) { openRoot(Screen.Decks) }
+        shot("desktop-prestige-dialog", 1440, 1000, overlay = {
+            cz.pfspells.ui.PrestigeDialog(state, state.character(ezren.id)!!, cz.pfspells.data.ClassCatalog.get("mystic_theurge")!!.prestige!!) { }
+        }) { openRoot(Screen.CharacterDetail(ezren.id)) }
         shot("cs-phone-archetypes-casting", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(kael.id)) }
         shot("cs-phone-archetypes", 390, 844, overlay = {
             cz.pfspells.ui.ArchetypesDialog(state, state.character(seelah.id)!!, "paladin") { }

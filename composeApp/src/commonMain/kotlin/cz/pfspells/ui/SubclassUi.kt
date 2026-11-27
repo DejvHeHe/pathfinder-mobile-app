@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.Strings
+import cz.pfspells.data.casterLevel
 import cz.pfspells.data.subclassKind
 import cz.pfspells.data.subclassLevel
 import cz.pfspells.data.archetypeEffect
@@ -274,7 +275,7 @@ fun LazyListScope.subclassBonusSpells(
     val type = e.subclassKind ?: return
     if (!type.hasBonusSpells) return
     val game = state.gameMode
-    val bonus = e.bonusSpellsByLevel(db.subclasses)
+    val bonus = e.bonusSpellsByLevel(db.subclasses, c.casterLevel(e))
     val domainType = type == SubclassType.TWO_DOMAINS || type == SubclassType.ONE_DOMAIN
     val spirit = type == SubclassType.SPIRIT
     val patron = type == SubclassType.PATRON
@@ -354,7 +355,7 @@ fun LazyListScope.subclassBonusSpells(
                     game -> {
                         // mystérium / bloodline / disciplína: sesílá se ze slotu spell levelu
                         val key = Character.slotKey(e.classId, lvl)
-                        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl)
+                        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl, c.casterLevel(e))
                         val total = (slots.perDay ?: 0) + slots.bonus
                         val used = c.cast(key)
                         NbDashedButton(str.castSpell, { state.setCast(c.id, key, used + 1) }, enabled = used < total && slots.abilityOk)

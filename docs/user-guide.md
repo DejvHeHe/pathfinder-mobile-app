@@ -30,6 +30,14 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
 2. **Multiclass:** v detailu postavy v panelu **Classes** → **Add class** (i nesesílací – fighter, rogue, swashbuckler…);
    podtřídu přidávané classy jde vybrat rovnou ve stejném dialogu.
    Úroveň každé classy se mění stepperem, celkem max. 20; classu jde odebrat (×) i s jejími kouzly.
+   **Prestižní classy** (118 z Archives of Nethys – Eldritch Knight, Mystic Theurge, Arcane Trickster…) jsou při přidání
+   classy ve vlastní skupině (u nové postavy ne); karta ukazuje počet úrovní (obvykle 10) a druh sesílání, který zvyšuje,
+   po výběru požadavky a odkaz **Požadavky a schopnosti**. Požadavky se ověřují jako prerekvizity featů (✓ / ✗ / ?, ruční
+   potvrzení „Mám“); přísný režim prestižní classu s nesplněným požadavkem nepřidá. BAB, záchrany, kostky životů,
+   skill body, class skills a bonusové featy se berou z tabulky classy. U prestižní classy, která zvyšuje sesílání
+   („+1 level of existing arcane spellcasting class“), se vybírá **classa, kterou zvyšuje** (jediná vhodná se vybere sama;
+   Mystic Theurge zvlášť tajemnou a božskou) – ta pak má vyšší **sesílací úroveň** (kouzla za den, známá, nejvyšší spell
+   level, „sesílací úroveň 7“ pod classou). Schopnosti prestižní classy jsou jen text v detailu.
 3. **Rasa** se vybírá při vytvoření postavy nebo později nahoře v panelu s classami (80 ras po skupinách: základní,
    významné, neobvyklé, ostatní, s velikostí, rychlostí a úpravami atributů). Rasa:
    - **přičte úpravy atributů** – u atributů zadáváte základní hodnoty, dlaždice ukazují výsledek včetně rasy

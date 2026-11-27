@@ -24,6 +24,14 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (27. 11. 2026)
+- ✅ **Vydáno `v1.7.0`** (27. 11. 2026, commit `f7664bb`): archetypy (viz níže) – workflowy Release / Docker po tagu ověřit.
+- ✅ 27. 11. 2026 (nevydáno): **prestižní classy z AoN** – `tools/build_prestige_classes.py` (PrestigeClasses.aspx + stránky,
+  cache `build/prestige-cache`; Foundry je nemá) → `PrestigeTable.kt` (118 class: HD, skilly, class skills, BAB / záchrany po
+  úrovních, sesílání po úrovních `arcane` / `divine` / `any` / `class:witch`, bonusové featy, požadavky) + `files/PrestigeClasses.json`
+  (popis a schopnosti, líně `ensurePrestigeTexts`). `ClassInfo.prestige` / `maxLevel`, `ClassGroup.PRESTIGE` (jen při přidání classy),
+  `Character.stats` z tabulky, `ClassEntry.advances` (druh → classId) → **`Character.casterLevel(e)`** – používat místo `e.level`
+  všude, kde jde o kouzla (sloty `e.levelSlots(…, casterLevel)`, `bonusSpellsByLevel(index, casterLevel)`, `Spellbook.classLevel`).
+  Požadavky `PrestigeRequirements` (přes `FeatPrereqs`), přísný režim `PrestigeRequirementUnmet`, UI `ui/PrestigeUi.kt`. Testy 164 zelené.
 - ✅ 27. 11. 2026 (nevydáno): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
   archetypů, cache `build/archetype-cache`, ~25 min) → `files/Archetypes.json` (líně, `ensureArchetypes`). `ClassEntry.archetypes`
   (`ArchetypePick`), `ArchetypesLink` pod classou + `ArchetypesDialog`, konflikty `Archetypes.conflicts` (stejná položka `replaces`),
@@ -128,7 +136,6 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Targety: `androidTarget`, `jvm("desktop")`, `iosX64/iosArm64/iosSimulatorArm64` (framework `ComposeApp`, static), `wasmJs` (web)
 - Verze v `gradle/libs.versions.toml`; verze appky `-PappVersion=X.Y.Z`, Android `-PversionCode=N` (CI z tagu / čísla běhu)
 
-
 ## Struktura
 ```
 composeApp/src/commonMain/kotlin/cz/pfspells/
@@ -170,6 +177,8 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
                          ui/ArchetypesUi.kt ArchetypesLink (pod classou, souhrn efektů archetypeEffectText) + ArchetypesDialog
   data/ArchetypeEffects.kt  mechanika archetypů (ArchetypeRules.effect → ArchetypeEffect; ClassEntry.caster / subclassKind / levelSlots)
   data/ArchetypeMods.kt  ručně zadané efekty známých archetypů (ARCHETYPE_MODS – doplňovat podle textu AoN)
+  data/Prestige.kt       prestižní classy: PrestigeInfo, Prestige (candidates, defaultAdvances), Character.casterLevel, PrestigeRequirements,
+                         PrestigeTextRepository; data/PrestigeTable.kt GENEROVANÉ `tools/build_prestige_classes.py`; ui/PrestigeUi.kt
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
   data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
@@ -217,6 +226,7 @@ tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/f
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
 tools/build_racial_traits.py [--cache DIR]   RacialTraitTable.kt + RacialTraits.json (AoN stránky ras, ~80 req po 1 s)
+tools/build_prestige_classes.py [--cache DIR]   PrestigeTable.kt + PrestigeClasses.json (AoN, ~120 req po 1 s)
 tools/build_archetypes.py [--cache DIR]   Archetypes.json (AoN tabulky archetypů + stránky, ~1 300 req po 1 s)
 tools/build_subclass_abilities.py [--cache DIR]   SubclassAbilityTable.kt + SubclassAbilities.json (AoN spirity, bloodline bloodragera, disciplíny, inquisitions)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
@@ -261,7 +271,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 | FOUR | paladin, antipaladin, ranger, bloodrager | `L<4 → žádné`, jinak `min(4, (L-1)/3)` |
 | FOUR_KNACKS | medium | `L<4 → 0` (jen knacky), jinak `min(4, (L-1)/3)` |
 
-- Ve výběru je 49 class (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany).
+- Ve výběru je 49 class + 118 prestižních (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany); prestižní zvyšují sesílací úroveň (`Character.casterLevel`).
   Navíc `ClassCatalog.creatures` = rasové HD tvorů pro mazlíčky (`animal`, `magical_beast`, skupina CREATURE) – ručně, ne z Foundry.
 - Mazlíček = `Character` s `ownerId` (`AppState.createCompanion`, `companionsOf`, `rootCharacters`); smazání vlastníka ho osamostatní,
   export ho přibalí s `owner` = pořadí vlastníka v souboru. Velikost: `Character.creatureSize` (mazlíček `size`, jinak rasa).

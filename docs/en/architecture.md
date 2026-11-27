@@ -77,6 +77,8 @@ composeApp/src/
       Archetypes.kt           class archetypes (Archetype, ArchetypePick, ArchetypeRepository, Archetypes – conflicts, unchained)
       ArchetypeEffects.kt     archetype mechanics (ArchetypeRules, ClassEntry.archetypeEffect / caster / subclassKind / levelSlots)
       ArchetypeMods.kt        hand-entered effects of known archetypes (ARCHETYPE_MODS)
+      Prestige.kt             prestige classes (PrestigeInfo, Prestige – classes to advance, Character.casterLevel, PrestigeRequirements, PrestigeTextRepository)
+      PrestigeTable.kt        GENERATED: 118 prestige classes (AoN, tools/build_prestige_classes.py)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       subclass powers (SubclassPowers), Foundry formulas (FoundryFormula), hexes and revelations (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENERATED: domain, bloodline, school and blessing powers, patron / spirit / discipline spells (Foundry, tools/build_class_abilities.py)
@@ -105,6 +107,7 @@ composeApp/src/
       RaceUi.kt               RacePickerDialog, race summary (size, speed, ability modifiers)
       RacialTraitsUi.kt       alternate racial traits (link below the race, picker dialog)
       ArchetypesUi.kt         archetypes (link below the class, picker dialog with text)
+      PrestigeUi.kt           prestige classes (controls below the class, detail with requirements, table and features)
       DeityUi.kt              DeityPickerDialog (deity list, custom text), DeityConflictWarning
       SkillsUi.kt             SkillsPanel (character skills: ranks, points, class skills)
       SubclassUi.kt           SubclassFields (subclass fields – shared by the picker and the dialog), SubclassDialog, subclass bonus spells
@@ -139,6 +142,7 @@ tools/build_icons.py   app icons from `art/icon.svg`
 tools/build_class_abilities.py   subclass powers, hexes and revelations (Foundry)
 tools/build_racial_traits.py   default and alternate racial traits (AoN)
 tools/build_archetypes.py   class archetypes (AoN)
+tools/build_prestige_classes.py   prestige classes (AoN)
 ```
 
 ## State and navigation
@@ -236,6 +240,7 @@ version (`characters_v2`…) and a migration (example: `CharacterStore` converts
 - **Feats** (`Feats.json`, bundled only) load **lazily** when a character or the feat picker is first opened (`ensureFeats`).
 - **Alternate racial traits** (`RacialTraits.json`) load **lazily** when their dialog opens (`ensureRacialTraits`).
 - **Archetypes** (`Archetypes.json`) load **lazily** when the archetype dialog opens (`ensureArchetypes`).
+- **Prestige classes** – description and features (`PrestigeClasses.json`) load **lazily** when a prestige class detail opens (`ensurePrestigeTexts`).
 - **Hexes and revelations** (`ClassAbilities.json` + spirit hexes `SubclassAbilities.json`) load **lazily** when a character has a witch / shaman / oracle class (`ensureClassAbilities`).
 - **Items** load **lazily** – when an inventory, an inventory import or the database screen is opened (`ensureItems`, ~0.3 s).
 - Both repositories first try the downloaded version in `AppFiles`; if it is missing or corrupt, they delete it and use the bundled one.
@@ -344,6 +349,7 @@ The "Ruled notebook" design (from the author's design in Claude Design):
 | `EquipmentTest` | bonus type stacking, bonus guess by name, only equipped and only what fits the slot, slot conflicts |
 | `DefenseTest` | AC / touch / flat-footed, max Dex, size, armor check and load penalty, HP (Toughness, rolled, creatures), current HP, metamagic, domain and bloodline powers |
 | `AnimalCompanionTest` | animal companion table against "animal" HD, wolf advancement at 7th level, species abilities, specials, suggested level |
+| `PrestigeTest` | prestige classes: table, BAB and saves from the table, caster level, classes to advance, bonus feats, requirements |
 | `ArchetypesTest`, `ArchetypeEffectsTest` | archetypes: conflicts, unchained, NPC; replaced abilities, subclasses, hexes and bonus feats by level, cantrips, hand-entered effects (no spells, one fewer spell, one domain, Sacred Servant, Insinuator) |
 | `StrictModeTest` | strict mode: prepared copies (slots + bonus), known limit, ability and spell level, feat count and prerequisites, animal companion |
 | `BundledDataTest` | bundled spells load, every class has spells, unique ids; hexes and revelations (text, formulas, the app's mysteries and domains); alternate racial traits (races, replaced traits) |

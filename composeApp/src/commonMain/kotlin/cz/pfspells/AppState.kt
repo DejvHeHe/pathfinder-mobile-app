@@ -1,5 +1,11 @@
 package cz.pfspells
 
+import cz.pfspells.data.ClassCatalog
+import cz.pfspells.data.Prestige
+import cz.pfspells.data.PrestigeRequirements
+import cz.pfspells.data.PrestigeText
+import cz.pfspells.data.PrestigeTextRepository
+import cz.pfspells.data.PrereqStatus
 import cz.pfspells.data.caster
 import cz.pfspells.data.ClassAbility
 import cz.pfspells.data.AppUpdates
@@ -892,16 +898,58 @@ class AppState(
     }
 
     /** Přidá classu (multiclass); classa už v postavě je → nic. */
-    fun addClass(charId: String, classId: String, level: Int, subclass: Map<String, String> = emptyMap()) = updateCharacter(charId) { c ->
-        if (c.classes.any { it.classId == classId }) c
-        else c.copy(classes = c.classes + ClassEntry(classId, level.coerceIn(1, 20), subclass = subclass))
+    fun addClass(charId: String, classId: String, level: Int, subclass: Map<String, String> = emptyMap()) {
+        val ch = character(charId) ?: return
+        val prestige = ClassCatalog.get(classId)?.prestige
+        // přísný režim: prestižní classu jen se splněnými požadavky (neověřitelné „?“ projdou)
+        if (prestige != null && strictBlocked(
+                PrestigeRequirements.evaluate(ch, prestige, featDb, spellDb).firstOrNull { it.status == PrereqStatus.UNMET }
+                    ?.let { StrictBlock.PrestigeRequirementUnmet("${it.label}: ${it.text}") },
+            )
+        ) return
+        updateCharacter(charId) { c ->
+            if (c.classes.any { it.classId == classId }) c
+            else c.copy(
+                classes = c.classes + ClassEntry(
+                    classId, level.coerceIn(1, prestige?.maxLevel ?: 20), subclass = subclass,
+                    // prestižní classa zvyšuje sesílání jediné vhodné classy (jinak vybere hráč)
+                    advances = prestige?.let { Prestige.defaultAdvances(c, it) }.orEmpty(),
+                ),
+            )
+        }
+    }
+
+    /** Prestižní classa [classId] zvyšuje u druhu sesílání [kind] classu [target] (null = nic). */
+    fun setPrestigeAdvance(charId: String, classId: String, kind: String, target: String?) = updateClass(charId, classId) { e ->
+        e.copy(advances = if (target == null) e.advances - kind else e.advances + (kind to target))
+    }
+
+    // ---- popis a schopnosti prestižních class (PrestigeClasses.json, líně) ----
+    var prestigeTexts: Map<String, PrestigeText>? by mutableStateOf(null)
+        private set
+    private var prestigeLoading = false
+
+    fun ensurePrestigeTexts() {
+        if (prestigeTexts != null || prestigeLoading) return
+        prestigeLoading = true
+        scope.launch {
+            prestigeTexts = try {
+                PrestigeTextRepository.load()
+            } catch (e: Exception) {
+                emptyMap()
+            }
+            prestigeLoading = false
+        }
     }
 
     /** Odebere classu i s jejími spelly (poslední classa zůstane). */
     fun removeClass(charId: String, classId: String) = updateCharacter(charId) { c ->
         if (c.classes.size <= 1) c
         else c.copy(
-            classes = c.classes.filterNot { it.classId == classId },
+            // prestižní classy, které odebranou classu zvyšovaly, ji přestanou zvyšovat
+            classes = c.classes.filterNot { it.classId == classId }.map { e ->
+                if (classId in e.advances.values) e.copy(advances = e.advances.filterValues { it != classId }) else e
+            },
             castToday = c.castToday.filterKeys { !it.startsWith("$classId:") },
         )
     }
@@ -1174,7 +1222,7 @@ class AppState(
     }
 
     fun setClassLevel(charId: String, classId: String?, level: Int) =
-        updateClass(charId, classId) { it.copy(level = level.coerceIn(1, 20)) }
+        updateClass(charId, classId) { it.copy(level = level.coerceIn(1, ClassCatalog.get(it.classId)?.maxLevel ?: 20)) }
 
     fun setSpellCount(charId: String, classId: String?, spellId: String, count: Int) {
         // přísný režim hlídá jen přidání (víc kopií / nové kouzlo), ubírat jde vždy

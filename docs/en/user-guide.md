@@ -31,6 +31,15 @@ are shown in Czech (the class list also shows the English original, e.g. "Kouzel
 2. **Multiclass:** in the character detail, panel **Classes** → **Add class** (non-casters too – fighter, rogue,
    swashbuckler…); the subclass of the added class can be chosen in the same dialog.
    Each class level is changed with a stepper, 20 levels in total at most; a class can be removed (×) together with its spells.
+   **Prestige classes** (118 from Archives of Nethys – Eldritch Knight, Mystic Theurge, Arcane Trickster…) have their own
+   group when adding a class (not for a new character); the card shows the number of levels (usually 10) and the kind of
+   spellcasting it advances, after selecting it the requirements and a **Requirements and features** link. Requirements are
+   checked like feat prerequisites (✓ / ✗ / ?, manual "I have it"); strict mode does not add a prestige class with an unmet
+   requirement. BAB, saves, hit dice, skill points, class skills and bonus feats come from the class table. A prestige class
+   that advances spellcasting ("+1 level of existing arcane spellcasting class") lets you pick **the class it advances**
+   (a single fitting class is picked automatically; Mystic Theurge arcane and divine separately) – that class gets a higher
+   **caster level** (spells per day, known, highest spell level, "caster level 7" below the class). Prestige class
+   features are text only in the detail.
 3. **Race** is chosen when creating the character or later at the top of the Classes panel (80 races in groups: core,
    featured, uncommon, other, with size, speed and ability modifiers). The race:
    - **adds its ability modifiers** – you enter base scores, the tiles show the result including race
