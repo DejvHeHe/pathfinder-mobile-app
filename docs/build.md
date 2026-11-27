@@ -75,7 +75,8 @@ Na Windows se dá iOS Kotlin kód aspoň zkompilovat (bez linkování) – hodí
 ./gradlew :composeApp:compileKotlinIosArm64 -Pkotlin.native.enableKlibsCrossCompilation=true
 ```
 
-Projekt Xcode je napsaný ručně podle KMP šablony; ikona appky zatím chybí (Xcode jen varuje).
+Projekt Xcode je napsaný ručně podle KMP šablony; ikona appky je v `iosApp/iosApp/Assets.xcassets/AppIcon.appiconset`
+(generuje `tools/build_icons.py`).
 
 ## Testy
 

@@ -30,7 +30,10 @@ The version from the tag goes into the app (`-PappVersion` → generated `AppVer
 On Android and desktop the app looks in the latest Release for a file ending in `.apk` / `.msi` / `.dmg` / `.deb` (update check,
 `data/AppUpdate.kt`) – so keep the file extensions in the Release. The release must be neither a *draft* nor a *pre-release*,
 otherwise the GitHub API `releases/latest` does not return it.
-The desktop installers bundle their own Java – users do not need to install anything else.
+The desktop installers bundle their own Java – users do not need to install anything else. In-app updates (since v1.9.2):
+the desktop app downloads the `.msi` / `.dmg` / `.deb` to the Downloads folder, starts it (`msiexec /i`, `open`, `xdg-open`)
+and quits – thanks to `upgradeUuid` the MSI replaces the old version. A development build (`./gradlew :composeApp:run`,
+version 1.0.0) offers the update too (manual button) – that is how to test updating to the latest Release.
 
 **A manual run** (Actions → Release → Run workflow, enter a version) only builds the files as run *artifacts* – it creates
 neither a Release nor a Docker image. Useful for testing.

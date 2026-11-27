@@ -30,7 +30,10 @@ Verze z tagu se propíše do appky (`-PappVersion` → vygenerovaný `AppVersion
 Appka na Androidu a desktopu podle této tabulky hledá v poslední Release soubor s příponou `.apk` / `.msi` / `.dmg` / `.deb`
 (kontrola aktualizací, `data/AppUpdate.kt`) – přípony souborů v Release proto neměnit. Release nesmí být *draft* ani *pre-release*,
 jinak ji GitHub API `releases/latest` nevrátí.
-Desktopové instalátory obsahují vlastní Javu – uživatel nic dalšího neinstaluje.
+Desktopové instalátory obsahují vlastní Javu – uživatel nic dalšího neinstaluje. Aktualizace z appky (od v1.9.2): desktop stáhne
+`.msi` / `.dmg` / `.deb` do složky Stažené soubory, spustí ho (`msiexec /i`, `open`, `xdg-open`) a sám se ukončí – MSI díky
+`upgradeUuid` nahradí starou verzi. Vývojová verze (`./gradlew :composeApp:run`, verze 1.0.0) aktualizaci nabídne taky
+(ručně tlačítkem) – tak jde aktualizaci otestovat na nejnovější Release.
 
 **Ruční běh** (Actions → Release → Run workflow, zadat verzi) jen sestaví buildy jako *artifacts* běhu – Release ani Docker image nevytvoří.
 Hodí se na vyzkoušení.

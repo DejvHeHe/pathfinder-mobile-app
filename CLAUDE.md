@@ -4,6 +4,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Podrobná dokumentace: `README.md` (anglicky, hlavní – open-source styl, badge, screenshoty z `docs/images/`) + `README.cs.md` (česky),
   `CONTRIBUTING.md`, `docs/` (česky) + `docs/en/` (anglicky) – při změně upravit obě jazykové verze (user-guide, architecture, data, build, deploy, ios-install) – při změnách ji udržuj aktuální.
 - Plánovaná práce: **`TODO.md`** (hlavní vylepšení + nápady) – hotové body odškrtávej.
+- Změny pro uživatele: **`CHANGELOG.md`** (anglicky) + **`CHANGELOG.cs.md`** (česky) – při každém vydání doplnit krátké shrnutí
+  (text jde vložit i do popisu GitHub Release).
 
 ## Pravidla spolupráce
 - Uživatel komunikuje **česky**; **UI je dvojjazyčné EN / CZ** (přepínač v hlavičce) – každý text UI patří do `Strings.kt`
@@ -24,7 +26,32 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (27. 11. 2026)
-- ✅ 27. 11. 2026 (nevydáno): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
+- ✅ **Vydáno `v1.9.2`** (27. 11. 2026, commit `6454e04`): **desktopová aktualizace** – `appUpdater` (desktopMain `Platform.desktop.kt`)
+  stáhne `.msi` / `.dmg` / `.deb` do `~/Downloads` (s průběhem, stejně jako Android), dialog „Nainstalovat a zavřít appku“
+  (`Strings.installAndClose`) spustí instalátor (`msiexec /i` / `open` / `xdg-open`, záloha `Desktop.open`) a za 1,5 s `exitProcess(0)`;
+  při chybě stažení / spuštění prohlížeč. Workflowy zelené; **uživatel otestoval na Windows** (vývojová verze 1.0.0 z `:composeApp:run`
+  → aktualizace na 1.9.2: stažení, instalátor, zavření appky, nainstalovaná 1.9.2 s postavami – funguje).
+  Pozor: `CLAUDE.md` se mezi v1.9.1 a v1.9.2 přepsal starou verzí (nejspíš otevřený editor) – obnoveno z `f72d384`.
+- ✅ **Vydáno `v1.9.0`** (mazlíčci) a `v1.9.1` (statistiky familiárů z bestiáře – uživatel hlásil atributy 10).
+- ✅ 27. 11. 2026 (v1.9.0): **mazlíčci** – `tools/build_companions.py` (d20pfsrd, 2 stránky, cache `build/companion-cache`):
+  `SpeciesTable.kt` (`EXTRA_SPECIES`, 140 zvířat Paizo, bez opengamingstore.com = 3PP; 17 CRB ručně zůstává) + `FamiliarTable.kt`
+  (89 familiárů, nepodmíněný bonus pánovi → `ItemBonus`, nový `BonusTarget.HP`; v1.9.1 statistiky z bestiáře – 86 stránek, cache
+  `build/companion-cache/familiars`). Familiár: `Character.familiar`, `companionLevel` =
+  úroveň pána (`FamiliarProgression`), bonus u pána `Character.familiarBonus` (AppState `syncFamiliarBonus`) → `Character.allBonuses`
+  (vybavení + familiár, skilly / záchrany / AC / HP). `tools/build_eidolons.py` → `EidolonTable.kt` (progrese klasická / unchained,
+  formy „u_…“, podtypy) + `files/Eidolons.json` (79 evolucí, líně `ensureEidolonData`); eidolon: `eidolonForm`, `eidolonSubtype`,
+  `evolutions` (`EvolutionPick`), rasové HD `eidolon` (záchrany podle formy v `stats`), Ability Increase / Improved Natural Armor / Large
+  mechanicky. UI: výběr zvířete / familiára s hledáním (`SearchPickDialog`), `EidolonPanel`, `EvolutionPickerDialog`. Testy 176 zelené.
+- ✅ **Vydáno `v1.8.0`** (27. 11. 2026, commit `cc0c580`): prestižní classy – workflowy Release, Docker i CI zelené, uživatel otestoval.
+- ✅ **Vydáno `v1.7.0`** (27. 11. 2026, commit `f7664bb`): archetypy – workflowy Release, Docker i CI zelené.
+- ✅ 27. 11. 2026 (v1.8.0): **prestižní classy z AoN** – `tools/build_prestige_classes.py` (PrestigeClasses.aspx + stránky,
+  cache `build/prestige-cache`; Foundry je nemá) → `PrestigeTable.kt` (118 class: HD, skilly, class skills, BAB / záchrany po
+  úrovních, sesílání po úrovních `arcane` / `divine` / `any` / `class:witch`, bonusové featy, požadavky) + `files/PrestigeClasses.json`
+  (popis a schopnosti, líně `ensurePrestigeTexts`). `ClassInfo.prestige` / `maxLevel`, `ClassGroup.PRESTIGE` (jen při přidání classy),
+  `Character.stats` z tabulky, `ClassEntry.advances` (druh → classId) → **`Character.casterLevel(e)`** – používat místo `e.level`
+  všude, kde jde o kouzla (sloty `e.levelSlots(…, casterLevel)`, `bonusSpellsByLevel(index, casterLevel)`, `Spellbook.classLevel`).
+  Požadavky `PrestigeRequirements` (přes `FeatPrereqs`), přísný režim `PrestigeRequirementUnmet`, UI `ui/PrestigeUi.kt`. Testy 164 zelené.
+- ✅ 27. 11. 2026 (v1.7.0): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
   archetypů, cache `build/archetype-cache`, ~25 min) → `files/Archetypes.json` (líně, `ensureArchetypes`). `ClassEntry.archetypes`
   (`ArchetypePick`), `ArchetypesLink` pod classou + `ArchetypesDialog`, konflikty `Archetypes.conflicts` (stejná položka `replaces`),
   přísný režim `StrictBlock.ArchetypeConflict`, export `ClassDto.archetypes`; unchained → archetypy základní classy, NPC žádné.
@@ -42,11 +69,11 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ **Vydáno `v1.6.1`** (27. 11. 2026): menu „Databáze a aktualizace“, sekce aktualizace appky nahoře. Release, Docker zelené,
   APK podepsané stabilním klíčem. **Aktualizace v1.6.0 → v1.6.1 přímo z appky na telefonu uživatel otestoval – funguje.**
   Otevřené: Play Protect označil APK za škodlivé (nejspíš kvůli `REQUEST_INSTALL_PACKAGES` + novému klíči) – uživatel zatím
-  oprávnění nechává; desktop po „Stáhnout instalátor“ appku nezavře (nápad: tlačítko „Stáhnout a zavřít appku“).
+  oprávnění nechává. Desktop od v1.9.2 instalátor stahuje sám a appku zavře (viz výše).
 - ✅ **Vydáno `v1.6.0`** (27. 11. 2026): **aktualizace appky z GitHub Releases** – `data/AppUpdate.kt` (`AppUpdates`: API
   `releases/latest`, `parseVersion` / `isNewer` / `pickAsset` / `evaluate`; `expect val appUpdater`): Android stáhne APK do
   `cache/updates` a otevře instalátor (`AndroidAppUpdater`, FileProvider `${applicationId}.updates`, `REQUEST_INSTALL_PACKAGES`),
-  desktop otevře stažení .msi / .dmg / .deb v prohlížeči, web a iOS nic. `APP_VERSION` / `IS_RELEASE_BUILD` generuje Gradle
+  desktop (od v1.9.2) stáhne .msi / .dmg / .deb a spustí ho, web a iOS nic. `APP_VERSION` / `IS_RELEASE_BUILD` generuje Gradle
   (`generateAppVersion`); automatická kontrola jen release build, max 1× za 24 h (`update_checked_at`, přeskočená verze
   `update_skipped_version`), banner `UpdateBanner`, sekce `AppUpdateSection` v Databázích. Soukromí v About doplněné.
   Instalace přes starou verzi na Androidu vyžaduje stabilní podpisový klíč (zatím debug klíč CI). Před instalací dialog
@@ -55,7 +82,7 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - ✅ **Vydáno `v1.4.0`** (24. 11. 2026): AC / dotyk / zaskočený, HP se zraněním, postih zbroje, metamagie u kouzel, doménové a bloodline schopnosti,
   inventář 2.0 podle návrhu v Claude Design (figurka se sloty, konflikty, záložky na mobilu), design brief `docs/design-brief.md`.
   Release a Docker zelené; CI testy padaly na kompilaci (`InventoryLinkTest` bez importu `scores`) – opraveno v `08289c8`,
-  nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) lokálně zelené (24. 11.); CI po pushi ověřit.
+  nové testy (DefenseTest, EquipmentTest, AnimalCompanionTest, StrictModeTest…) zelené i v CI.
   Po vydání opraveno: export postavy nepřenášel `hpBonus` / `hpOverride` / `acMisc` (`CharacterDto`; zranění se záměrně neexportuje).
 - ✅ 24. 11. 2026 (v1.5.0): **schopnosti class z Foundry** – `tools/build_class_abilities.py` (packs/class-abilities
   + názvy knih z `module/registry/sources.mjs`; Python cert → lokální ZIP stažený curlem) → `ClassAbilityTable.kt` (schopnosti domén,
@@ -88,8 +115,8 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
 - Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
   a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
-- 🟡 **Tag `v1.3.0`** (24. 11. 2026): ikona appky, Umami události, no-cache pro web, štítky druhu magie na kartách class, přísný režim,
-  mazlíčci a zvířecí společníci (17 zvířat CRB, progrese, rarita, pravidla návratu), nasazené vybavení s bonusy – workflowy Release a Docker zatím neověřeny.
+- ✅ **Tag `v1.3.0`** (24. 11. 2026): ikona appky, Umami události, no-cache pro web, štítky druhu magie na kartách class, přísný režim,
+  mazlíčci a zvířecí společníci (17 zvířat CRB, progrese, rarita, pravidla návratu), nasazené vybavení s bonusy (pozdější vydání mají workflowy zelené).
   Na Linux PC uživatele (`/home/davids/…`) se Gradle nespouští bez požádání; push přes SSH (`git@github.com:DejvHeHe/pathfinder-mobile-app.git`), HTTPS nemá přihlášení.
   Spuštění appky na požádání: `JAVA_HOME=~/.jdks/temurin-21.0.10 ./gradlew :composeApp:run` (na pozadí; hláška „Cannot create Linux GL context“ = jen softwarové vykreslování).
 - ✅ **Vydáno `v1.2.0`** (rasy, skills, božstva, odvozené prerekvizity featů, podtřídy v pickeru) – workflowy Release, Docker i CI zelené (ověřeno 24. 11. 2026).
@@ -136,8 +163,10 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   Strings.kt              texty UI: interface Strings, EnStrings, CsStrings, Lang, LocalStrings / `str`
   data/Model.kt           Spell, Deck (jen migrace a starý exportní formát)
   data/Character.kt       Character (+ mazlíček: ownerId, CompanionKind, size, quadruped), ClassEntry, Abilities, FeatPick, Spellbook (pohled postava + classa), CharacterStore + migrace
-  data/AnimalCompanions.kt  CompanionProgression (tabulka CRB podle efektivní úrovně druida), SpeciesCatalog (17 zvířat CRB, vylepšení na 4./7. úrovni),
+  data/AnimalCompanions.kt  CompanionProgression (tabulka CRB podle efektivní úrovně druida), SpeciesCatalog (17 zvířat CRB + 140 v SpeciesTable.kt, vylepšení na 4./7. úrovni),
                           `Character.withCompanion`, companionMod (do `scores`), naturalArmor, suggestedCompanionLevel
+  data/Familiars.kt      familiáři (FamiliarCatalog z FamiliarTable.kt, FamiliarProgression, familiarBonuses → Character.familiarBonus)
+  data/Eidolons.kt       eidolon (EidolonTable.kt: progrese, formy, podtypy; Eidolons.json evoluce; EvolutionPick, eidolonMod)
   data/Equipment.kt       nasazené vybavení: ItemSlot, ItemBonus (BonusTarget/BonusType), stackBonuses (pravidla PF1), ItemBonusGuess (podle jména),
                           zbroj/štít: AC + MAX_DEX + ARMOR_CHECK (ItemBonusGuess.of(Item)), zatížení → loadBonuses (UNTYPED) v `Character.gear`
                           `InvEntry.equipped/slot/bonuses` → `Character.gear` (AppState.updateInventory/linkInventory) → gearMod (do `scores`), gearSkill, gearSave, gearAc
@@ -169,6 +198,8 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
                          ui/ArchetypesUi.kt ArchetypesLink (pod classou, souhrn efektů archetypeEffectText) + ArchetypesDialog
   data/ArchetypeEffects.kt  mechanika archetypů (ArchetypeRules.effect → ArchetypeEffect; ClassEntry.caster / subclassKind / levelSlots)
   data/ArchetypeMods.kt  ručně zadané efekty známých archetypů (ARCHETYPE_MODS – doplňovat podle textu AoN)
+  data/Prestige.kt       prestižní classy: PrestigeInfo, Prestige (candidates, defaultAdvances), Character.casterLevel, PrestigeRequirements,
+                         PrestigeTextRepository; data/PrestigeTable.kt GENEROVANÉ `tools/build_prestige_classes.py`; ui/PrestigeUi.kt
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
   data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
@@ -216,6 +247,7 @@ tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/f
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
 tools/build_racial_traits.py [--cache DIR]   RacialTraitTable.kt + RacialTraits.json (AoN stránky ras, ~80 req po 1 s)
+tools/build_prestige_classes.py [--cache DIR]   PrestigeTable.kt + PrestigeClasses.json (AoN, ~120 req po 1 s)
 tools/build_archetypes.py [--cache DIR]   Archetypes.json (AoN tabulky archetypů + stránky, ~1 300 req po 1 s)
 tools/build_subclass_abilities.py [--cache DIR]   SubclassAbilityTable.kt + SubclassAbilities.json (AoN spirity, bloodline bloodragera, disciplíny, inquisitions)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
@@ -260,7 +292,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 | FOUR | paladin, antipaladin, ranger, bloodrager | `L<4 → žádné`, jinak `min(4, (L-1)/3)` |
 | FOUR_KNACKS | medium | `L<4 → 0` (jen knacky), jinak `min(4, (L-1)/3)` |
 
-- Ve výběru je 49 class (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany).
+- Ve výběru je 49 class + 118 prestižních (`ClassCatalog`), sesílání řeší 27 `CasterClasses`; classy bez spellů jen pro multiclass (BAB, záchrany); prestižní zvyšují sesílací úroveň (`Character.casterLevel`).
   Navíc `ClassCatalog.creatures` = rasové HD tvorů pro mazlíčky (`animal`, `magical_beast`, skupina CREATURE) – ručně, ne z Foundry.
 - Mazlíček = `Character` s `ownerId` (`AppState.createCompanion`, `companionsOf`, `rootCharacters`); smazání vlastníka ho osamostatní,
   export ho přibalí s `owner` = pořadí vlastníka v souboru. Velikost: `Character.creatureSize` (mazlíček `size`, jinak rasa).
