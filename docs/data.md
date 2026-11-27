@@ -411,7 +411,10 @@ devotion, multiattack, improved evasion). HD, BAB, záchrany, skill body a featy
 AppState drží kopii bonusů od familiárů u pána (`Character.familiarBonus`, `syncFamiliarBonus` při změně / smazání
 mazlíčka a importu); `Character.allBonuses` = vybavení + familiár (skilly, záchrany, AC, HP). Progrese podle úrovně pána
 (`companionLevel` familiára, `FamiliarProgression`): přirozená zbroj (úroveň + 1) / 2, Int 5 + (úroveň + 1) / 2,
-SR úroveň + 5 od 11., schopnosti; HD familiára = úroveň pána (rasové HD „animal“).
+SR úroveň + 5 od 11., schopnosti; HD familiára = úroveň pána (rasové HD „animal“). Statistiky tvora čte generátor ze
+stránky bestiáře, na kterou odkazuje tabulka (statblok `<p class="title">`, víc tvorů na stránce → nejbližší název;
+„use butterfly statistics“ → statistiky jiného familiára; 86 z 89, Crab king, Penguin a Spiny Starfish nemají stránku).
+`withCompanion` je dá familiárovi při změně druhu nebo dokud má výchozí atributy.
 
 ### Eidolon (`Eidolons.kt`, `EidolonTable.kt`, `Eidolons.json`)
 `python tools/build_eidolons.py [--cache DIR]` (d20pfsrd, stránky eidolonů klasického a unchained summonera):

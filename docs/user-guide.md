@@ -129,8 +129,9 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   z úrovní wizard, witch, sorcerer, arcanist a shaman). List familiára ukáže **bonus pánovi** (Cat: +3 Stealth, Toad: +3 HP,
   Rat: +2 Fortitude…), který se **počítá na listu pána** (skilly, záchrany, AC, HP – jako vybavení); podmíněné bonusy
   („in bright light“) jsou jen text. Podle úrovně pána přirozená zbroj (+1 za každé 2 úrovně), Int (6–15), odolnost vůči
-  kouzlům od 11. úrovně a schopnosti (alertness, sdílení kouzel, řeč s pánem…); HD = úroveň pána. Vlastní atributy
-  familiára zadejte podle bestiáře.
+  kouzlům od 11. úrovně a schopnosti (alertness, sdílení kouzel, řeč s pánem…); HD = úroveň pána. Výběr druhu vyplní
+  **statistiky z bestiáře** (atributy, velikost, rychlost, útoky, přirozená zbroj, smysly – 86 z 89 familiárů); familiár
+  založený ve v1.9.0 s atributy 10 je dostane při další úpravě nastavení nebo úrovně pána.
 - **Eidolon**: **základní forma** (biped, quadruped, serpentine, aquatic, avian, tauric; u unchained summonera unchained
   formy včetně aberrant a **podtyp** – angel, demon, devil…) a **úroveň summonera**. Z tabulky klasického / unchained
   summonera HD, BAB, záchrany podle formy, bonus Str / Obr, přirozená zbroj, max. útoků a schopnosti. **Evoluce** z 79

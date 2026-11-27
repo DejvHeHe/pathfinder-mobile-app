@@ -136,7 +136,9 @@ The old "decks" were converted to characters (with all their spells) on the firs
   (Cat: +3 Stealth, Toad: +3 HP, Rat: +2 Fortitude…), which **counts on the master's sheet** (skills, saves, AC, HP – like
   gear); conditional bonuses ("in bright light") are text only. By the master's level: natural armor (+1 per 2 levels),
   Int (6–15), spell resistance from 11th level and special abilities (alertness, share spells, speak with master…); HD =
-  master's level. Enter the familiar's own ability scores from the Bestiary.
+  master's level. Picking the kind fills in the **Bestiary statistics** (abilities, size, speed, attacks, natural armor,
+  senses – 86 of 89 familiars); a familiar created in v1.9.0 with all abilities at 10 gets them on the next settings or
+  master's level change.
 - **Eidolon**: the **base form** (biped, quadruped, serpentine, aquatic, avian, tauric; for an unchained summoner the
   unchained forms including aberrant and a **subtype** – angel, demon, devil…) and the **summoner level**. From the
   summoner / unchained summoner table: HD, BAB, saves by form, Str / Dex bonus, natural armor, max attacks and special

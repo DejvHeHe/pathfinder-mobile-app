@@ -5,7 +5,7 @@ package cz.pfspells.data
  * - druh familiára dává pánovi bonus (Cat: +3 Stealth, Toad: +3 HP…) – nepodmíněný bonus se ukládá pánovi
  *   (`Character.familiarBonus`, drží ho AppState) a počítá se jako bonusy vybavení; podmíněný („in bright light“) jen text,
  * - podle úrovně pána (`Character.companionLevel` u familiára) přirozená zbroj +1 za každé 2 úrovně, Int 6–15, schopnosti.
- * Statistiky familiára (atributy, útoky) jsou z bestiáře – zadávají se ručně.
+ * Statistiky tvora (atributy, velikost, rychlost, útoky, přirozená zbroj) z bestiáře d20pfsrd vyplní výběr druhu.
  */
 
 /** Druh familiára: [bonus] = nepodmíněný bonus pánovi (null = jen text [bonusText]). */
@@ -17,6 +17,14 @@ class FamiliarInfo(
     /** „use hawk statistics“ apod. */
     val note: String = "",
     val source: String = "",
+    // statistiky tvora z bestiáře d20pfsrd (null / prázdné = stránka bez statbloku)
+    val size: CreatureSize? = null,
+    val speed: String = "",
+    /** přirozená zbroj tvora (k ní se přičítá tabulka familiára) */
+    val naturalArmor: Int = 0,
+    val attacks: String = "",
+    val abilities: Abilities? = null,
+    val senses: String = "",
 )
 
 enum class FamiliarSpecial(val level: Int) {

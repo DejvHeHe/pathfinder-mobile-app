@@ -166,7 +166,7 @@ fun companionSize(species: AnimalSpecies?, companionLevel: Int?): CreatureSize? 
 /** Přirozená zbroj celkem: druh (+ vylepšení) + bonus z tabulky společníka; null = bez šablony i progrese. */
 val Character.naturalArmor: Int?
     get() {
-        familiarLevel?.let { return FamiliarProgression.naturalArmor(it) }
+        familiarLevel?.let { return (familiarInfo?.naturalArmor ?: 0) + FamiliarProgression.naturalArmor(it) }
         if (isEidolon) return eidolonNaturalArmor
         val sp = speciesInfo
         val row = companionRow
@@ -216,7 +216,10 @@ fun Character.withCompanion(
         classes = if (classes.any { it.classId == "animal" }) classes.map { if (it.classId == "animal") it.copy(level = hd) else it }
         else listOf(ClassEntry("animal", hd)) + classes
     }
-    val newSize = companionSize(sp, lvl) ?: size
+    // familiár: atributy a velikost z bestiáře – při změně druhu, nebo dokud má výchozí atributy (založený bez statistik)
+    val fam = FamiliarCatalog.get(familiar).takeIf { kind == CompanionKind.FAMILIAR }
+    val famStats = fam?.abilities?.takeIf { fam.id != this.familiar || abilities == Abilities() }
+    val newSize = companionSize(sp, lvl) ?: fam?.size?.takeIf { famStats != null || size == null } ?: size
     return copy(
         eidolonForm = null,
         eidolonSubtype = null,
@@ -226,7 +229,7 @@ fun Character.withCompanion(
         companionLevel = lvl,
         size = newSize,
         quadruped = (sp?.quadruped ?: quadruped) && newSize != null,
-        abilities = if (sp != null && sp.id != this.species) sp.abilities else abilities,
+        abilities = famStats ?: if (sp != null && sp.id != this.species) sp.abilities else abilities,
         classes = classes,
     )
 }

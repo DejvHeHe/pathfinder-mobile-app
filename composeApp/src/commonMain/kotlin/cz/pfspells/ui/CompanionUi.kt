@@ -183,6 +183,9 @@ fun CompanionHeader(state: AppState, c: Character, wide: Boolean) {
                 fam?.let { f ->
                     Text(f.name, fontFamily = LocalNbFonts.current.serif, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Nb.ink)
                     DetailLine(s.masterBonusLabel, f.bonusText + if (f.bonus == null) " (${s.masterBonusConditional})" else "")
+                    DetailLine(s.speedLabel, f.speed)
+                    DetailLine(s.attacksLabel, f.attacks)
+                    DetailLine(s.qualitiesLabel, f.senses)
                     DetailLine(s.familiarNoteLabel, f.note)
                 }
                 if (famLevel != null) {
@@ -321,6 +324,8 @@ fun CompanionDialog(
     var level by remember { mutableIntStateOf(initial.level) }
     var size by remember { mutableStateOf(initial.size) }
     var quadruped by remember { mutableStateOf(initial.quadruped) }
+    // nový druh familiára → velikost z bestiáře (Cat Tiny, Bat Diminutive)
+    LaunchedEffect(familiar?.id) { familiar?.takeIf { it.id != initial.familiar }?.size?.let { size = it } }
     var rarity by remember { mutableStateOf(initial.rarity) }
     var respawn by remember { mutableStateOf(initial.respawnRules ?: s.defaultRespawn(initial.kind)) }
     val lvl = companionLevel.takeIf { progression }

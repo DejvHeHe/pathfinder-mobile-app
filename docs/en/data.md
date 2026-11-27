@@ -432,7 +432,10 @@ bonus ("+3 bonus on Stealth checks", "+2 bonus on Reflex saves", "+1 natural arm
 identify") are text only. AppState keeps a copy of the familiar bonuses on the master (`Character.familiarBonus`,
 `syncFamiliarBonus` on companion change / delete and import); `Character.allBonuses` = gear + familiar (skills, saves,
 AC, HP). Progression by the master's level (the familiar's `companionLevel`, `FamiliarProgression`): natural armor
-(level + 1) / 2, Int 5 + (level + 1) / 2, SR level + 5 from 11th, special abilities; familiar HD = master's level.
+(level + 1) / 2, Int 5 + (level + 1) / 2, SR level + 5 from 11th, special abilities; familiar HD = master's level. The generator reads the creature statistics
+from the Bestiary page linked from the table (statblock `<p class="title">`, several creatures on a page → closest
+title; "use butterfly statistics" → another familiar's statistics; 86 of 89, Crab king, Penguin and Spiny Starfish have
+no page). `withCompanion` applies them when the kind changes or while the familiar still has default abilities.
 
 ### Eidolon (`Eidolons.kt`, `EidolonTable.kt`, `Eidolons.json`)
 `python tools/build_eidolons.py [--cache DIR]` (d20pfsrd, summoner and unchained summoner eidolon pages): progression

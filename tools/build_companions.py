@@ -8,7 +8,7 @@ Animal companions and familiars from d20pfsrd.com (OGL; Paizo content only – "
 2. composeApp/src/commonMain/kotlin/cz/pfspells/data/FamiliarTable.kt – familiars with the master's bonus
    (parsed into skill / save / AC / HP bonuses where unconditional) and the source code.
 
-Pages (2 requests, cached in build/companion-cache):
+Pages (2 lists + ~90 bestiary pages of the familiars, 1 per second, cached in build/companion-cache):
   https://www.d20pfsrd.com/classes/core-classes/druid/animal-companions/
   https://www.d20pfsrd.com/classes/core-classes/wizard/familiar/
 
@@ -179,8 +179,45 @@ def familiars(page: str):
         if fid in seen:
             continue
         seen.add(fid)
-        out.append({"id": fid, "name": name, "note": note, "bonus": bonus.rstrip("."), "parsed": master_bonus(bonus), "source": source})
+        link = re.search(r'href="([^"]+)"', re.findall(r"<td.*?</td>", r, re.S)[0])
+        out.append({"id": fid, "name": name, "note": note, "bonus": bonus.rstrip("."), "parsed": master_bonus(bonus),
+                    "source": source, "url": link.group(1) if link else None})
     return out
+
+
+def statblock(page: str, name: str):
+    """Statistiky tvora z bestiáře d20pfsrd: velikost, rychlost, přirozená zbroj, útoky, atributy, smysly.
+    Na stránce s víc tvory se bere statblok, jehož název se nejvíc shoduje se jménem familiára."""
+    # statblok začíná nadpisem <p class="title"> (někdy v <div class="statblock">); bloky bez atributů se přeskočí
+    start = page.find("<h1")
+    parts = re.split(r'<p class="title">', page[start if start >= 0 else 0:])[1:]
+    blocks = [p for p in parts if re.search(r"<b>\s*Str\s*</b>", p)]
+    if not blocks:
+        return None
+    words = [w for w in re.split(r"[^a-z]+", name.lower()) if w]
+
+    def score(b):
+        title = plain(b[: b.find("</p>")]).lower()
+        return sum(w in title for w in words) - (0.5 if "dire" in title or "giant" in title and "giant" not in words else 0)
+    b = max(blocks, key=score)
+    b = b[: b.find('<p class="divider">SPECIAL ABILITIES') if 'SPECIAL ABILITIES' in b else len(b)]
+    text = plain(re.sub(r"<br\s*/?>", "; ", b))
+    size = re.search(r"\b(Fine|Diminutive|Tiny|Small|Medium|Large|Huge)\b", text)
+    na = re.search(r"\+(\d+)\s*natural", text)
+    speed = re.search(r"\bSpeed\s+(.*?)(?:;|$)", text)
+    melee = re.search(r"\bMelee\s+(.*?)(?:;|$)", text)
+    senses = re.search(r"\bSenses\s+(.*?)(?:;\s*Perception|;|$)", text)
+    scores = []
+    for a in ("Str", "Dex", "Con", "Int", "Wis", "Cha"):
+        m = re.search(r"\b" + a + r"\s+(\d+|—|-)", text)
+        scores.append(int(m.group(1)) if m and m.group(1).isdigit() else 0)
+    if scores[1] == 0:
+        return None
+    return {
+        "size": size.group(1).upper() if size else "TINY", "na": int(na.group(1)) if na else 0,
+        "speed": speed.group(1).strip().rstrip(".") if speed else "", "attacks": melee.group(1).strip() if melee else "",
+        "scores": scores, "senses": senses.group(1).strip() if senses else "",
+    }
 
 
 def main():
@@ -221,7 +258,26 @@ def main():
         "/** Familiáři: bonus pánovi (text + nepodmíněný bonus jako ItemBonus), poznámka ke statistikám, zdroj. */",
         "internal val FAMILIAR_TABLE: List<FamiliarInfo> = listOf(",
     ]
+    missing = []
     for f in fam:
+        st = None
+        if f["url"]:
+            try:
+                page = cached(cache / "familiars", f["id"] + ".html", f["url"])
+                st = statblock(page, f["name"])
+            except Exception as e:  # rozbitý odkaz (404) – familiár zůstane bez statistik
+                print(f"  {f['name']}: {e}")
+        f["stats"] = st
+    # „use butterfly statistics“ – statistiky jiného familiára
+    by_name = {x["name"].lower(): x for x in fam}
+    for f in fam:
+        m = re.search(r"use ([a-z ,]+?) statistics", f["note"].lower())
+        if f["stats"] is None and m and by_name.get(m.group(1).strip(), {}).get("stats"):
+            f["stats"] = by_name[m.group(1).strip()]["stats"]
+    for f in fam:
+        st = f["stats"]
+        if st is None:
+            missing.append(f["name"])
         p = f["parsed"]
         if p is None:
             bonus = "null"
@@ -229,11 +285,17 @@ def main():
             target, value, skill = p
             typ = "BonusType.NATURAL_ARMOR" if target == "AC" else "BonusType.UNTYPED"
             bonus = f"ItemBonus(BonusTarget.{target}, {value}, {typ}" + (f", skill = {kstr(skill)})" if skill else ")")
-        lines.append(f"    FamiliarInfo({kstr(f['id'])}, {kstr(f['name'])}, {kstr(f['bonus'])}, {bonus}, note = {kstr(f['note'])}, source = {kstr(f['source'])}),")
+        stats = ""
+        if st:
+            stats = (f", size = CreatureSize.{st['size']}, speed = {kstr(st['speed'])}, naturalArmor = {st['na']}, "
+                     f"attacks = {kstr(st['attacks'])}, abilities = Abilities({', '.join(map(str, st['scores']))}), senses = {kstr(st['senses'])}")
+        lines.append(f"    FamiliarInfo({kstr(f['id'])}, {kstr(f['name'])}, {kstr(f['bonus'])}, {bonus}, note = {kstr(f['note'])}, source = {kstr(f['source'])}{stats}),")
     lines.append(")")
     OUT_FAMILIARS.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"{OUT_SPECIES.relative_to(ROOT)}: {len(sp)} species; {OUT_FAMILIARS.relative_to(ROOT)}: {len(fam)} familiars "
-          f"({sum(1 for f in fam if f['parsed'])} with a computed master bonus)")
+          f"({sum(1 for f in fam if f['parsed'])} with a computed master bonus, {len(fam) - len(missing)} with statistics)")
+    if missing:
+        print("familiars without a statblock:", missing)
 
 
 if __name__ == "__main__":

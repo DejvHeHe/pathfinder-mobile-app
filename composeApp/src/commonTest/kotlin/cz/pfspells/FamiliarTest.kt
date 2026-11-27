@@ -28,7 +28,7 @@ class FamiliarTest {
     private val master = Character("m", "Ezren", listOf(ClassEntry("wizard", 7)), abilities = Abilities(con = 12))
 
     private fun familiar(id: String, level: Int?) =
-        Character("f", "Fam", listOf(ClassEntry("animal", 1)), ownerId = "m", abilities = Abilities(int = 2))
+        Character("f", "Fam", listOf(ClassEntry("animal", 1)), ownerId = "m")
             .withCompanion(CompanionKind.FAMILIAR, null, level, null, false, id)
 
     @Test
@@ -51,10 +51,28 @@ class FamiliarTest {
         assertEquals("cat", f.familiar)
         assertEquals(7, f.classes.single().level) // HD = úroveň pána
         assertNull(f.companionRow) // tabulka zvířecího společníka neplatí
-        assertEquals(4, f.naturalArmor)
-        assertEquals(9 - 2, f.companionMod(cz.pfspells.data.Ability.INT))
+        assertEquals(FamiliarCatalog.get("cat")!!.naturalArmor + 4, f.naturalArmor)
+        assertEquals(9 - f.abilities.int, f.companionMod(cz.pfspells.data.Ability.INT))
         // familiár jen u druhu FAMILIAR
         assertNull(Character("x", "X", listOf(ClassEntry("animal", 1))).withCompanion(CompanionKind.PET, null, null, null, false, "cat").familiar)
+    }
+
+    @Test
+    fun bestiaryStats() {
+        val f = familiar("cat", 5)
+        // kočka z bestiáře: Str 3, Dex 15, Con 8, Int 2 (familiár má Int podle tabulky), Wis 12, Cha 7; Tiny
+        assertEquals(cz.pfspells.data.Abilities(3, 15, 8, 2, 12, 7), f.abilities)
+        assertEquals(cz.pfspells.data.CreatureSize.TINY, f.size)
+        assertEquals(8, f.abilities.int + f.companionMod(cz.pfspells.data.Ability.INT))
+        // přirozená zbroj: tvor + tabulka familiára
+        val toad = familiar("toad", 5)
+        assertEquals(FamiliarCatalog.get("toad")!!.naturalArmor + 3, toad.naturalArmor)
+        // familiár založený bez statistik (atributy 10) je dostane při další úpravě
+        val old = Character("f", "Old", listOf(ClassEntry("animal", 5)), ownerId = "m", companion = CompanionKind.FAMILIAR, companionLevel = 5, familiar = "cat")
+        assertEquals(3, old.withCompanion(CompanionKind.FAMILIAR, null, 5, null, false, "cat").abilities.str)
+        // ručně upravené atributy se při změně úrovně nepřepíšou
+        val edited = f.copy(abilities = f.abilities.copy(str = 4))
+        assertEquals(4, edited.withCompanion(CompanionKind.FAMILIAR, null, 6, f.size, false, "cat").abilities.str)
     }
 
     @Test

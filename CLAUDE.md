@@ -24,9 +24,11 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (27. 11. 2026)
-- ✅ 27. 11. 2026 (nevydáno): **mazlíčci** – `tools/build_companions.py` (d20pfsrd, 2 stránky, cache `build/companion-cache`):
+- ✅ **Vydáno `v1.9.0`** (mazlíčci) a `v1.9.1` (statistiky familiárů z bestiáře – uživatel hlásil atributy 10).
+- ✅ 27. 11. 2026 (v1.9.0): **mazlíčci** – `tools/build_companions.py` (d20pfsrd, 2 stránky, cache `build/companion-cache`):
   `SpeciesTable.kt` (`EXTRA_SPECIES`, 140 zvířat Paizo, bez opengamingstore.com = 3PP; 17 CRB ručně zůstává) + `FamiliarTable.kt`
-  (89 familiárů, nepodmíněný bonus pánovi → `ItemBonus`, nový `BonusTarget.HP`). Familiár: `Character.familiar`, `companionLevel` =
+  (89 familiárů, nepodmíněný bonus pánovi → `ItemBonus`, nový `BonusTarget.HP`; v1.9.1 statistiky z bestiáře – 86 stránek, cache
+  `build/companion-cache/familiars`). Familiár: `Character.familiar`, `companionLevel` =
   úroveň pána (`FamiliarProgression`), bonus u pána `Character.familiarBonus` (AppState `syncFamiliarBonus`) → `Character.allBonuses`
   (vybavení + familiár, skilly / záchrany / AC / HP). `tools/build_eidolons.py` → `EidolonTable.kt` (progrese klasická / unchained,
   formy „u_…“, podtypy) + `files/Eidolons.json` (79 evolucí, líně `ensureEidolonData`); eidolon: `eidolonForm`, `eidolonSubtype`,

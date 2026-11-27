@@ -1392,7 +1392,7 @@ object EnStrings : Strings {
     override fun evolutionCost(n: Int) = "$n pt"
     override val freeEvolutionsLabel = "Free evolutions"
     override val eidolonHint = "Ability Increase (+2) and Improved Natural Armor (+2) are counted, Large changes the size; other evolutions are text only."
-    override val familiarHint = "The master's bonus counts on the master's sheet (skills, saves, AC, HP). HD = master's level; the familiar uses the master's BAB and base saves if better. Enter its own ability scores from the Bestiary."
+    override val familiarHint = "The master's bonus counts on the master's sheet (skills, saves, AC, HP). HD = master's level; the familiar uses the master's BAB and base saves if better. Ability scores, size, speed and attacks come from the Bestiary when you pick the kind."
     override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
         CompanionSpecial.LINK -> "Link"
         CompanionSpecial.SHARE_SPELLS -> "Share spells"
@@ -2395,7 +2395,7 @@ object CsStrings : Strings {
     override fun evolutionCost(n: Int) = "$n b."
     override val freeEvolutionsLabel = "Volné evoluce"
     override val eidolonHint = "Počítá se Ability Increase (+2) a Improved Natural Armor (+2), Large mění velikost; ostatní evoluce jsou jen text."
-    override val familiarHint = "Bonus pánovi se počítá na listu pána (skilly, záchrany, AC, HP). HD = úroveň pána; familiár má BAB a základní záchrany pána, jsou-li lepší. Vlastní atributy zadejte podle bestiáře."
+    override val familiarHint = "Bonus pánovi se počítá na listu pána (skilly, záchrany, AC, HP). HD = úroveň pána; familiár má BAB a základní záchrany pána, jsou-li lepší. Atributy, velikost, rychlost a útoky se vyplní z bestiáře při výběru druhu."
     override fun companionSpecial(sp: CompanionSpecial) = when (sp) {
         CompanionSpecial.LINK -> "Pouto (Link)"
         CompanionSpecial.SHARE_SPELLS -> "Sdílení kouzel"
