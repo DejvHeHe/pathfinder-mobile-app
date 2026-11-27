@@ -90,7 +90,7 @@ object AppUpdates {
 
 /**
  * Aktualizace připravená k instalaci – mezi stažením a instalací se appka zeptá uživatele (a nabídne zálohu postav).
- * [localPath] = stažený soubor (Android), null = instalátor se stáhne až v prohlížeči (desktop).
+ * [localPath] = stažený soubor (Android APK, desktop instalátor ve Stažených souborech).
  * [signatureMatches] = podpis staženého APK sedí s nainstalovanou verzí (false = Android ho přes ni nenainstaluje,
  * je nutné odinstalovat → smažou se data; null = neznámé / desktop).
  */
@@ -108,10 +108,10 @@ interface AppUpdater {
     /** Přípony souborů z release v pořadí preference (Android „.apk“, Windows „.msi“…). */
     val assetExtensions: List<String>
 
-    /** Připraví instalaci: Android stáhne APK ([onProgress] 0–1, null = neznámá velikost) a ověří podpis, desktop nic. */
+    /** Připraví instalaci: stáhne APK / instalátor ([onProgress] 0–1, null = neznámá velikost), Android ověří podpis. */
     suspend fun prepare(asset: GithubAsset, onProgress: (Float?) -> Unit): PreparedUpdate
 
-    /** Spustí instalaci (Android instalátor, desktop stažení v prohlížeči). Vrací true, když se spustila. */
+    /** Spustí instalaci (Android instalátor; desktop spustí instalátor a appku zavře). Vrací true, když se spustila. */
     fun install(update: PreparedUpdate): Boolean
 
     /** Otevře adresu v prohlížeči (stránka release nebo přímé stažení souboru). */

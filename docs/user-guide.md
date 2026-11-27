@@ -348,7 +348,9 @@ Na stejné obrazovce je nahoře sekce **Aktualizace appky** (jen Android a deskt
 
 - **Android**: **Stáhnout a nainstalovat** stáhne APK přímo v appce (s průběhem) a otevře systémový instalátor. Poprvé je
   potřeba povolit instalaci z této appky. Aktualizace přes starou verzi funguje jen u APK podepsaných stejným klíčem.
-- **Desktop**: **Stáhnout instalátor** otevře stažení `.msi` / `.dmg` / `.deb` v prohlížeči – appku zavřete a instalátor spusťte.
+- **Desktop**: **Stáhnout a nainstalovat** stáhne `.msi` / `.dmg` / `.deb` do složky Stažené soubory (s průběhem), dotaz nabídne
+  export postav a **Nainstalovat a zavřít appku** spustí instalátor a appku ukončí, aby ji mohl nahradit. Když stažení
+  nebo spuštění selže, otevře se stažení v prohlížeči.
 - **Co je nového** otevře stránku vydání s popisem změn.
 - Před instalací se appka **zeptá** a nabídne **export postav a inventářů** (záloha). Na Androidu po stažení porovná podpis
   APK s nainstalovanou verzí: když se liší, Android aktualizaci přes starou verzi nepovolí – appka pak místo instalace ukáže

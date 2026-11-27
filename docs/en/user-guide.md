@@ -363,7 +363,9 @@ At the top of the same screen is an **App updates** section (Android and desktop
 
 - **Android**: **Download and install** downloads the APK right in the app (with progress) and opens the system installer.
   The first time you have to allow installs from this app. Updating over an old version only works for APKs signed with the same key.
-- **Desktop**: **Download installer** opens the `.msi` / `.dmg` / `.deb` download in your browser – close the app and run the installer.
+- **Desktop**: **Download and install** downloads the `.msi` / `.dmg` / `.deb` to your Downloads folder (with progress), the
+  prompt offers a character export and **Install and close the app** starts the installer and quits the app so it can be
+  replaced. If the download or launch fails, the download opens in your browser.
 - **What's new** opens the release page with the changes.
 - Before installing, the app **asks** and offers to **export characters and inventories** (backup). On Android it compares
   the APK signature with the installed version after the download: if they differ, Android refuses the update over the old

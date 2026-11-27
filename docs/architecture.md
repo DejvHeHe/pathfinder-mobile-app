@@ -100,7 +100,7 @@ tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
       ItemRepository.kt       ItemRepository, InventoryStore, InventoryTransfer
       Platform.kt             expect: AppFiles, createHttpClient, deckFileIo, nowDisplayText, currentTimeMillis, trackEvent (Umami, jen web)
       AppUpdate.kt            kontrola aktualizací z GitHub Releases: AppUpdates (API, porovnání verzí, výběr souboru), expect appUpdater
-                              (Android APK + FileProvider, desktop instalátor v prohlížeči, web / iOS nic); verze APP_VERSION
+                              (Android APK + FileProvider, desktop stažení instalátoru do Stažených souborů, spuštění a zavření appky, web / iOS nic); verze APP_VERSION
                               generuje Gradle úloha generateAppVersion z -PappVersion
     ui/
       Theme.kt                barvy Nb.*, fonty, PfTheme, modifikátory (linkovaný papír, čárkované okraje), ikony

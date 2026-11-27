@@ -485,7 +485,6 @@ interface Strings {
     val upToDate: String
     fun updateAvailable(v: String): String
     val downloadAndInstall: String
-    val downloadInstaller: String
     val releaseNotes: String
     fun updateDownloading(percent: Int?): String
     fun updateFailed(msg: String): String
@@ -497,6 +496,7 @@ interface Strings {
     val updateBackupHint: String
     val updateSignatureMismatch: String
     val installNow: String
+    val installAndClose: String
     val downloadApkInBrowser: String
     val itemDbFailed: String
     fun itemsCount(n: Int): String
@@ -1231,12 +1231,11 @@ object EnStrings : Strings {
     override val upToDate = "You have the latest version."
     override fun updateAvailable(v: String) = "Version $v is available"
     override val downloadAndInstall = "Download and install"
-    override val downloadInstaller = "Download installer"
     override val releaseNotes = "What's new"
     override fun updateDownloading(percent: Int?) = "Downloading…" + (percent?.let { " $it %" } ?: "")
     override fun updateFailed(msg: String) = "Update failed: $msg"
     override val updateHintApk = "The APK is downloaded and the system installer opens – allow installing from this app the first time. Characters and inventories are kept."
-    override val updateHintInstaller = "The installer downloads in your browser – close the app and run it. Characters and inventories are kept."
+    override val updateHintInstaller = "The app downloads the installer to your Downloads folder, starts it and closes itself so it can be replaced. Characters and inventories are kept."
     override val updateLater = "Later"
     override val updateSkip = "Skip this version"
     override fun updateConfirmTitle(v: String) = "Install version $v?"
@@ -1248,6 +1247,7 @@ object EnStrings : Strings {
         "3. Uninstall PF Spellbook and install the downloaded APK.\n" +
         "4. Import the characters and inventories again (in the main menu choose Import)."
     override val installNow = "Install"
+    override val installAndClose = "Install and close the app"
     override val downloadApkInBrowser = "Download APK in browser"
     override val itemDbFailed = "Item database failed to load."
     override fun itemsCount(n: Int) = "$n items"
@@ -2214,12 +2214,11 @@ object CsStrings : Strings {
     override val upToDate = "Máte nejnovější verzi."
     override fun updateAvailable(v: String) = "Je dostupná verze $v"
     override val downloadAndInstall = "Stáhnout a nainstalovat"
-    override val downloadInstaller = "Stáhnout instalátor"
     override val releaseNotes = "Co je nového"
     override fun updateDownloading(percent: Int?) = "Stahuji…" + (percent?.let { " $it %" } ?: "")
     override fun updateFailed(msg: String) = "Aktualizace se nezdařila: $msg"
     override val updateHintApk = "Stáhne se APK a otevře se systémový instalátor – poprvé povolte instalaci z této appky. Postavy i inventáře zůstanou."
-    override val updateHintInstaller = "Instalátor se stáhne v prohlížeči – zavřete appku a spusťte ho. Postavy i inventáře zůstanou."
+    override val updateHintInstaller = "Appka stáhne instalátor do složky Stažené soubory, spustí ho a sama se zavře, aby ji mohl nahradit. Postavy i inventáře zůstanou."
     override val updateLater = "Později"
     override val updateSkip = "Tuto verzi přeskočit"
     override fun updateConfirmTitle(v: String) = "Nainstalovat verzi $v?"
@@ -2231,6 +2230,7 @@ object CsStrings : Strings {
         "3. Odinstalujte PF Spellbook a nainstalujte stažené APK.\n" +
         "4. Postavy a inventáře znovu importujte (v hlavním menu zvolte Import)."
     override val installNow = "Instalovat"
+    override val installAndClose = "Nainstalovat a zavřít appku"
     override val downloadApkInBrowser = "Stáhnout APK v prohlížeči"
     override val itemDbFailed = "Databázi předmětů se nepodařilo načíst."
     override fun itemsCount(n: Int) = cz(n, "předmět", "předměty", "předmětů")

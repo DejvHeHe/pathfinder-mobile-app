@@ -36,12 +36,8 @@ import cz.pfspells.data.UpdateInfo
 import cz.pfspells.data.appUpdater
 import cz.pfspells.str
 
-/** Tlačítko podle platformy: Android stáhne a nainstaluje APK, desktop stáhne instalátor v prohlížeči. */
-private fun installLabel(s: Strings, info: UpdateInfo): String = when {
-    info.asset == null -> s.releaseNotes
-    ".apk" in appUpdater.assetExtensions -> s.downloadAndInstall
-    else -> s.downloadInstaller
-}
+/** Tlačítko: Android i desktop stáhnou APK / instalátor a po potvrzení ho spustí; bez souboru stránka release. */
+private fun installLabel(s: Strings, info: UpdateInfo): String = if (info.asset == null) s.releaseNotes else s.downloadAndInstall
 
 /** Sekce „Aktualizace appky“ na obrazovce Databáze – jen na platformách, které aktualizace nabízejí (Android, desktop). */
 @OptIn(ExperimentalLayoutApi::class)
@@ -144,7 +140,7 @@ fun UpdateConfirmDialog(state: AppState, db: SpellDatabase) {
         },
         confirmButton = {
             if (mismatch) NbPrimaryButton(s.downloadApkInBrowser, { state.openInBrowser(ready.prepared.asset.downloadUrl) }, icon = null, height = 40.dp)
-            else NbPrimaryButton(if (".apk" in appUpdater.assetExtensions) s.installNow else s.downloadInstaller, { state.confirmInstall() }, icon = null, height = 40.dp)
+            else NbPrimaryButton(if (".apk" in appUpdater.assetExtensions) s.installNow else s.installAndClose, { state.confirmInstall() }, icon = null, height = 40.dp)
         },
         dismissButton = { TextButton(onClick = { state.cancelInstall() }) { Text(s.cancel, color = Nb.ink) } },
     )
