@@ -68,6 +68,8 @@ object SubclassSlot {
     const val BLESSING2 = "blessing2"
     /** inquisitor: inquisition místo domény */
     const val INQUISITION = "inquisition"
+    /** čaroděj s archetypem Crossblooded: druhá bloodline */
+    const val BLOODLINE2 = "bloodline2"
 }
 
 /** Jak classa pracuje s podtřídou. */
@@ -233,9 +235,10 @@ fun domainSpells(index: SubclassIndex, domain: String?, subdomain: String?): Map
  * Kouzelník bonusová kouzla nemá (školní slot se řeší zvlášť).
  */
 fun ClassEntry.bonusSpellsByLevel(index: SubclassIndex): Map<Int, List<Spell>> {
-    val cls = CasterClasses.get(classId) ?: return emptyMap()
+    val cls = caster ?: return emptyMap()
+    if (archetypes.isNotEmpty() && archetypeEffect.noSubclassSpells) return emptyMap()
     val max = cls.maxSpellLevel(level)
-    val all: Map<Int, List<Spell>> = when (subclassType(classId)) {
+    val all: Map<Int, List<Spell>> = when (subclassKind) {
         SubclassType.TWO_DOMAINS -> {
             val a = domainSpells(index, subclass[SubclassSlot.DOMAIN1], subclass[SubclassSlot.SUBDOMAIN1])
             val b = domainSpells(index, subclass[SubclassSlot.DOMAIN2], subclass[SubclassSlot.SUBDOMAIN2])
@@ -245,9 +248,13 @@ fun ClassEntry.bonusSpellsByLevel(index: SubclassIndex): Map<Int, List<Spell>> {
         SubclassType.MYSTERY -> subclass[SubclassSlot.MYSTERY]?.let { m ->
             index.spells(SubclassKind.MYSTERY, m).filterKeys { level >= 2 * it }
         } ?: emptyMap()
-        SubclassType.BLOODLINE -> subclass[SubclassSlot.BLOODLINE]?.let { b ->
-            index.spells(SubclassKind.BLOODLINE, b).filterKeys { level >= 2 * it + 1 }
-        } ?: emptyMap()
+        SubclassType.BLOODLINE -> {
+            // Crossblooded: kouzla obou bloodline (na každém levelu si vybere jedno)
+            val second = if (archetypes.isNotEmpty() && archetypeEffect.secondBloodline) subclass[SubclassSlot.BLOODLINE2] else null
+            val lists = listOfNotNull(subclass[SubclassSlot.BLOODLINE], second).distinct()
+                .map { b -> index.spells(SubclassKind.BLOODLINE, b).filterKeys { level >= 2 * it + 1 } }
+            lists.flatMap { it.keys }.toSet().associateWith { k -> lists.flatMap { it[k].orEmpty() }.distinctBy { s -> s.id } }
+        }
         SubclassType.PATRON -> fromTable(index, SubclassKind.PATRON, SubclassSlot.PATRON, SubclassType.PATRON)
         SubclassType.SPIRIT -> {
             // wandering spirit (od 4. úrovně) přidává svá kouzla do magie ducha
@@ -288,7 +295,7 @@ fun ClassEntry.spellLevelFor(cls: CasterClass, spell: Spell, index: SubclassInde
 
 /** Spell level kouzla patrona, které čarodějnice na své úrovni má (null = není kouzlo jejího patrona). */
 fun ClassEntry.patronSpellLevel(spell: Spell, index: SubclassIndex): Int? {
-    if (subclassType(classId) != SubclassType.PATRON) return null
+    if (subclassKind != SubclassType.PATRON || (archetypes.isNotEmpty() && archetypeEffect.noSubclassSpells)) return null
     val patron = subclass[SubclassSlot.PATRON] ?: return null
     return index.spells(SubclassKind.PATRON, patron).entries
         .firstOrNull { (lvl, list) -> level >= 2 * lvl && list.any { it.id == spell.id } }?.key
@@ -314,7 +321,7 @@ fun singleSlotOf(type: SubclassType): String? = when (type) {
 }
 
 /** Doménový / školní slot: classa má na každém spell levelu ≥ 1 jeden slot navíc (jen pro kouzla podtřídy). */
-fun ClassEntry.hasSubclassSlot(): Boolean = when (subclassType(classId)) {
+fun ClassEntry.hasSubclassSlot(): Boolean = if (archetypes.isNotEmpty() && archetypeEffect.noSubclassSpells && subclassKind != SubclassType.SCHOOL) false else when (subclassKind) {
     SubclassType.TWO_DOMAINS, SubclassType.ONE_DOMAIN -> subclass[SubclassSlot.DOMAIN1] != null || subclass[SubclassSlot.DOMAIN2] != null
     SubclassType.SCHOOL -> subclass[SubclassSlot.SCHOOL]?.let { it != UNIVERSALIST } == true
     else -> false

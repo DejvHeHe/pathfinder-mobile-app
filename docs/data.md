@@ -10,6 +10,7 @@ Všechna data jsou **přibalená v appce** (`composeApp/src/commonMain/composeRe
 | `SpellList.json` (6 MB) | 3 040 záznamů → 3 030 spellů s class listem | [SpellTable-pf1e](https://github.com/iociveteres/SpellTable-pf1e) `data/SpellList.json` (MIT, data z Archives of Nethys) | ano |
 | `ItemsBase.json` (0,7 MB) | 1 541 položek: výstroj, oblečení, nástroje, jídlo, alchymie, byliny, zvířata, zbroje a štíty | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/items`, `packs/armors-and-shields` (OGL) | ne (jen přibalené) |
 | `ClassAbilities.json` (0,3 MB) | 420 hexů a zjevení s textem; schopnosti podtříd v `ClassAbilityTable.kt` | [Foundry VTT PF1](https://gitlab.com/foundryvtt_pathfinder1e/foundryvtt-pathfinder1) `packs/class-abilities` (OGL) – `tools/build_class_abilities.py` | ne (jen přibalené) |
+| `Archetypes.json` (4,0 MB) | 1 252 archetypů 40 class (nahrazené schopnosti, shrnutí, zdroj, PFS, text) | [Archives of Nethys](https://aonprd.com/Archetypes.aspx) – `tools/build_archetypes.py` | ne (jen přibalené) |
 | `RacialTraits.json` (0,4 MB) | 632 alternativních rasových traitů; výchozí traity v `RacialTraitTable.kt` | [Archives of Nethys](https://aonprd.com/Races.aspx) – `tools/build_racial_traits.py` | ne (jen přibalené) |
 | `Weapons.csv` | 243 zbraní | [Vireche/randomitemgenerator](https://github.com/Vireche/randomitemgenerator) `data/weapons.csv` (d20pfsrd/AoN) | ano |
 | `Ammunition.csv` | 36 druhů munice | tamtéž `data/ammunition.csv` | ano |
@@ -155,6 +156,40 @@ neobvyklé (14), ostatní (zbytek – Bestiary, Alien…), seznamy jsou ve skrip
   případně s „subtype“ nebo upřesněním v závorce. Rasa splňuje, když se jménem shoduje nebo má daný podtyp
   (`RaceInfo.countsAs`): half-elf platí jako elf i člověk, half-orc jako orc, drow jako elf, svirfneblin jako gnóm.
   „Human (Varisian)“ s rasou human = ověř ručně, s jinou rasou = nesplněno. Rasové traity viz níže.
+
+### Archetypy (`Archetypes.json`)
+`python tools/build_archetypes.py [--cache DIR]` projde classy z `ClassTable.kt` (bez NPC a unchained) a stáhne
+z Archives of Nethys tabulku archetypů classy (`Archetypes.aspx?Class=X`: název, PFS, „Replaces“, shrnutí) a stránku
+každého archetypu (`ArchetypeDisplay.aspx?FixedName=X Y`: zdroj, plný text) – ~1300 požadavků po 1 s, cache
+`build/archetype-cache`. Výsledek: 1 252 archetypů, id `classa:slug-jména`, `replaces` = schopnosti oddělené „;“
+tak, jak je uvádí AoN („Smite Evil“, „3rd-level Mercy“). Načítá se líně (`ensureArchetypes`).
+
+Položky „Replaces“ se dělí podle „;“ i „,“ – seznam úrovní zůstane u své schopnosti („2nd, 4th, 6th-level discovery“).
+
+V appce: `ClassEntry.archetypes` (`ArchetypePick` = id, jméno, kopie `replaces`), výběr pod classou postavy.
+- **Mechanika** (`ArchetypeEffects.kt`, `ClassEntry.archetypeEffect`):
+  - automaticky z `replaces`: jméno předvyplněné schopnosti (`FeaturePresets`, aliasy Bomb → Bombs, Judgement → Judgment)
+    → schopnost zmizí; podtřída classy (`SUBCLASS_FEATURES`: cleric „Domains“, druid „Nature Bond“, wizard „Arcane School“…)
+    → `ClassEntry.subclassKind` = null; „Bloodline Powers“ / „Domain Powers“… → bez schopností podtřídy, „Bonus Spells“ /
+    „Patron Spells“… → bez bonusových kouzel; „Cantrips“ / „Orisons“ / „Knacks“ → bez triků; hexy / revelations / bonusové
+    featy (i combat style a teamwork featy) → o uvedené úrovně ≤ úroveň classy méně (bez úrovní celá schopnost),
+  - ručně `ARCHETYPE_MODS` (`ArchetypeMods.kt`, podle textů AoN): `noSpells` (`ClassEntry.caster` = null), `perDayDelta` /
+    `knownDelta` (`ClassEntry.levelSlots`, i triky – kromě `deltaIncludesCantrips = false`), `oneDomain`, `subclass`
+    (Sacred Servant / Temple Champion: doména paladina), `removes`, `presets` (nové schopnosti s počtem použití),
+    `bonusFeatLevels`, `casting` (`CastingChange`: `lists` / `addLists`, `ability`, `kind`, `table` + `progression` –
+    tabulka kouzel jiné classy přes `CasterClass.tableId`, `tradition`, `abilityBonus`, `spells` jménem),
+    `subclassLevelOffset` (`ClassEntry.subclassLevel` – Sacred Servant −3), `secondBloodline` (`SubclassSlot.BLOODLINE2`).
+    Test `BundledDataTest` hlídá, že id, spell listy, tabulky a kouzla existují.
+  - **Kouzla navíc** z textu (`Archetype.spells`, kopie v `ArchetypePick.spells`): generátor čte „1st—a, b; 2nd—c“,
+    „a (1st), b (2nd)“ a „adds x … as a 3rd-level spell“ v odstavcích o spell listu, jména ověří proti `SpellList.json`
+    (bez zkratek knih „APG“, „UM“…, „lesser x“ → „x, lesser“); „2nd—x (1st)“ = úroveň classy + spell level v závorce.
+    `ClassEntry.caster` je dá do `CasterClass.extraSpells` (spellLevelOf, výběr kouzel).
+  - „Spells“ / „Spellcasting“ v `replaces` automaticky nic nedělá – většinou jde o změněné, ne zrušené sesílání.
+  - Druh magie (`CasterClass.tradition`, i změněný archetypem) určuje prerekvizity „ability to cast arcane / divine spells“.
+- Konflikt = dva vybrané archetypy mají stejnou položku v `replaces` (bez ohledu na velikost písmen) – „Mercy“
+  a „3rd-level Mercy“ appka za konflikt nepovažuje. Přísný režim konfliktní archetyp nepřidá.
+- Unchained classy (`rogue_unchained`…) dostanou archetypy základní classy (`Archetypes.baseClass`), NPC classy a rasové
+  HD tvorů žádné (`Archetypes.supports`).
 
 ### Rasové traity (`RacialTraitTable.kt`, `RacialTraits.json`)
 `python tools/build_racial_traits.py [--cache DIR]` stáhne seznam ras z Archives of Nethys

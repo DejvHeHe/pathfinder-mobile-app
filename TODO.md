@@ -32,9 +32,18 @@ Seznam plánovaných vylepšení. Hotové položky odškrtnout (`- [x]`), nové 
   - [x] druid jen domény Nature Bond (Air, Animal, Earth, Fire, Plant, Water, Weather + jejich subdomény kromě Metal)
   - [x] subdomény jen ke zvolené doméně (`SUBDOMAIN_DOMAINS` podle AoN; boreal a sleep v tabulce chybí)
   - [x] výběr podtřídy jako krok rovnou ve výběru classy
-- [ ] **Archetypy** (Grey Paladin, Sacred Servant…, 1 000+): seznam z AoN (název, classa, zdroj, nahrazené class features)
-  stáhnout jako featy, u classy postavy vybrat jeden či víc a ukázat jejich text – jen evidence, mechanicky nepočítat
-  - archetypy měnící spell list nebo sesílání (Sacred Servant, Thassilonian Specialist, Vigilante – Warlock / Zealot…) jen informativně
+- [x] **Archetypy** (Grey Paladin, Sacred Servant…): 1 252 archetypů z AoN (`tools/build_archetypes.py` → `Archetypes.json` –
+  název, classa, zdroj, nahrazené class features, shrnutí, text), u classy postavy výběr jednoho či víc s textem, konflikty, export
+  - [x] mechanika: nahrazené schopnosti s počtem použití, podtřída (i jen kouzla / schopnosti), triky a počty hexů / revelations /
+    bonusových featů podle „Replaces“ (`ArchetypeEffects.kt`)
+  - [x] ~75 známých archetypů ručně (`ArchetypeMods.kt`): bez sesílání, o kouzlo méně za den / známé, jedna doména,
+    doména paladina (Sacred Servant, Temple Champion), nové schopnosti s počtem použití, bonusové featy (Insinuator)
+  - [x] jiné sesílání (`CastingChange`): spell list (Unlettered Arcanist, Hunting Paladin, Fey Trickster…), způsob a sloty
+    jiné classy (Eldritch Scion, Mindblade, Living Grimoire, Ley Line Guardian, Dandy, Pearl Seeker), atribut, druh magie
+  - [x] kouzla navíc na spell listu z textu archetypů (~30 archetypů, ~260 kouzel, generátor)
+  - [x] efektivní úroveň podtřídy (Sacred Servant paladin −3), Crossblooded – druhá bloodline
+  - [ ] (nápad) kouzla „podle vlastní volby“ (Raven Master, Onmyoji, Mindblade – psychic access) a bonusová kouzla
+    bloodline Eldritch Scion; inquisitor Ravener Hunter (dobrá kouzla klerika), Silver Champion (kouzla domén Apsu)
 
 ### 3. Multiclass
 - [x] Postava = seznam class a úrovní (součet max 20), spelly zvlášť pro každou sesílající classu

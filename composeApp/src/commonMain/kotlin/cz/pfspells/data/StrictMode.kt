@@ -18,6 +18,8 @@ sealed interface StrictBlock {
     data class ClassAbilityLevel(val minLevel: Int) : StrictBlock
     /** výchozí rasový trait už nahrazuje jiný vybraný alternativní trait */
     data class RacialTraitReplaced(val trait: String) : StrictBlock
+    /** class feature už nahrazuje jiný vybraný archetyp */
+    data class ArchetypeConflict(val feature: String) : StrictBlock
 }
 
 /**
@@ -28,17 +30,18 @@ object StrictRules {
     /** Ještě jedna kopie (připravující classa) / nové známé kouzlo (spontánní, arcanist) na levelu kouzla. */
     fun spellBlock(c: Character, classId: String, spell: Spell, db: SpellDatabase): StrictBlock? {
         val e = c.classEntry(classId) ?: return null
-        val cls = CasterClasses.get(e.classId) ?: return null
+        val cls = e.caster ?: return null
         val lvl = e.spellLevelFor(cls, spell, db.subclasses) ?: return null
         // známé kouzlo se podruhé nepřidává – nic se nemění
         if (cls.distinctSpells && spell.id in e.spells) return null
         // kouzlo patrona (mimo spell list) má úroveň ověřenou už v spellLevelFor
         if (cls.spellLevelOf(spell) != null && !cls.canCast(spell, e.level)) return StrictBlock.SpellNotAvailable
-        val slots = cls.levelSlots(e.level, c.scores[cls.ability], lvl)
+        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl)
+        if (lvl == 0 && slots.limit == 0) return StrictBlock.SpellNotAvailable
         if (!slots.abilityOk) return StrictBlock.AbilityTooLow(lvl)
         val base = slots.limit ?: return null
         // specialista (wizard) má na každém levelu od 1. slot navíc pro kouzlo své školy
-        val schoolSlot = if (lvl >= 1 && e.hasSubclassSlot() && subclassType(e.classId) == SubclassType.SCHOOL) 1 else 0
+        val schoolSlot = if (lvl >= 1 && e.hasSubclassSlot() && e.subclassKind == SubclassType.SCHOOL) 1 else 0
         val limit = base + schoolSlot
         val chosen = e.spells.entries.sumOf { (id, n) ->
             val sp = db.get(id)

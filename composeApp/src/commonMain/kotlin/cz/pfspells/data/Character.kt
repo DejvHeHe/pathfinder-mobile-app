@@ -56,6 +56,8 @@ data class ClassEntry(
     val bonusSpells: Map<String, Int> = emptyMap(),
     /** vybrané hexy (witch, shaman) / revelations (oracle) */
     val abilities: List<AbilityPick> = emptyList(),
+    /** vybrané archetypy (jen evidence – nic se nepočítá) */
+    val archetypes: List<ArchetypePick> = emptyList(),
 )
 
 enum class ResourceUnit { PER_DAY, ROUNDS, POINTS }

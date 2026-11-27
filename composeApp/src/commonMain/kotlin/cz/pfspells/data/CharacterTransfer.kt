@@ -63,6 +63,7 @@ data class ClassDto(
     val bonusSpells: List<DeckSpellDto> = emptyList(),
     /** hexy / revelations */
     val abilities: List<AbilityPick> = emptyList(),
+    val archetypes: List<ArchetypePick> = emptyList(),
 )
 
 @Serializable
@@ -121,6 +122,7 @@ object CharacterTransfer {
                         spells = spellDtos(e.spells, db),
                         bonusSpells = spellDtos(e.bonusSpells, db),
                         abilities = e.abilities,
+                        archetypes = e.archetypes,
                     )
                 },
                 abilities = c.abilities,
@@ -193,6 +195,7 @@ object CharacterTransfer {
                 ClassEntry(
                     cd.classId, cd.level.coerceIn(1, 20), cd.subclass, match(cd.spells), match(cd.bonusSpells),
                     abilities = cd.abilities.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
+                    archetypes = cd.archetypes.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
                 )
             }.distinctBy { it.classId }
             if (classes.isEmpty()) throw DeckImportException(ImportError.Invalid(inventory = false, "no classes"))

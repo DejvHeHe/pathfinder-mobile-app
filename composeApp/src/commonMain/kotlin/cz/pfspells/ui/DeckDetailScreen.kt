@@ -39,6 +39,9 @@ import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.Screen
 import cz.pfspells.Strings
+import cz.pfspells.data.caster
+import cz.pfspells.data.archetypeEffect
+import cz.pfspells.data.subclassKind
 import cz.pfspells.data.resources
 import cz.pfspells.data.isOppositionSpell
 import cz.pfspells.data.hasSubclassSlot
@@ -101,7 +104,7 @@ fun DeckDetailScreen(
     if (export) ExportDialog(state, listOf(c), db) { export = false }
 
     val stats = c.stats()
-    val casters = c.classes.filter { CasterClasses.get(it.classId) != null }
+    val casters = c.classes.filter { it.caster != null }
     val openPicker: (String) -> Unit = { classId ->
         if (wide) state.openRoot(Screen.Picker(charId, classId)) else state.push(Screen.Picker(charId, classId))
     }
@@ -189,7 +192,7 @@ fun DeckDetailScreen(
             }
             casters.forEach { e ->
                 classSpells(state, db, c, e, wide, selectedSpellId, showAddButton = casters.size > 1, openPicker)
-                CasterClasses.get(e.classId)?.let { cls ->
+                e.caster?.let { cls ->
                     subclassBonusSpells(state, db, c, e, cls, wide, selectedSpellId) { subclassFor = e.classId }
                 }
             }
@@ -342,6 +345,8 @@ private fun ClassesPanel(
             }
         }
         MonoLabel(s.classesHeader)
+        var archetypesFor by remember { mutableStateOf<String?>(null) }
+        archetypesFor?.let { id -> ArchetypesDialog(state, c, id) { archetypesFor = null } }
         c.classes.forEach { e ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -373,6 +378,8 @@ private fun ClassesPanel(
                 val bad = e.deityConflicts(d)
                 if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad, Modifier.clip(Nb.shape).clickable { onSubclass(e.classId) })
             }
+            // archetypy (Archives of Nethys) – jen evidence
+            ArchetypesLink(e) { archetypesFor = e.classId }
         }
         Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (c.level < 20) NbDashedButton(s.addClass, onAdd, icon = NbIcons.Plus)
@@ -455,14 +462,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
     showAddButton: Boolean,
     openPicker: (String) -> Unit,
 ) {
-    val cls = CasterClasses.get(e.classId) ?: return
+    val cls = e.caster ?: return
     val game = state.gameMode
     val entries = e.spells.mapNotNull { (id, count) -> db.get(id)?.let { it to count } }
     val byLevel = entries.groupBy { (spell, _) -> e.spellLevelFor(cls, spell, db.subclasses) ?: -1 }
     val maxLevel = cls.maxSpellLevel(e.level)
     val score = c.scores[cls.ability]
     // všechny dostupné levely (i prázdné – kvůli limitům), pak případné kouzla nad úrovní / mimo list
-    val levels = ((if (cls.hasCantrips) 0 else 1)..maxLevel).toList() + byLevel.keys.filter { it > maxLevel || it < 0 }.sorted()
+    val levels = ((if (cls.hasCantrips && !e.archetypeEffect.noCantrips) 0 else 1)..maxLevel).toList() + byLevel.keys.filter { it > maxLevel || it < 0 }.sorted()
     val grouped: List<Pair<Int, List<Pair<Spell, Int>>>> = levels.map { lvl ->
         lvl to (byLevel[lvl] ?: emptyList()).sortedBy { it.first.searchName }
     }
@@ -507,12 +514,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
             if (level < 0 || level > maxLevel) {
                 SectionHeader(if (level < 0) s.notOnClassList else s.spellLevelLabel(level), size = 16.sp)
             } else {
-                val slots = cls.levelSlots(e.level, score, level)
+                val slots = e.levelSlots(cls, score, level)
                 if (game) {
                     GameLevelHeader(s, cls, slots, c, e.classId, list) { key, n -> state.setCast(c.id, key, n) }
                 } else {
                     val chosen = if (cls.distinctSpells) list.size else list.sumOf { it.second }
-                    LevelHeader(s, cls, slots, chosen, schoolSlot = if (level >= 1 && e.hasSubclassSlot() && subclassType(e.classId) == SubclassType.SCHOOL) 1 else 0)
+                    LevelHeader(s, cls, slots, chosen, schoolSlot = if (level >= 1 && e.hasSubclassSlot() && e.subclassKind == SubclassType.SCHOOL) 1 else 0)
                 }
             }
         }
@@ -527,7 +534,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 })
                 else -> ({
                     val key = Character.slotKey(e.classId, level)
-                    val slots = cls.levelSlots(e.level, score, level)
+                    val slots = e.levelSlots(cls, score, level)
                     val total = (slots.perDay ?: 0) + slots.bonus
                     val used = c.cast(key)
                     NbDashedButton(str.castSpell, { state.setCast(c.id, key, used + 1) }, enabled = used < total && slots.abilityOk)

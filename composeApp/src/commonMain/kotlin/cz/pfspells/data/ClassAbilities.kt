@@ -40,7 +40,7 @@ object SubclassPowers {
     private val BLOODLINE_ALIASES = mapOf("air" to "elemental", "earth" to "elemental", "fire" to "elemental", "water" to "elemental")
 
     /** Bonusové featy bloodline (čaroděj 7. / 13. / 19., bloodrager 6. a každá 3.) – AoN; prázdné = neznámé. */
-    fun bonusFeats(e: ClassEntry): List<String> = keysOf(e).firstNotNullOfOrNull { BLOODLINE_BONUS_FEATS[it.first] }.orEmpty()
+    fun bonusFeats(e: ClassEntry): List<String> = keysOf(e).flatMap { BLOODLINE_BONUS_FEATS[it.first].orEmpty() }.distinct()
 
     /** Schopnosti podtřídy; null = podtřídu nezná Foundry ani AoN. */
     fun of(key: String): List<SubclassPower>? = byKey[key] ?: key.takeIf { it.startsWith("wspirit:") }?.let(::wandering)
@@ -65,6 +65,8 @@ object SubclassPowers {
      * s popiskem pro název schopnosti („Fire“, „Ash“, „Draconic“).
      */
     fun keysOf(e: ClassEntry): List<Pair<String, String>> {
+        // archetyp podtřídu zrušil („Domains“, „Bloodline“…)
+        val kind = e.subclassKind ?: return emptyList()
         val sc = e.subclass
         fun domain(d: String?, sub: String?): Pair<String, String>? {
             val dom = d?.lowercase()?.trim()?.ifEmpty { null } ?: return null
@@ -77,7 +79,7 @@ object SubclassPowers {
         return when (e.classId) {
             "cleric" -> listOfNotNull(
                 domain(sc[SubclassSlot.DOMAIN1], sc[SubclassSlot.SUBDOMAIN1]),
-                domain(sc[SubclassSlot.DOMAIN2], sc[SubclassSlot.SUBDOMAIN2]),
+                domain(sc[SubclassSlot.DOMAIN2], sc[SubclassSlot.SUBDOMAIN2]).takeIf { kind == SubclassType.TWO_DOMAINS },
             ).distinctBy { it.first }
             "druid" -> listOfNotNull(domain(sc[SubclassSlot.DOMAIN1], sc[SubclassSlot.SUBDOMAIN1]))
             // inquisitor: doména, nebo místo ní inquisition
@@ -94,11 +96,16 @@ object SubclassPowers {
             )
             "bloodrager" -> listOfNotNull(sc[SubclassSlot.BLOODLINE]?.lowercase()?.let { "brbloodline:$it" to title(it) })
             "psychic" -> listOfNotNull(sc[SubclassSlot.DISCIPLINE]?.lowercase()?.let { "discipline:$it" to title(it) })
-            "sorcerer" -> listOfNotNull(sc[SubclassSlot.BLOODLINE]?.lowercase()?.let { "bloodline:${BLOODLINE_ALIASES[it] ?: it}" to title(it) })
+            "sorcerer" -> listOfNotNull(
+                sc[SubclassSlot.BLOODLINE],
+                // Crossblooded: druhá bloodline
+                sc[SubclassSlot.BLOODLINE2]?.takeIf { e.archetypes.isNotEmpty() && e.archetypeEffect.secondBloodline },
+            ).map { it.lowercase() }.distinct().map { "bloodline:${BLOODLINE_ALIASES[it] ?: it}" to title(it) }
             "wizard" -> listOfNotNull(sc[SubclassSlot.SCHOOL]?.lowercase()?.let { v ->
                 "school:$v" to title(v.removePrefix("element:"))
             })
-            else -> emptyList()
+            // doména z archetypu (Sacred Servant paladina)
+            else -> if (kind.hasDomains) listOfNotNull(domain(sc[SubclassSlot.DOMAIN1], sc[SubclassSlot.SUBDOMAIN1])) else emptyList()
         }
     }
 
@@ -331,7 +338,8 @@ object AbilityRules {
         else listOf(6, 14).count { it <= e.level }
 
     /** Hexy / revelations classy postavy celkem: podle úrovně + Extra Hex / Extra Revelation + wandering hex. */
-    fun slots(c: Character, e: ClassEntry): Int = slots(e.classId, e.level) + extraFeats(c, e.classId) + wanderingHexes(e)
+    fun slots(c: Character, e: ClassEntry): Int =
+        slots(e.classId, e.level) - e.archetypeEffect.lostAbilitySlots + extraFeats(c, e.classId) + wanderingHexes(e)
 
     /** Revelation patří k mystériu orákula (nebo k žádnému konkrétnímu); bez zvoleného mystéria vše. */
     fun matchesMystery(a: ClassAbility, mystery: String?): Boolean =

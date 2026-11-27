@@ -1,5 +1,6 @@
 package cz.pfspells
 
+import cz.pfspells.data.caster
 import cz.pfspells.data.ClassAbility
 import cz.pfspells.data.AppUpdates
 import cz.pfspells.data.UpdateInfo
@@ -7,6 +8,10 @@ import cz.pfspells.data.PreparedUpdate
 import cz.pfspells.data.appUpdater
 import cz.pfspells.data.currentTimeMillis
 import cz.pfspells.data.isSupported
+import cz.pfspells.data.Archetype
+import cz.pfspells.data.ArchetypeDatabase
+import cz.pfspells.data.ArchetypeRepository
+import cz.pfspells.data.Archetypes
 import cz.pfspells.data.RacialTrait
 import cz.pfspells.data.RacialTraitDatabase
 import cz.pfspells.data.RacialTraitRepository
@@ -133,6 +138,14 @@ sealed interface TraitDbState {
     data object Loading : TraitDbState
     data class Ready(val db: RacialTraitDatabase) : TraitDbState
     data class Failed(val message: String) : TraitDbState
+}
+
+/** Stav databáze archetypů (`Archetypes.json`, líně). */
+sealed interface ArchetypeDbState {
+    data object NotLoaded : ArchetypeDbState
+    data object Loading : ArchetypeDbState
+    data class Ready(val db: ArchetypeDatabase) : ArchetypeDbState
+    data class Failed(val message: String) : ArchetypeDbState
 }
 
 /** Stav databáze hexů a revelations (`ClassAbilities.json`, líně). */
@@ -1087,6 +1100,35 @@ class AppState(
         syncInventory(charId)
     }
 
+    // ---- archetypy class (databáze se načítá líně, jen evidence) ----
+    var archetypeDbState: ArchetypeDbState by mutableStateOf(ArchetypeDbState.NotLoaded)
+        private set
+    val archetypeDb: ArchetypeDatabase? get() = (archetypeDbState as? ArchetypeDbState.Ready)?.db
+
+    fun ensureArchetypes() {
+        if (archetypeDbState != ArchetypeDbState.NotLoaded && archetypeDbState !is ArchetypeDbState.Failed) return
+        archetypeDbState = ArchetypeDbState.Loading
+        scope.launch {
+            archetypeDbState = try {
+                ArchetypeDbState.Ready(ArchetypeRepository.load())
+            } catch (e: Exception) {
+                ArchetypeDbState.Failed(e.message ?: e.toString())
+            }
+        }
+    }
+
+    /** Přidá archetyp ke classe postavy (každý jednou); přísný režim nedovolí nahradit už nahrazenou schopnost. */
+    fun addArchetype(charId: String, classId: String, a: Archetype) {
+        val e = character(charId)?.classEntry(classId) ?: return
+        if (e.archetypes.any { it.id == a.id }) return
+        if (strictBlocked(Archetypes.blockedBy(e, a)?.let { StrictBlock.ArchetypeConflict(it) })) return
+        updateClass(charId, classId) { it.copy(archetypes = it.archetypes + a.toPick()) }
+    }
+
+    fun removeArchetype(charId: String, classId: String, archetypeId: String) {
+        updateClass(charId, classId) { it.copy(archetypes = it.archetypes.filterNot { p -> p.id == archetypeId }) }
+    }
+
     /** Rasa s „+2 k jednomu atributu“ (human, half-elf, half-orc): který atribut. */
     fun setRaceBonus(charId: String, ability: Ability?) {
         updateCharacter(charId) { it.copy(raceBonus = ability) }
@@ -1156,7 +1198,7 @@ class AppState(
     fun addSpell(charId: String, classId: String?, spellId: String) {
         val book = spellbook(charId, classId) ?: return
         val current = book.spells[spellId] ?: 0
-        val single = CasterClasses.get(book.classId)?.distinctSpells == true
+        val single = book.entry.caster?.distinctSpells == true
         setSpellCount(charId, classId, spellId, if (single) 1 else current + 1)
     }
 

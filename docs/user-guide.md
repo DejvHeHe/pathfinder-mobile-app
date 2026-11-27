@@ -42,6 +42,30 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
    Bonus Feat / Skilled přijde o bonusový feat / skill body navíc. Traity, které mění atributy (Dual Talent, Keen Kitsune,
    Orc Atavism…), se přičtou k atributům; kde se atribut volí, je u traitu výběr a dokud chybí, panel rasy na to upozorní. Dva traity nahrazující stejný trait appka ohlásí
    (přísný režim nedovolí). Změna rasy výběr zruší; export ho přenáší.
+   **Archetypy** (pod každou classou, ~1 300 z Archives of Nethys): dialog ukáže vybrané archetypy (× odebere,
+   klepnutím text) a seznam archetypů classy – hledání v názvu, nahrazených schopnostech i textu, „Nahrazuje: …“, PFS,
+   krátké shrnutí, klepnutím plný text a zdroj. Pod classou je souhrn toho, co archetypy mění („Ruší: Smite Evil ·
+   bez sesílání · −1 bonusový feat · Získává: Hunter's Tricks“):
+   - **nahrazené schopnosti** zmizí – schopnosti s počtem použití (Smite Evil, Rage, Channel Energy, Bombs, Ki Pool,
+     Wild Shape…), podtřída („Domains“, „Arcane School“, „Bloodline“…, i jen její kouzla nebo schopnosti), triky,
+     a **počty se sníží** podle úrovně („2nd, 6th-level hex“ → o hex méně od 2. a od 6. úrovně; bonusové featy, revelations),
+   - **kouzla navíc na spell listu** (~30 archetypů, ~260 kouzel z textu – Cultivator, Death Druid, Forest Preserver…)
+     – nabídnou se ve výběru kouzel classy na své úrovni,
+   - **známé archetypy** (~75, ručně podle textu) navíc: bez sesílání (Skirmisher, Warrior of the Holy Light…),
+     o kouzlo méně za den / známé na každém levelu (Kensai, Crossblooded…), jen jedna doména (Cloistered Cleric…),
+     doména paladina (Sacred Servant – schopnosti domény na úrovni paladin −3, Temple Champion), nové schopnosti s počtem
+     použití (Hunter's Tricks, Arcane Reservoir, Eldritch Pool…) a bonusové featy (Insinuator),
+   - **jiné sesílání**: jiný spell list (Unlettered Arcanist → witch, Hunting Paladin → ranger, Fey Trickster → druid
+     a ranger…), jiný způsob a sloty (Eldritch Scion a Mindblade spontánně se sloty barda, Living Grimoire připravuje
+     se sloty warpriesta, Ley Line Guardian jako sorcerer, Dandy z bardova listu se sloty media, Pearl Seeker jako
+     bloodrager), jiný atribut (Fractured Mind – Cha, Scarred Witch Doctor – Int +2) nebo druh magie (Filidh – divine);
+     pod classou „Sesílání: spontánní · CHA · sloty jako Bard“,
+   - **Crossblooded** vybírá v dialogu podtřídy **druhou bloodline** – nabídnou se kouzla, schopnosti i bonusové featy obou.
+
+   Archetypy, které dávají schopnosti bez jasného vzorce nebo kouzla „podle vlastní volby“ (Raven Master, Onmyoji…),
+   jsou jen text. Dva archetypy, které nahrazují
+   stejnou schopnost classy, appka ohlásí (přísný režim nedovolí). Unchained classy nabízejí archetypy základní classy,
+   NPC classy archetypy nemají. Export postavy archetypy přenáší.
 4. Pod classami je souhrn – úroveň postavy, **BAB** a záchrany (součet za všechny classy) – a **atributy** STR–CHA
    (klepnutím upravíte hodnotu, vedle je modifikátor).
 5. Každá sesílací classa má vlastní sekci kouzel s tlačítkem **Add spells**.

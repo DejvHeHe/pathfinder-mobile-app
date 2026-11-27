@@ -342,19 +342,16 @@ internal object PrereqRules {
 
     // ---------------- druh kouzel, konkrétní kouzla ----------------
 
-    private val ARCANE = setOf("wizard", "sorcerer", "witch", "magus", "bard", "summoner", "summoner_unchained", "arcanist", "bloodrager", "skald")
-    private val DIVINE = setOf("cleric", "druid", "oracle", "paladin", "antipaladin", "ranger", "inquisitor", "warpriest", "hunter", "shaman")
-    private val PSYCHIC = setOf("psychic", "mesmerist", "occultist", "spiritualist", "medium")
-
     /** Classy postavy, které sesílají kouzla daného druhu / jména classy (a mají na úrovni aspoň 1 kouzlo). */
     fun castersOf(c: Character, kind: String?): List<ClassEntry> = c.classes.filter { e ->
-        val cls = CasterClasses.get(e.classId) ?: return@filter false
+        val cls = e.caster ?: return@filter false
         val any = cls.maxSpellLevel(e.level) >= (if (cls.hasCantrips) 0 else 1) && (cls.maxSpellLevel(e.level) > 0 || cls.hasCantrips)
         any && when (kind) {
             null -> true
-            "arcane" -> e.classId in ARCANE
-            "divine" -> e.classId in DIVINE
-            "psychic" -> e.classId in PSYCHIC
+            // druh magie z classy (archetyp ho může změnit: Filidh → divine, Mindblade → psychic)
+            "arcane" -> cls.tradition == MagicTradition.ARCANE
+            "divine" -> cls.tradition == MagicTradition.DIVINE
+            "psychic" -> cls.tradition == MagicTradition.PSYCHIC
             else -> e.classId == kind || e.classId == kind.replace(' ', '_') || cls.name.lowercase() == kind
         }
     }
@@ -371,7 +368,7 @@ internal object PrereqRules {
         CAST_N_LEVEL.find(t)?.let { m ->
             val n = m.groupValues[1].toInt()
             val kind = m.groupValues[2].trim().ifEmpty { null }
-            return met(castersOf(c, kind).any { e -> CasterClasses.get(e.classId)!!.maxSpellLevel(e.level) >= n })
+            return met(castersOf(c, kind).any { e -> e.caster!!.maxSpellLevel(e.level) >= n })
         }
         // „ability to cast druid or ranger spells“ – druh = jméno classy
         Regex("""^(?:ability to cast|able to cast)\s+([a-z]+)\s+spells$""").find(t)?.let { m ->
@@ -389,7 +386,7 @@ internal object PrereqRules {
         val matching = spells.findByName(name)?.let { listOf(it) }
             ?: spells.spells.filter { it.searchName.startsWith("$name ") }.takeIf { it.isNotEmpty() }
             ?: return null
-        val can = c.classes.any { e -> CasterClasses.get(e.classId)?.let { cls -> matching.any { cls.canCast(it, e.level) } } == true }
+        val can = c.classes.any { e -> e.caster?.let { cls -> matching.any { cls.canCast(it, e.level) } } == true }
         // rasovou SLA nebo předmět jde potvrdit ručně
         return if (can) PrereqStatus.MET else PrereqStatus.UNMET
     }

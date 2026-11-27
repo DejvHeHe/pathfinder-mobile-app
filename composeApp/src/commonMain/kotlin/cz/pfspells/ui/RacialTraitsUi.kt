@@ -88,7 +88,7 @@ private fun AbilityVariantEditor(state: AppState, c: Character, p: cz.pfspells.d
 }
 
 @Composable
-private fun TraitWarning(text: String) {
+internal fun TraitWarning(text: String) {
     Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(NbIcons.Warn, null, tint = Nb.error, modifier = Modifier.padding(end = 6.dp).size(15.dp))
         Text(text, fontSize = 13.sp, color = Nb.error)

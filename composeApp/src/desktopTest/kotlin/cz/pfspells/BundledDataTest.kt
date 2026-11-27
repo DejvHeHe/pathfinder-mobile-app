@@ -5,6 +5,7 @@ import cz.pfspells.data.SpellParser
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** Ověří, že přibalená data jdou načíst a sedí na spell listy class. */
@@ -79,5 +80,41 @@ class BundledDataTest {
         val known = all.count { (r, n) -> cz.pfspells.data.RacialTraits.defaults(r).orEmpty().any { it.equals(n, ignoreCase = true) } }
         println("Replaced traits matching defaults: $known / ${all.size}")
         assertTrue(known > all.size * 0.85)
+    }
+
+    /** Archetypy z AoN: soubor jde načíst, classy existují v appce, texty bez HTML. */
+    @Test
+    fun bundledArchetypes() {
+        val db = cz.pfspells.data.ArchetypeRepository.parse(File("src/commonMain/composeResources/files/Archetypes.json").readText())
+        assertTrue(db.all.size > 1000)
+        assertEquals(db.all.size, db.all.map { it.id }.toSet().size)
+        assertTrue(db.all.all { cz.pfspells.data.Archetypes.supports(it.classId) })
+        assertTrue(db.all.all { "<" !in it.text && "<" !in it.summary })
+        val withText = db.all.count { it.text.isNotBlank() && it.source.isNotBlank() }
+        println("Archetypes with text and source: $withText / ${db.all.size}")
+        assertTrue(withText > db.all.size * 0.95)
+        val ss = db.forClass("paladin").first { it.name == "Sacred Servant" }
+        assertTrue("Smite Evil" in ss.replaces)
+        assertTrue(ss.source.startsWith("Advanced Player's Guide"))
+        assertTrue("celestial spirit" in ss.text)
+        // ručně zadané efekty patří ke skutečným archetypům
+        val missing = cz.pfspells.data.ARCHETYPE_MODS.keys.filter { db.get(it) == null }
+        assertEquals(emptyList(), missing)
+        // kouzla přidaná archetypy (z textu i ručně) a změněné spell listy existují v databázi kouzel
+        val spells = SpellParser.parse(File("src/commonMain/composeResources/files/SpellList.json").readText())
+        val ids = spells.map { it.id }.toSet()
+        assertEquals(emptyList(), db.all.flatMap { a -> a.spells.keys.filter { it !in ids }.map { "${a.id}: $it" } })
+        assertTrue(db.all.sumOf { it.spells.size } > 200)
+        assertEquals(mapOf("confusion-lesser" to 1, "detect-thoughts" to 2), db.get("witch:rhetorician")!!.spells.filterValues { it <= 2 })
+        val listKeys = spells.flatMap { it.levels.keys }.toSet()
+        for ((id, m) in cz.pfspells.data.ARCHETYPE_MODS) {
+            val ch = m.casting ?: continue
+            assertEquals(emptyList(), (ch.lists.orEmpty() + ch.addLists).filter { it !in listKeys }, id)
+            assertEquals(emptyList(), ch.spells.keys.map(SpellParser::slug).filter { it !in ids }, id)
+            ch.table?.let { assertNotNull(cz.pfspells.data.CasterClasses.get(it), id) }
+        }
+        // unchained classa dostane archetypy základní classy
+        assertEquals(db.forClass("rogue"), db.forClass("rogue_unchained"))
+        assertTrue(db.forClass("rogue").isNotEmpty())
     }
 }

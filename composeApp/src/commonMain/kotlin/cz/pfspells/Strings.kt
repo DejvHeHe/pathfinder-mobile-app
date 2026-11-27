@@ -154,6 +154,33 @@ interface Strings {
     val noAlternateTraits: String
     val racialTraitsHint: String
     val sourceRacialTraits: String
+    fun archetypesButton(n: Int): String
+    fun archetypesTitle(cls: String): String
+    val chosenArchetypesLabel: String
+    val archetypesHint: String
+    fun archetypeConflict(list: String): String
+    val noArchetypes: String
+    val sourceArchetypes: String
+    fun fxRemoves(list: String): String
+    fun fxGains(list: String): String
+    fun fxChanges(list: String): String
+    val fxNoSpells: String
+    val fxNoCantrips: String
+    val fxNoSubclass: String
+    val fxNoSubclassSpells: String
+    val fxNoSubclassPowers: String
+    fun fxLostAbilities(n: Int): String
+    fun fxLostFeats(n: Int): String
+    fun fxGainedFeats(n: Int): String
+    fun fxPerDay(delta: Int): String
+    fun fxKnown(delta: Int): String
+    val fxOneDomain: String
+    val secondBloodline: String
+    fun fxSpellList(list: String): String
+    fun fxAddedSpells(n: Int): String
+    fun fxAsClass(cls: String): String
+    fun fxSubclassLevel(delta: Int): String
+    val crossbloodedHint: String
     /** „+2 k:“ / „−2 k:“ – volba atributu u alternativního traitu */
     fun abilityChoiceLabel(amount: Int): String
     fun missingAbilityChoice(trait: String): String
@@ -785,6 +812,33 @@ object EnStrings : Strings {
     override val noAlternateTraits = "This race has no alternate racial traits."
     override val racialTraitsHint = "Replaced default traits stop counting for feat prerequisites, the human bonus feat and skill points."
     override val sourceRacialTraits = "Default and alternate racial traits"
+    override fun archetypesButton(n: Int) = if (n == 0) "Archetypes" else "Archetypes ($n)"
+    override fun archetypesTitle(cls: String) = "$cls – archetypes"
+    override val chosenArchetypesLabel = "Chosen archetypes"
+    override val archetypesHint = "Replaced class features disappear (limited-use abilities, subclass, hexes, bonus feats); known archetypes also change spellcasting and add abilities. Everything else is only a record – check the text."
+    override fun archetypeConflict(list: String) = "Two archetypes replace the same class feature: $list"
+    override val noArchetypes = "This class has no archetypes."
+    override val sourceArchetypes = "Class archetypes"
+    override fun fxRemoves(list: String) = "Removes: $list"
+    override fun fxGains(list: String) = "Gains: $list"
+    override fun fxChanges(list: String) = "Changes: $list"
+    override val fxNoSpells = "no spellcasting"
+    override val fxNoCantrips = "no cantrips"
+    override val fxNoSubclass = "no subclass"
+    override val fxNoSubclassSpells = "no subclass bonus spells"
+    override val fxNoSubclassPowers = "no subclass powers"
+    override fun fxLostAbilities(n: Int) = "−$n hexes / revelations"
+    override fun fxLostFeats(n: Int) = if (n == 1) "−1 bonus feat" else "−$n bonus feats"
+    override fun fxGainedFeats(n: Int) = if (n == 1) "+1 bonus feat" else "+$n bonus feats"
+    override fun fxPerDay(delta: Int) = "${if (delta < 0) "−${-delta}" else "+$delta"} spell per day of each level"
+    override fun fxKnown(delta: Int) = "${if (delta < 0) "−${-delta}" else "+$delta"} spell known of each level"
+    override val fxOneDomain = "one domain only"
+    override val secondBloodline = "Second bloodline"
+    override fun fxSpellList(list: String) = "Spellcasting: $list"
+    override fun fxAddedSpells(n: Int) = if (n == 1) "+1 spell on the list" else "+$n spells on the list"
+    override fun fxAsClass(cls: String) = "slots as $cls"
+    override fun fxSubclassLevel(delta: Int) = "subclass powers at class level ${if (delta < 0) "−${-delta}" else "+$delta"}"
+    override val crossbloodedHint = "Crossblooded: bonus spells, powers and bonus feats of both bloodlines are offered – at each level you take one of them."
     override fun abilityChoiceLabel(amount: Int) = (if (amount < 0) "−${-amount}" else "+$amount") + " to"
     override fun missingAbilityChoice(trait: String) = "Choose an ability score for $trait"
     override fun abilityGroupName(g: AbilityGroup) = when (g) {
@@ -1227,6 +1281,7 @@ object EnStrings : Strings {
         is StrictBlock.ClassAbilitySlotsFull -> "all ${b.total} choices at this level are taken"
         is StrictBlock.ClassAbilityLevel -> "requires class level ${b.minLevel}"
         is StrictBlock.RacialTraitReplaced -> "\"${b.trait}\" is already replaced by another alternate trait"
+        is StrictBlock.ArchetypeConflict -> "\"${b.feature}\" is already replaced by another archetype"
     }
     override val companionsHeader = "Companions"
     override val companionsHint = "Animal companion, mount, familiar, eidolon or a pet – each with its own sheet, feats, skills and inventory."
@@ -1655,6 +1710,33 @@ object CsStrings : Strings {
     override val noAlternateTraits = "Tahle rasa nemá alternativní rasové traity."
     override val racialTraitsHint = "Nahrazené výchozí traity se přestanou počítat do prerekvizit featů, bonusového featu člověka a skill bodů."
     override val sourceRacialTraits = "Výchozí a alternativní rasové traity"
+    override fun archetypesButton(n: Int) = if (n == 0) "Archetypy" else "Archetypy ($n)"
+    override fun archetypesTitle(cls: String) = "$cls – archetypy"
+    override val chosenArchetypesLabel = "Vybrané archetypy"
+    override val archetypesHint = "Nahrazené schopnosti classy zmizí (schopnosti s počtem použití, podtřída, hexy, bonusové featy); známé archetypy navíc mění sesílání a přidávají schopnosti. Zbytek je jen evidence – řiďte se textem."
+    override fun archetypeConflict(list: String) = "Dva archetypy nahrazují stejnou schopnost classy: $list"
+    override val noArchetypes = "Tahle classa nemá archetypy."
+    override val sourceArchetypes = "Archetypy class"
+    override fun fxRemoves(list: String) = "Ruší: $list"
+    override fun fxGains(list: String) = "Získává: $list"
+    override fun fxChanges(list: String) = "Mění: $list"
+    override val fxNoSpells = "bez sesílání"
+    override val fxNoCantrips = "bez triků"
+    override val fxNoSubclass = "bez podtřídy"
+    override val fxNoSubclassSpells = "bez bonusových kouzel podtřídy"
+    override val fxNoSubclassPowers = "bez schopností podtřídy"
+    override fun fxLostAbilities(n: Int) = "−$n hexů / zjevení"
+    override fun fxLostFeats(n: Int) = if (n == 1) "−1 bonusový feat" else if (n in 2..4) "−$n bonusové featy" else "−$n bonusových featů"
+    override fun fxGainedFeats(n: Int) = if (n == 1) "+1 bonusový feat" else if (n in 2..4) "+$n bonusové featy" else "+$n bonusových featů"
+    override fun fxPerDay(delta: Int) = "${if (delta < 0) "−${-delta}" else "+$delta"} kouzlo za den na každém levelu"
+    override fun fxKnown(delta: Int) = "${if (delta < 0) "−${-delta}" else "+$delta"} známé kouzlo na každém levelu"
+    override val fxOneDomain = "jen jedna doména"
+    override val secondBloodline = "Druhá bloodline"
+    override fun fxSpellList(list: String) = "Sesílání: $list"
+    override fun fxAddedSpells(n: Int) = if (n == 1) "+1 kouzlo na listu" else if (n in 2..4) "+$n kouzla na listu" else "+$n kouzel na listu"
+    override fun fxAsClass(cls: String) = "sloty jako $cls"
+    override fun fxSubclassLevel(delta: Int) = "schopnosti podtřídy na úrovni classy ${if (delta < 0) "−${-delta}" else "+$delta"}"
+    override val crossbloodedHint = "Crossblooded: nabízejí se bonusová kouzla, schopnosti i bonusové featy obou bloodline – na každé úrovni si vezmete jednu z nich."
     override fun abilityChoiceLabel(amount: Int) = (if (amount < 0) "−${-amount}" else "+$amount") + " k"
     override fun missingAbilityChoice(trait: String) = "Vyberte atribut u traitu $trait"
     override fun abilityGroupName(g: AbilityGroup) = when (g) {
@@ -2149,6 +2231,7 @@ object CsStrings : Strings {
         is StrictBlock.ClassAbilitySlotsFull -> "na této úrovni je vybráno všech ${b.total}"
         is StrictBlock.ClassAbilityLevel -> "vyžaduje ${b.minLevel}. úroveň classy"
         is StrictBlock.RacialTraitReplaced -> "„${b.trait}“ už nahrazuje jiný alternativní trait"
+        is StrictBlock.ArchetypeConflict -> "„${b.feature}“ už nahrazuje jiný archetyp"
     }
     override val companionsHeader = "Mazlíčci a společníci"
     override val companionsHint = "Zvířecí společník, jezdecké zvíře, familiár, eidolon nebo mazlíček – každý má vlastní list, featy, skills i inventář."

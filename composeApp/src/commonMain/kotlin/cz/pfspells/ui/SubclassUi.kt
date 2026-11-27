@@ -24,6 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.Strings
+import cz.pfspells.data.subclassKind
+import cz.pfspells.data.subclassLevel
+import cz.pfspells.data.archetypeEffect
 import cz.pfspells.data.CasterClass
 import cz.pfspells.data.Character
 import cz.pfspells.data.DeityInfo
@@ -67,7 +70,7 @@ fun schoolOptionName(s: Strings, v: String): String = when {
 
 /** Souhrn podtřídy pod classou: „Domény: Fire, Magic (Arcane)“, „Bloodline: vybrat…“; null = classa podtřídu nemá. */
 fun subclassSummary(s: Strings, e: ClassEntry): String? {
-    val type = subclassType(e.classId) ?: return null
+    val type = e.subclassKind ?: return null
     val sub = e.subclass
     fun dom(d: String, sd: String) = sub[d]?.let { cap(it) + (sub[sd]?.let { x -> " (${cap(x)})" } ?: "") }
     val text = when (type) {
@@ -75,7 +78,11 @@ fun subclassSummary(s: Strings, e: ClassEntry): String? {
         SubclassType.ONE_DOMAIN -> dom(SubclassSlot.DOMAIN1, SubclassSlot.SUBDOMAIN1) ?: ""
         SubclassType.INQUISITOR_DOMAIN -> sub[SubclassSlot.INQUISITION]?.let { s.inquisitionName(cap(it)) }
             ?: dom(SubclassSlot.DOMAIN1, SubclassSlot.SUBDOMAIN1) ?: ""
-        SubclassType.MYSTERY, SubclassType.BLOODLINE, SubclassType.PATRON,
+        SubclassType.BLOODLINE -> listOfNotNull(
+            sub[SubclassSlot.BLOODLINE],
+            sub[SubclassSlot.BLOODLINE2]?.takeIf { e.archetypes.isNotEmpty() && e.archetypeEffect.secondBloodline },
+        ).joinToString(" / ") { cap(it) }
+        SubclassType.MYSTERY, SubclassType.PATRON,
         SubclassType.BLOODRAGER_BLOODLINE, SubclassType.DISCIPLINE -> singleSlotOf(type)?.let { sub[it] }?.let(::cap) ?: ""
         SubclassType.SPIRIT -> listOfNotNull(
             sub[SubclassSlot.SPIRIT]?.let(::cap),
@@ -94,7 +101,7 @@ fun subclassSummary(s: Strings, e: ClassEntry): String? {
 @Composable
 fun SubclassDialog(state: AppState, db: SpellDatabase, c: Character, e: ClassEntry, onDismiss: () -> Unit) {
     val s = str
-    val type = subclassType(e.classId) ?: return
+    val type = e.subclassKind ?: return
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Nb.panel,
@@ -105,7 +112,10 @@ fun SubclassDialog(state: AppState, db: SpellDatabase, c: Character, e: ClassEnt
                     val bad = e.deityConflicts(d)
                     if (bad.isNotEmpty()) DeityConflictWarning(s, d, bad)
                 }
-                SubclassFields(e.classId, type, e.subclass, db.subclasses, deity = c.deityInfo) { key, v -> state.setSubclass(c.id, e.classId, key, v) }
+                SubclassFields(
+                    e.classId, type, e.subclass, db.subclasses, deity = c.deityInfo,
+                    secondBloodline = e.archetypes.isNotEmpty() && e.archetypeEffect.secondBloodline,
+                ) { key, v -> state.setSubclass(c.id, e.classId, key, v) }
                 SubclassPowersList(s, e)
             }
         },
@@ -126,7 +136,7 @@ private fun SubclassPowersList(s: Strings, e: ClassEntry) {
     Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
         MonoLabel(s.subclassPowersHeader)
         powers.forEach { (label, p) ->
-            val has = e.level >= p.level
+            val has = e.subclassLevel >= p.level
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "${p.name} ($label)", Modifier.weight(1f),
@@ -150,6 +160,8 @@ fun SubclassFields(
     sub: Map<String, String>,
     idx: SubclassIndex,
     deity: DeityInfo? = null,
+    /** Crossblooded: výběr druhé bloodline */
+    secondBloodline: Boolean = false,
     set: (key: String, value: String?) -> Unit,
 ) {
     val s = str
@@ -184,16 +196,23 @@ fun SubclassFields(
                 d2?.let { d -> subsOf(d).filter { it != sub[SubclassSlot.SUBDOMAIN1] } }
                     ?.takeIf { it.isNotEmpty() }?.let { pick(s.subdomain, SubclassSlot.SUBDOMAIN2, it) }
             }
-            if (type == SubclassType.INQUISITOR_DOMAIN) {
+            // doména jen se schopnostmi má i paladin / occultist z archetypu (Temple Champion, Reliquarian) – inquisition jen inquisitor
+            if (type == SubclassType.INQUISITOR_DOMAIN && classId == "inquisitor") {
                 // inquisition místo domény (Ultimate Magic) – jen ty, které božstvo dovoluje
                 pick(s.inquisitionLabel, SubclassSlot.INQUISITION, INQUISITIONS.filter { inquisitionAllowed(it, deity) })
             }
             if (deityDomains != null) Text(s.deityDomainsHint(deity.name), fontSize = 12.5.sp, color = Nb.inkMuted)
-            if (type == SubclassType.INQUISITOR_DOMAIN) Text(s.inquisitorDomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
+            if (type == SubclassType.INQUISITOR_DOMAIN && classId == "inquisitor") Text(s.inquisitorDomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
             Text(if (classId == "druid") s.druidDomainHint else s.subdomainHint, fontSize = 12.5.sp, color = Nb.inkMuted)
         }
         SubclassType.MYSTERY -> pick(s.subclassLabel(type), SubclassSlot.MYSTERY, idx.names(SubclassKind.MYSTERY))
-        SubclassType.BLOODLINE -> pick(s.subclassLabel(type), SubclassSlot.BLOODLINE, idx.names(SubclassKind.BLOODLINE))
+        SubclassType.BLOODLINE -> {
+            pick(s.subclassLabel(type), SubclassSlot.BLOODLINE, idx.names(SubclassKind.BLOODLINE))
+            if (secondBloodline) {
+                pick(s.secondBloodline, SubclassSlot.BLOODLINE2, idx.names(SubclassKind.BLOODLINE))
+                Text(s.crossbloodedHint, fontSize = 12.5.sp, color = Nb.inkMuted)
+            }
+        }
         SubclassType.PATRON, SubclassType.SPIRIT, SubclassType.BLOODRAGER_BLOODLINE, SubclassType.DISCIPLINE -> {
             pick(s.subclassLabel(type), singleSlotOf(type)!!, idx.tableNames(type))
             if (type == SubclassType.SPIRIT) {
@@ -252,7 +271,7 @@ fun LazyListScope.subclassBonusSpells(
     selectedSpellId: String?,
     onEditSubclass: () -> Unit,
 ) {
-    val type = subclassType(e.classId) ?: return
+    val type = e.subclassKind ?: return
     if (!type.hasBonusSpells) return
     val game = state.gameMode
     val bonus = e.bonusSpellsByLevel(db.subclasses)
@@ -335,7 +354,7 @@ fun LazyListScope.subclassBonusSpells(
                     game -> {
                         // mystérium / bloodline / disciplína: sesílá se ze slotu spell levelu
                         val key = Character.slotKey(e.classId, lvl)
-                        val slots = cls.levelSlots(e.level, c.scores[cls.ability], lvl)
+                        val slots = e.levelSlots(cls, c.scores[cls.ability], lvl)
                         val total = (slots.perDay ?: 0) + slots.bonus
                         val used = c.cast(key)
                         NbDashedButton(str.castSpell, { state.setCast(c.id, key, used + 1) }, enabled = used < total && slots.abilityOk)

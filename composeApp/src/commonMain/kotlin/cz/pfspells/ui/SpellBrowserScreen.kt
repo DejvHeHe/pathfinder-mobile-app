@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
 import cz.pfspells.BrowserFilter
 import cz.pfspells.Screen
+import cz.pfspells.data.caster
 import cz.pfspells.data.CasterClass
 import cz.pfspells.data.CasterClasses
 import cz.pfspells.data.Spell
@@ -69,7 +70,7 @@ fun SpellBrowserScreen(
     }
     val listState = if (picker) state.pickerList else state.compendiumList
 
-    val cls: CasterClass? = if (deck != null) CasterClasses.get(deck.classId) else filter.classId?.let(CasterClasses::get)
+    val cls: CasterClass? = if (deck != null) deck.entry.caster else filter.classId?.let(CasterClasses::get)
     val maxLevel = if (deck != null) cls?.maxSpellLevel(deck.classLevel) ?: -1 else 9
     val minLevel = if (cls != null && !cls.hasCantrips) 1 else 0
     val schools = remember(db) { db.spells.map { it.school }.distinct().sorted() }

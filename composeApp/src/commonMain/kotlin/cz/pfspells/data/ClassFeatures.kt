@@ -119,11 +119,19 @@ private fun abilityPresets(e: ClassEntry): List<FeaturePreset> = e.abilities.fil
 /** Předvyplněné schopnosti class postavy (dostupné na její úrovni, bez skrytých) + vlastní počítadla. */
 fun Character.resources(includeHidden: Boolean = false): List<Resource> {
     val presets = classes.flatMap { e ->
+        val fx = e.archetypeEffect
         val base = FeaturePresets.all.filter { it.classId == e.classId && e.level >= it.minLevel }
-            .filterNot { it.id == "wizard-school-power" && e.hasSchoolPowers() }
-        (base + subclassPresets(e) + abilityPresets(e)).map { p ->
+            .filterNot { it.id == "wizard-school-power" && (e.hasSchoolPowers() || e.subclassKind != SubclassType.SCHOOL) }
+            .filterNot { it.name.lowercase() in fx.removedPresets }
+        // schopnosti podtřídy jen když ji classa (po archetypech) má a archetyp je nenahradil;
+        // úroveň podtřídy může být nižší než úroveň classy (Sacred Servant: paladin −3)
+        val subE = e.copy(level = e.subclassLevel)
+        val sub = if (e.subclassKind == null || fx.noSubclassPowers || subE.level < 1) emptyList()
+        else subclassPresets(subE).filterNot { it.name.lowercase() in fx.removedPresets }
+        val extra = fx.presets.filter { e.level >= it.minLevel }
+        (base + abilityPresets(e) + extra).map { p ->
             Resource("res:${p.id}", p.name, p.unit, p.max(e.level, this), e.classId, preset = p)
-        }
+        } + sub.map { p -> Resource("res:${p.id}", p.name, p.unit, p.max(subE.level, this), e.classId, preset = p) }
     }.filter { includeHidden || it.preset!!.id !in hiddenPresets }
     val custom = trackers.map { t -> Resource("res:${t.id}", t.name, t.unit, t.max, tracker = t) }
     return presets + custom

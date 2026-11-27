@@ -140,6 +140,25 @@ class PreviewRender {
             state.setRacialTraitAbility(h.id, "human:dual-talent", 0, cz.pfspells.data.Ability.CHA)
             state.character(h.id)!!
         }
+        // archetypy (AoN): paladinka se dvěma archetypy – Sacred Servant a Hospitaler nahrazují oba Smite Evil (konflikt)
+        withContext(Dispatchers.Main) { state.ensureArchetypes() }
+        while (state.archetypeDb == null) delay(50)
+        val seelah = withContext(Dispatchers.Main) {
+            val p = state.createCharacter("Seelah", "paladin", 6)
+            state.addClass(p.id, "rogue_unchained", 2)
+            state.archetypeDb!!.forClass("paladin").filter { it.name in setOf("Sacred Servant", "Hospitaler") }.forEach { state.addArchetype(p.id, "paladin", it) }
+            state.character(p.id)!!
+        }
+        // Crossblooded čaroděj (dvě bloodline) + Eldritch Scion magus (spontánně, Cha, sloty jako bard)
+        val kael = withContext(Dispatchers.Main) {
+            val k = state.createCharacter("Kael", "sorcerer", 5)
+            state.setSubclass(k.id, "sorcerer", cz.pfspells.data.SubclassSlot.BLOODLINE, "arcane")
+            state.setSubclass(k.id, "sorcerer", cz.pfspells.data.SubclassSlot.BLOODLINE2, "draconic")
+            state.archetypeDb!!.get("sorcerer:crossblooded")?.let { state.addArchetype(k.id, "sorcerer", it) }
+            state.addClass(k.id, "magus", 3)
+            state.archetypeDb!!.get("magus:eldritch-scion")?.let { state.addArchetype(k.id, "magus", it) }
+            state.character(k.id)!!
+        }
         // podtřídy z Foundry: patron (Morgana), spirit, blessingy warpriesta, doména inquisitora
         val kaya = withContext(Dispatchers.Main) {
             state.setSubclass(morgana.id, "witch", cz.pfspells.data.SubclassSlot.PATRON, "agility")
@@ -246,6 +265,14 @@ class PreviewRender {
             cz.pfspells.ui.RacialTraitsDialog(state, state.character(pip.id)!!) { }
         }) { openRoot(Screen.CharacterDetail(pip.id)) }
         shot("cs-phone-race-panel", 390, 1000) { openRoot(Screen.CharacterDetail(pip.id)) }
+        shot("cs-phone-archetypes-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(seelah.id)) }
+        shot("cs-phone-archetypes-casting", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(kael.id)) }
+        shot("cs-phone-archetypes", 390, 844, overlay = {
+            cz.pfspells.ui.ArchetypesDialog(state, state.character(seelah.id)!!, "paladin") { }
+        }) { openRoot(Screen.Decks) }
+        shot("desktop-archetypes", 1440, 1000, overlay = {
+            cz.pfspells.ui.ArchetypesDialog(state, state.character(seelah.id)!!, "rogue_unchained") { }
+        }) { openRoot(Screen.CharacterDetail(seelah.id)) }
         shot("cs-phone-dual-talent", 390, 844, overlay = {
             cz.pfspells.ui.RacialTraitsDialog(state, state.character(aria.id)!!) { }
         }) { openRoot(Screen.Decks) }

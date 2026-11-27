@@ -152,6 +152,14 @@ class CharacterTransferTest {
     }
 
     @Test
+    fun archetypesRoundTrip() {
+        val ss = cz.pfspells.data.ArchetypePick("paladin:sacred-servant", "Sacred Servant", listOf("Smite Evil", "Divine Bond"))
+        val p = Character("s", "Seelah", listOf(ClassEntry("paladin", 5, archetypes = listOf(ss, ss.copy(name = "dup")))))
+        val c = CharacterTransfer.parse(CharacterTransfer.export(listOf(p), db) { null }, db, featDb, null).single().character
+        assertEquals(listOf(ss), c.classes.single().archetypes)
+    }
+
+    @Test
     fun withoutInventory() {
         val text = CharacterTransfer.export(listOf(thomas), db) { null }
         assertNull(CharacterTransfer.parse(text, db, featDb, null).single().inventory)

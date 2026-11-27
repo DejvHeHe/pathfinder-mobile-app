@@ -44,6 +44,30 @@ are shown in Czech (the class list also shows the English original, e.g. "Kouzel
    the same trait are reported (strict mode does not allow it). Traits that change ability scores (Dual Talent, Keen
    Kitsune, Orc Atavism…) are applied to the abilities; where an ability is chosen, the trait has a picker and the race
    panel warns until it is set. Changing the race clears the choice; export carries it.
+   **Archetypes** (below each class, ~1,300 from Archives of Nethys): the dialog shows the chosen archetypes (× removes,
+   tap for text) and the class's archetypes – search in the name, replaced features and text, "Replaces: …", PFS,
+   a short summary, tap for the full text and source. Below the class is a summary of what the archetypes change
+   ("Removes: Smite Evil · no spellcasting · −1 bonus feat · Gains: Hunter's Tricks"):
+   - **replaced features** disappear – limited-use abilities (Smite Evil, Rage, Channel Energy, Bombs, Ki Pool, Wild
+     Shape…), the subclass ("Domains", "Arcane School", "Bloodline"…, or just its spells or powers), cantrips,
+     and **counts drop** by level ("2nd, 6th-level hex" → one hex fewer from 2nd and from 6th level; bonus feats, revelations),
+   - **extra spells on the spell list** (~30 archetypes, ~260 spells from the text – Cultivator, Death Druid, Forest
+     Preserver…) – offered in the class's spell picker at their level,
+   - **known archetypes** (~75, by hand from the text) also: no spellcasting (Skirmisher, Warrior of the Holy Light…),
+     one fewer spell per day / known of each level (Kensai, Crossblooded…), a single domain (Cloistered Cleric…),
+     a paladin domain (Sacred Servant – domain powers at paladin level −3, Temple Champion), new limited-use abilities
+     (Hunter's Tricks, Arcane Reservoir, Eldritch Pool…) and bonus feats (Insinuator),
+   - **different spellcasting**: another spell list (Unlettered Arcanist → witch, Hunting Paladin → ranger, Fey
+     Trickster → druid and ranger…), another casting style and slots (Eldritch Scion and Mindblade spontaneous with bard
+     slots, Living Grimoire prepared with warpriest slots, Ley Line Guardian as a sorcerer, Dandy from the bard list with
+     medium slots, Pearl Seeker as a bloodrager), another ability (Fractured Mind – Cha, Scarred Witch Doctor – Int +2)
+     or magic tradition (Filidh – divine); below the class "Spellcasting: spontaneous · CHA · slots as Bard",
+   - **Crossblooded** picks a **second bloodline** in the subclass dialog – spells, powers and bonus feats of both are offered.
+
+   Archetypes that grant abilities without a clear formula or spells "of their choice" (Raven Master, Onmyoji…) are
+   text only. Two archetypes
+   replacing the same class feature are reported (strict mode does not allow it). Unchained classes offer the base
+   class's archetypes, NPC classes have none. Character export carries them.
 4. Below the classes is a summary – character level, **BAB** and saves (summed over all classes) – and the
    **abilities** STR–CHA (tap to edit, the modifier is shown next to the score).
 5. Each spellcasting class has its own spell section with an **Add spells** button.

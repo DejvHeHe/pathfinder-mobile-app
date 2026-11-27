@@ -74,6 +74,9 @@ composeApp/src/
       RaceTable.kt            GENERATED: 80 races (Foundry, tools/build_races.py)
       RacialTraits.kt         alternate racial traits (RacialTrait, RacialTraitPick, RacialTraits – replaced traits, conflicts)
       RacialTraitTable.kt     GENERATED: default racial traits (AoN, tools/build_racial_traits.py)
+      Archetypes.kt           class archetypes (Archetype, ArchetypePick, ArchetypeRepository, Archetypes – conflicts, unchained)
+      ArchetypeEffects.kt     archetype mechanics (ArchetypeRules, ClassEntry.archetypeEffect / caster / subclassKind / levelSlots)
+      ArchetypeMods.kt        hand-entered effects of known archetypes (ARCHETYPE_MODS)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       subclass powers (SubclassPowers), Foundry formulas (FoundryFormula), hexes and revelations (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENERATED: domain, bloodline, school and blessing powers, patron / spirit / discipline spells (Foundry, tools/build_class_abilities.py)
@@ -101,6 +104,7 @@ composeApp/src/
       ClassPicker.kt          class picker (cards, search, preview, subclass, race and deity for a new character)
       RaceUi.kt               RacePickerDialog, race summary (size, speed, ability modifiers)
       RacialTraitsUi.kt       alternate racial traits (link below the race, picker dialog)
+      ArchetypesUi.kt         archetypes (link below the class, picker dialog with text)
       DeityUi.kt              DeityPickerDialog (deity list, custom text), DeityConflictWarning
       SkillsUi.kt             SkillsPanel (character skills: ranks, points, class skills)
       SubclassUi.kt           SubclassFields (subclass fields – shared by the picker and the dialog), SubclassDialog, subclass bonus spells
@@ -134,6 +138,7 @@ tools/build_feats.py, build_casting.py, build_classes.py, build_races.py, build_
 tools/build_icons.py   app icons from `art/icon.svg`
 tools/build_class_abilities.py   subclass powers, hexes and revelations (Foundry)
 tools/build_racial_traits.py   default and alternate racial traits (AoN)
+tools/build_archetypes.py   class archetypes (AoN)
 ```
 
 ## State and navigation
@@ -230,6 +235,7 @@ version (`characters_v2`…) and a migration (example: `CharacterStore` converts
 - **Spells** load at start (`SpellRepository.load` on `Dispatchers.Default`, ~0.35 s). Until then "Loading spells…" is shown.
 - **Feats** (`Feats.json`, bundled only) load **lazily** when a character or the feat picker is first opened (`ensureFeats`).
 - **Alternate racial traits** (`RacialTraits.json`) load **lazily** when their dialog opens (`ensureRacialTraits`).
+- **Archetypes** (`Archetypes.json`) load **lazily** when the archetype dialog opens (`ensureArchetypes`).
 - **Hexes and revelations** (`ClassAbilities.json` + spirit hexes `SubclassAbilities.json`) load **lazily** when a character has a witch / shaman / oracle class (`ensureClassAbilities`).
 - **Items** load **lazily** – when an inventory, an inventory import or the database screen is opened (`ensureItems`, ~0.3 s).
 - Both repositories first try the downloaded version in `AppFiles`; if it is missing or corrupt, they delete it and use the bundled one.
@@ -338,11 +344,12 @@ The "Ruled notebook" design (from the author's design in Claude Design):
 | `EquipmentTest` | bonus type stacking, bonus guess by name, only equipped and only what fits the slot, slot conflicts |
 | `DefenseTest` | AC / touch / flat-footed, max Dex, size, armor check and load penalty, HP (Toughness, rolled, creatures), current HP, metamagic, domain and bloodline powers |
 | `AnimalCompanionTest` | animal companion table against "animal" HD, wolf advancement at 7th level, species abilities, specials, suggested level |
+| `ArchetypesTest`, `ArchetypeEffectsTest` | archetypes: conflicts, unchained, NPC; replaced abilities, subclasses, hexes and bonus feats by level, cantrips, hand-entered effects (no spells, one fewer spell, one domain, Sacred Servant, Insinuator) |
 | `StrictModeTest` | strict mode: prepared copies (slots + bonus), known limit, ability and spell level, feat count and prerequisites, animal companion |
 | `BundledDataTest` | bundled spells load, every class has spells, unique ids; hexes and revelations (text, formulas, the app's mysteries and domains); alternate racial traits (races, replaced traits) |
 | `SubclassTest` | domains, bloodlines, mysteries and schools from `access_ways`, patrons / spirits / bloodrager bloodlines / disciplines from Foundry, blessings and inquisitor domain (deity), bonus spells by level, subclass changes, subdomain → domain |
 | `CharacterStoreTest` | migration of old decks to characters |
-| `CharacterTransferTest` | character export → import (with and without inventory, race, skills, defense and HP, equipped gear, hexes and revelations, racial traits), companions with owner, feats only, old decks, errors |
+| `CharacterTransferTest` | character export → import (with and without inventory, race, skills, defense and HP, equipped gear, hexes and revelations, racial traits, archetypes), companions with owner, feats only, old decks, errors |
 | `DeckTransferTest` | old deck format: export → import, name matching, rejecting garbage |
 | `InventoryLinkTest` | (with `AppState`) character ↔ inventory link – STR on both sides, race size and racial STR, companions and strict mode, equipped gear, damage and rest |
 | `ItemDataTest` | bundled items, CSV parser, prices/weights, carrying capacity, hidden prices, inventory export → import |

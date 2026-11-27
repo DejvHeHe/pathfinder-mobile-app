@@ -24,6 +24,18 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
 ## Stav (27. 11. 2026)
+- ✅ 27. 11. 2026 (nevydáno): **archetypy z AoN** – `tools/build_archetypes.py` (tabulky `Archetypes.aspx?Class=X` + stránky
+  archetypů, cache `build/archetype-cache`, ~25 min) → `files/Archetypes.json` (líně, `ensureArchetypes`). `ClassEntry.archetypes`
+  (`ArchetypePick`), `ArchetypesLink` pod classou + `ArchetypesDialog`, konflikty `Archetypes.conflicts` (stejná položka `replaces`),
+  přísný režim `StrictBlock.ArchetypeConflict`, export `ClassDto.archetypes`; unchained → archetypy základní classy, NPC žádné.
+  **Mechanika** (`ArchetypeEffects.kt`): z `replaces` automaticky – předvyplněné schopnosti, podtřída (`ClassEntry.subclassKind`),
+  triky, počty hexů / revelations / bonusových featů podle úrovní; ručně `ARCHETYPE_MODS` (`ArchetypeMods.kt`, 75 archetypů) – bez
+  sesílání (`ClassEntry.caster`), o kouzlo méně (`ClassEntry.levelSlots`), jedna doména, doména paladina, nové schopnosti, bonusové featy.
+  Místo `CasterClasses.get(e.classId)` / `subclassType(e.classId)` / `cls.levelSlots` u classy postavy používat `e.caster` /
+  `e.subclassKind` / `e.levelSlots(cls, …)`. „Spells“ v Replaces automaticky nic nedělá (většinou změněné sesílání).
+  Jiné sesílání `CastingChange` (spell list, atribut, druh, tabulka jiné classy přes `CasterClass.tableId`, tradice), kouzla navíc
+  (`Archetype.spells` z generátoru, ~260; `CasterClass.extraSpells`), `ClassEntry.subclassLevel` (Sacred Servant −3),
+  Crossblooded `SubclassSlot.BLOODLINE2`. Tradice pro prerekvizity z `CasterClass.tradition`. Testy 155 zelené.
 - ✅ **Vydáno `v1.5.0`** (26. 11. 2026): schopnosti class z Foundry, alternativní rasové traity, podtřídy patron / spirit /
   bloodline bloodragera / disciplína / blessingy / doména a inquisition inquisitora, schopnosti podtříd z AoN, wandering spirit,
   bonusové featy bloodline – workflowy Release, Docker i CI zelené (ověřeno 26. 11. 2026).
@@ -109,7 +121,6 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Vývojový PC: Windows, `JAVA_HOME` = `%USERPROFILE%\.jdks\temurin-21.0.11` (systémová Java je 8; Android Studio má JBR 25,
   které Gradle 8.10.2 neumí → Gradle JDK pro Studio v `.gradle/config.properties` `java.home`, mimo git), `local.properties` → `%LOCALAPPDATA%\Android\Sdk`.
   Docker ani `gh` nejsou nainstalované. Port 8080 drží služba NI Application Web Server (National Instruments) – pro lokální test webu jiný port.
-- 
 ## Stack
 - Kotlin 2.1.0, Compose Multiplatform 1.7.3, Material 3, AGP 8.7.3, Gradle wrapper 8.10.2
 - kotlinx-serialization-json 1.7.3, kotlinx-coroutines 1.9.0, multiplatform-settings-no-arg 1.3.0 (decky, inventáře)
@@ -155,6 +166,10 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
                          ClassAbilityRepository (ClassAbilities.json, líně – AppState.ensureClassAbilities)
   data/ClassAbilityTable.kt  GENEROVANÉ `tools/build_class_abilities.py` (Foundry packs/class-abilities)
   data/SubclassAbilityTable.kt  GENEROVANÉ `tools/build_subclass_abilities.py` (AoN: spirity, bloodline bloodragera, disciplíny, inquisitions)
+  data/Archetypes.kt     archetypy class (Archetype, ArchetypePick, ArchetypeRepository – Archetypes.json líně, Archetypes.conflicts / baseClass / supports);
+                         ui/ArchetypesUi.kt ArchetypesLink (pod classou, souhrn efektů archetypeEffectText) + ArchetypesDialog
+  data/ArchetypeEffects.kt  mechanika archetypů (ArchetypeRules.effect → ArchetypeEffect; ClassEntry.caster / subclassKind / levelSlots)
+  data/ArchetypeMods.kt  ručně zadané efekty známých archetypů (ARCHETYPE_MODS – doplňovat podle textu AoN)
   data/Feats.kt          Feat, FeatDatabase, FeatRepository (Feats.json, líně), FeatPrereqs (✓/✗/? z textu prerekvizit), featSlots (počet featů)
   data/CustomItems.kt     vlastní katalog itemů (CustomItem, CustomItemStore), SpellItemKind (lektvar/svitek/hůlka ze spellu)
   data/SpellParser.kt     SpellList.json → Spell
@@ -189,7 +204,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/DatabaseScreen.kt    stav a aktualizace databáze spellů i itemů
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
-  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), SubclassAbilities.json (hexy duchů z AoN), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
+  files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), SubclassAbilities.json (hexy duchů z AoN), Archetypes.json (archetypy z AoN), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
   font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
@@ -202,6 +217,7 @@ tools/build_feats.py   Feats.json z AoN (~3 400 stránek, 1 req/s, cache build/f
 tools/build_casting.py, tools/build_classes.py, tools/build_races.py   CastingTable.kt (AoN), ClassTable.kt a RaceTable.kt (Foundry)
 tools/build_class_abilities.py [zip] [sources.mjs]   ClassAbilityTable.kt + ClassAbilities.json (Foundry packs/class-abilities)
 tools/build_racial_traits.py [--cache DIR]   RacialTraitTable.kt + RacialTraits.json (AoN stránky ras, ~80 req po 1 s)
+tools/build_archetypes.py [--cache DIR]   Archetypes.json (AoN tabulky archetypů + stránky, ~1 300 req po 1 s)
 tools/build_subclass_abilities.py [--cache DIR]   SubclassAbilityTable.kt + SubclassAbilities.json (AoN spirity, bloodline bloodragera, disciplíny, inquisitions)
 docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 .github/workflows/     ci.yml, release.yml, docker.yml

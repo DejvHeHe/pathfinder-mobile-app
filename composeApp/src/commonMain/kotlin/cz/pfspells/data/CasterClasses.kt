@@ -48,10 +48,16 @@ data class CasterClass(
     /** atribut sesílání (bonusové sloty, nejvyšší sesílatelný level) */
     val ability: Ability,
     val hasCantrips: Boolean = progression != Progression.FOUR,
+    /** classa, jejíž tabulka kouzel za den / známých platí (archetyp: Eldritch Scion = bard, Living Grimoire = warpriest) */
+    val tableId: String = id,
+    /** kouzla navíc na listu (archetyp): spellId → spell level */
+    val extraSpells: Map<String, Int> = emptyMap(),
+    /** druh magie změněný archetypem (Filidh → divine, Mindblade → psychic) */
+    val traditionOverride: MagicTradition? = null,
 ) {
     fun maxSpellLevel(classLevel: Int): Int = progression.maxSpellLevel(classLevel)
 
-    val tradition: MagicTradition get() = when (id) {
+    val tradition: MagicTradition get() = traditionOverride ?: when (id) {
         "wizard", "sorcerer", "arcanist", "witch", "bard", "skald", "magus",
         "summoner", "summoner_unchained", "bloodrager" -> MagicTradition.ARCANE
         "cleric", "oracle", "druid", "shaman", "inquisitor", "warpriest", "hunter",
@@ -62,7 +68,7 @@ data class CasterClass(
     }
 
     private val tables by lazy {
-        CASTING_TABLE[id]?.let { (perDay, known) -> parseSlotTable(perDay) to known?.let(::parseSlotTable) }
+        CASTING_TABLE[tableId]?.let { (perDay, known) -> parseSlotTable(perDay) to known?.let(::parseSlotTable) }
     }
 
     /** Základní počet kouzel za den (bez bonusu z atributu); null = classa tento level nemá. Spontánní triky jsou bez limitu → null. */
@@ -78,7 +84,7 @@ data class CasterClass(
 
     /** Spell level pro tuto classu, nebo null, když spell není na jejím listu. */
     fun spellLevelOf(spell: Spell): Int? =
-        listKeys.mapNotNull { spell.levels[it] }.minOrNull()
+        (listKeys.mapNotNull { spell.levels[it] } + listOfNotNull(extraSpells[spell.id])).minOrNull()
 
     fun canCast(spell: Spell, classLevel: Int): Boolean {
         val lvl = spellLevelOf(spell) ?: return false

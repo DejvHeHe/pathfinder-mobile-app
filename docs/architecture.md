@@ -74,6 +74,9 @@ composeApp/src/
       RaceTable.kt            GENEROVANÉ: 80 ras (Foundry, tools/build_races.py)
       RacialTraits.kt         alternativní rasové traity (RacialTrait, RacialTraitPick, RacialTraits – nahrazené traity, konflikty)
       RacialTraitTable.kt     GENEROVANÉ: výchozí traity ras (AoN, tools/build_racial_traits.py)
+      Archetypes.kt           archetypy class (Archetype, ArchetypePick, ArchetypeRepository, Archetypes – konflikty, unchained)
+      ArchetypeEffects.kt     mechanika archetypů (ArchetypeRules, ClassEntry.archetypeEffect / caster / subclassKind / levelSlots)
+      ArchetypeMods.kt        ručně zadané efekty známých archetypů (ARCHETYPE_MODS)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       schopnosti podtříd (SubclassPowers), vzorce Foundry (FoundryFormula), hexy a zjevení (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENEROVANÉ: schopnosti domén, bloodline, škol a blessingů, kouzla patronů / spiritů / disciplín (Foundry, tools/build_class_abilities.py)
@@ -103,6 +106,7 @@ composeApp/src/
       SkillsUi.kt             SkillsPanel (dovednosti postavy: ranky, body, class skills)
       RaceUi.kt               RacePickerDialog, souhrn rasy (velikost, rychlost, úpravy atributů)
       RacialTraitsUi.kt       alternativní rasové traity (odkaz pod rasou, dialog výběru)
+      ArchetypesUi.kt         archetypy (odkaz pod classou, dialog výběru s textem)
       SubclassUi.kt           SubclassFields (pole podtřídy – sdílí picker i dialog), SubclassDialog, bonusová kouzla podtřídy
       FeatScreens.kt          featy postavy, výběr a detail featu
       ClassAbilitiesUi.kt     hexy a zjevení u classy (počet, výběr se seznamem a textem)
@@ -134,6 +138,7 @@ tools/build_feats.py, build_casting.py, build_classes.py, build_races.py, build_
 tools/build_icons.py   ikony appky ze `art/icon.svg`
 tools/build_class_abilities.py   schopnosti podtříd, hexy a zjevení (Foundry)
 tools/build_racial_traits.py   výchozí a alternativní rasové traity (AoN)
+tools/build_archetypes.py   archetypy class (AoN)
 ```
 
 ## Stav a navigace
@@ -231,6 +236,7 @@ staré decky z `decks_v1`, starý klíč nechává jako zálohu).
 - **Spelly** se načtou při startu (`SpellRepository.load` na `Dispatchers.Default`, ~0,35 s). Do té doby je vidět „Loading spells…“.
 - **Featy** (`Feats.json`, jen přibalené) se načtou **líně** při prvním otevření postavy nebo výběru featů (`ensureFeats`).
 - **Alternativní rasové traity** (`RacialTraits.json`) se načtou **líně** při otevření jejich dialogu (`ensureRacialTraits`).
+- **Archetypy** (`Archetypes.json`) se načtou **líně** při otevření dialogu archetypů (`ensureArchetypes`).
 - **Hexy a zjevení** (`ClassAbilities.json` + hexy duchů `SubclassAbilities.json`) se načtou **líně**, když má postava witch / shaman / oracle (`ensureClassAbilities`).
 - **Itemy** se načtou **líně** – až při otevření inventáře, importu inventáře nebo obrazovky databází (`ensureItems`, ~0,3 s).
 - Obě repository nejdřív zkusí staženou verzi z `AppFiles`; když chybí nebo je poškozená, smažou ji a použijí přibalenou z resources.
@@ -333,11 +339,12 @@ Design „Linkovaný zápisník“ (podle návrhu uživatele v Claude Design):
 | `EquipmentTest` | sčítání typů bonusů, odhad bonusu podle jména, jen nasazené a jen co se vejde do slotu, konflikty slotů |
 | `DefenseTest` | AC / dotyk / zaskočený, max Dex, velikost, postih zbroje a zatížení, HP (Toughness, házené, tvorové), aktuální HP, metamagie, doménové a bloodline schopnosti |
 | `AnimalCompanionTest` | tabulka zvířecího společníka proti HD „animal“, vylepšení vlka na 7. úrovni, atributy druhu, zvláštní schopnosti, navržená úroveň |
+| `ArchetypesTest`, `ArchetypeEffectsTest` | archetypy: konflikty, unchained, NPC; nahrazené schopnosti, podtřídy, hexy a bonusové featy podle úrovní, triky, ručně zadané efekty (bez kouzel, o kouzlo méně, jedna doména, Sacred Servant, Insinuator) |
 | `StrictModeTest` | přísný režim: připravené kopie (sloty + bonus), limit známých, atribut a spell level, počet featů a prerekvizity, zvířecí společník |
 | `BundledDataTest` | přibalené spelly jdou načíst, každá classa má spelly, unikátní id; hexy a zjevení (text, vzorce, mystéria a domény appky); alternativní rasové traity (rasy, nahrazované traity) |
 | `SubclassTest` | domény, bloodline, mystéria a školy z `access_ways`, patroni / spirity / bloodline bloodragera / disciplíny z Foundry, blessingy a doména inquisitora (božstvo), bonusová kouzla podle úrovně, změny podtřídy, subdoména → doména |
 | `CharacterStoreTest` | migrace starých decků na postavy |
-| `CharacterTransferTest` | export → import postavy (s inventářem i bez, rasa, skills, obrana a HP, nasazené vybavení, hexy a zjevení, rasové traity), mazlíčci s vlastníkem, jen featy, staré decky, chyby |
+| `CharacterTransferTest` | export → import postavy (s inventářem i bez, rasa, skills, obrana a HP, nasazené vybavení, hexy a zjevení, rasové traity, archetypy), mazlíčci s vlastníkem, jen featy, staré decky, chyby |
 | `DeckTransferTest` | starý formát decků: export → import, párování podle jména, odmítnutí nesmyslů |
 | `InventoryLinkTest` | (s `AppState`) propojení postavy s inventářem – STR na obou stranách, velikost a STR rasy, mazlíčci a přísný režim, nasazené vybavení, zranění a odpočinek |
 | `ItemDataTest` | přibalené itemy, CSV parser, ceny/váhy, nosnost, skryté ceny, export → import inventáře |

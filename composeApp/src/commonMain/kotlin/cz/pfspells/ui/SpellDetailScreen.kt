@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.caster
 import cz.pfspells.data.bonusSpellsByLevel
 import cz.pfspells.str
 import androidx.compose.foundation.clickable
@@ -50,7 +51,7 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
     val fonts = LocalNbFonts.current
     val s = str
     val deck = charId?.let { state.spellbook(it, classId) }
-    val cls = deck?.let { CasterClasses.get(it.classId) }
+    val cls = deck?.entry?.caster
     val inDeck = deck?.spells?.get(spell.id) ?: 0
     // spontánní classa: známé kouzlo podruhé nepřidává
     // kouzlo patrona čarodějnice jde připravit, i když není na jejím spell listu

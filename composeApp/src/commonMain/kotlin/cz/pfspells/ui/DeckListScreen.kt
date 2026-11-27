@@ -1,5 +1,6 @@
 package cz.pfspells.ui
 
+import cz.pfspells.data.caster
 import cz.pfspells.data.Character
 import cz.pfspells.str
 import androidx.compose.foundation.background
@@ -166,8 +167,8 @@ fun DeckSidebar(state: AppState, selectedDeckId: String?, modifier: Modifier = M
 @Composable
 private fun CharacterItem(character: Character, selected: Boolean, onClick: () -> Unit, card: Boolean = false) {
     // spell levely ukazuje první sesílací classa
-    val casterEntry = character.classes.firstOrNull { CasterClasses.get(it.classId) != null }
-    val cls = casterEntry?.let { CasterClasses.get(it.classId) }
+    val casterEntry = character.classes.firstOrNull { it.caster != null }
+    val cls = casterEntry?.caster
     val fonts = LocalNbFonts.current
     val base = Modifier.fillMaxWidth().clip(Nb.shape)
     Column(

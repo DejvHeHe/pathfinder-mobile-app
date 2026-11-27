@@ -17,6 +17,7 @@ so the app works offline. Part of it can be re-downloaded from the source with a
 | `ClassTable.kt` | 49 classes: BAB, saves, HD, skill points, class skills, proficiencies | Foundry VTT PF1 `packs/classes` – `tools/build_classes.py` | no |
 | `RaceTable.kt` | 80 races: size, speed, ability and skill modifiers, vision | Foundry VTT PF1 `packs/races` – `tools/build_races.py` | no |
 | `ClassAbilityTable.kt`, `ClassAbilities.json` (0.3 MB) | 325 domain / bloodline / school powers; 420 hexes and revelations with text | Foundry VTT PF1 `packs/class-abilities` – `tools/build_class_abilities.py` | no |
+| `Archetypes.json` (4.0 MB) | 1,252 archetypes of 40 classes (replaced features, summary, source, PFS, text) | [Archives of Nethys](https://aonprd.com/Archetypes.aspx) – `tools/build_archetypes.py` | no |
 | `RacialTraitTable.kt`, `RacialTraits.json` (0.4 MB) | default traits of 77 races; 632 alternate racial traits | Archives of Nethys race pages – `tools/build_racial_traits.py` | no |
 | `DeityTable.kt` | 463 deities: pantheon, alignment, areas, domains, subdomains, favored weapon | [Archives of Nethys](https://aonprd.com/DeitiesByGroup.aspx) – `tools/build_deities.py` | no |
 
@@ -164,6 +165,43 @@ lists are in the script.
   optionally with "subtype" or a qualifier in parentheses. A race qualifies when its name matches or it has the subtype
   (`RaceInfo.countsAs`): a half-elf counts as an elf and a human, a half-orc as an orc, a drow as an elf, a svirfneblin as a gnome.
   "Human (Varisian)" with race human = check yourself, with another race = not met.
+
+### Archetypes (`Archetypes.json`)
+`python tools/build_archetypes.py [--cache DIR]` walks the classes of `ClassTable.kt` (without NPC and unchained) and
+downloads from Archives of Nethys the class's archetype table (`Archetypes.aspx?Class=X`: name, PFS, "Replaces",
+summary) and every archetype page (`ArchetypeDisplay.aspx?FixedName=X Y`: source, full text) – ~1300 requests,
+1 per second, cached in `build/archetype-cache`. Result: 1,252 archetypes, id `class:name-slug`, `replaces` = features
+split on ";" as AoN lists them ("Smite Evil", "3rd-level Mercy"). Loaded lazily (`ensureArchetypes`).
+
+"Replaces" entries are split on ";" and "," – a list of levels stays with its feature ("2nd, 4th, 6th-level discovery").
+
+In the app: `ClassEntry.archetypes` (`ArchetypePick` = id, name, copy of `replaces`), chosen below the character's class.
+- **Mechanics** (`ArchetypeEffects.kt`, `ClassEntry.archetypeEffect`):
+  - automatically from `replaces`: the name of a preset ability (`FeaturePresets`, aliases Bomb → Bombs, Judgement →
+    Judgment) → the ability disappears; the class's subclass (`SUBCLASS_FEATURES`: cleric "Domains", druid "Nature Bond",
+    wizard "Arcane School"…) → `ClassEntry.subclassKind` = null; "Bloodline Powers" / "Domain Powers"… → no subclass powers,
+    "Bonus Spells" / "Patron Spells"… → no bonus spells; "Cantrips" / "Orisons" / "Knacks" → no cantrips; hexes /
+    revelations / bonus feats (also combat style and teamwork feats) → fewer by the listed levels ≤ class level (no levels =
+    the whole feature),
+  - by hand `ARCHETYPE_MODS` (`ArchetypeMods.kt`, from the AoN texts): `noSpells` (`ClassEntry.caster` = null),
+    `perDayDelta` / `knownDelta` (`ClassEntry.levelSlots`, cantrips too unless `deltaIncludesCantrips = false`),
+    `oneDomain`, `subclass` (Sacred Servant / Temple Champion: a paladin domain), `removes`, `presets` (new limited-use
+    abilities), `bonusFeatLevels`, `casting` (`CastingChange`: `lists` / `addLists`, `ability`, `kind`, `table` +
+    `progression` – another class's spell table via `CasterClass.tableId`, `tradition`, `abilityBonus`, `spells` by name),
+    `subclassLevelOffset` (`ClassEntry.subclassLevel` – Sacred Servant −3), `secondBloodline` (`SubclassSlot.BLOODLINE2`).
+    `BundledDataTest` checks that ids, spell lists, tables and spells exist.
+  - **Extra spells** from the text (`Archetype.spells`, copied into `ArchetypePick.spells`): the generator reads
+    "1st—a, b; 2nd—c", "a (1st), b (2nd)" and "adds x … as a 3rd-level spell" in spell-list paragraphs and checks the
+    names against `SpellList.json` (without book abbreviations "APG", "UM"…, "lesser x" → "x, lesser"); "2nd—x (1st)" =
+    class level + spell level in parentheses. `ClassEntry.caster` puts them into `CasterClass.extraSpells`
+    (spellLevelOf, spell picker).
+  - "Spells" / "Spellcasting" in `replaces` does nothing automatically – it usually means altered, not removed, casting.
+  - The magic tradition (`CasterClass.tradition`, also when changed by an archetype) decides "ability to cast arcane /
+    divine spells" prerequisites.
+- Conflict = two chosen archetypes share an entry in `replaces` (case-insensitive) – "Mercy" and "3rd-level Mercy" are
+  not treated as a conflict. Strict mode does not add a conflicting archetype.
+- Unchained classes (`rogue_unchained`…) get the base class's archetypes (`Archetypes.baseClass`), NPC classes and
+  creature HD none (`Archetypes.supports`).
 
 ### Racial traits (`RacialTraitTable.kt`, `RacialTraits.json`)
 `python tools/build_racial_traits.py [--cache DIR]` downloads the race list from Archives of Nethys
