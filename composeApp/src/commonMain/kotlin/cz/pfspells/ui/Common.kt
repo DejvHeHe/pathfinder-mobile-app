@@ -82,8 +82,10 @@ fun SectionHeader(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        // nadpis se dopíše, linka se dotáhne tužkou (Deník dobrodruha)
         Text(
             text,
+            Modifier.writeIn(),
             fontFamily = LocalNbFonts.current.serif,
             fontStyle = FontStyle.Italic,
             fontWeight = FontWeight.Bold,
@@ -91,7 +93,7 @@ fun SectionHeader(
             color = Nb.rust,
         )
         Spacer(Modifier.size(10.dp))
-        Box(Modifier.weight(1f).height(2.dp).dashedEdge(Side.Top, Nb.rule))
+        Box(Modifier.weight(1f).height(2.dp).lineIn().dashedEdge(Side.Top, Nb.rule))
         if (trailing != null) {
             Spacer(Modifier.size(10.dp))
             trailing()

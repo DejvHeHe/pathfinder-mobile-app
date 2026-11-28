@@ -110,6 +110,9 @@ sealed interface Screen {
 
 enum class Section { SPELLBOOK, INVENTORY }
 
+/** Záložky rozdělovníku v detailu postavy (návrh „Deník dobrodruha“). */
+enum class CharacterTab { CHARACTER, COMBAT, SPELLS, INVENTORY, COMPANIONS }
+
 data class ItemFilter(
     val query: String = "",
     val category: ItemCategory? = null,
@@ -1125,6 +1128,9 @@ class AppState(
             if (v && !gameModeOn) trackEvent("game-mode")
             gameModeOn = v
         }
+
+    /** Otevřená záložka rozdělovníku v detailu postavy – jen stav UI, sdílený mezi postavami. */
+    var characterTab by mutableStateOf(CharacterTab.CHARACTER)
 
     fun setCast(charId: String, key: String, n: Int) = updateCharacter(charId) { it.withCast(key, n) }
 

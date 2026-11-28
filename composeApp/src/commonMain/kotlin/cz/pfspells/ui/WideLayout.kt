@@ -1,5 +1,8 @@
 package cz.pfspells.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+
 import cz.pfspells.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -79,6 +82,11 @@ fun WideLayout(state: AppState, db: SpellDatabase) {
                     background = Nb.paper,
                 )
                 NbDashedButton(str.compendium, { state.openRoot(Screen.Compendium) }, icon = NbIcons.Book)
+            }
+            // data jsou jen v zařízení – ruční poznámka s fajfkou
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                HandNote(str.savedOffline, color = Nb.inkMuted, size = 18f)
+                Icon(NbIcons.Check, null, tint = Nb.accent, modifier = Modifier.size(15.dp))
             }
             LangToggle(state)
             AppMenu(state, db, onDatabase = { state.openRoot(Screen.Database) }, onAbout = { state.openRoot(Screen.About) })

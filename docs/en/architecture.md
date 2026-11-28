@@ -82,8 +82,6 @@ composeApp/src/
       ArchetypeMods.kt        hand-entered effects of known archetypes (ARCHETYPE_MODS)
       Prestige.kt             prestige classes (PrestigeInfo, Prestige – classes to advance, Character.casterLevel, PrestigeRequirements, PrestigeTextRepository)
       PrestigeTable.kt        GENERATED: 118 prestige classes (AoN, tools/build_prestige_classes.py)
-tools/build_companions.py   further animal companions and familiars (d20pfsrd)
-tools/build_eidolons.py   eidolon – progression, forms, evolutions (d20pfsrd)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       subclass powers (SubclassPowers), Foundry formulas (FoundryFormula), hexes and revelations (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENERATED: domain, bloodline, school and blessing powers, patron / spirit / discipline spells (Foundry, tools/build_class_abilities.py)
@@ -106,8 +104,11 @@ tools/build_eidolons.py   eidolon – progression, forms, evolutions (d20pfsrd)
       Theme.kt                Nb.* colors, fonts, PfTheme, modifiers (ruled paper, dashed borders), icons
       Common.kt               shared components + NbScreen (screen skeleton)
       WideLayout.kt           three-column layout
+      Journal.kt              "Adventurer's journal" elements: divider tabs (NbIndexTabs, vertical NbIndexTabsVertical), Prepare | Play, animations
+                              (rememberRevealProgress, pageTurn, writeIn, staggerIn, reduced motion via LocalReduceMotion), slot circles, margin marks,
+                              stamps, index card, torn note, tape, paperclip, page margin, empty states
       DeckListScreen.kt       start screen (tabs), character list, ⋮ menu, new character
-      DeckDetailScreen.kt     character detail: race, alignment, deity, classes, abilities, inventory, feats, skills, abilities with uses, spells, game mode
+      DeckDetailScreen.kt     character detail with journal tabs (Character / Combat / Spells / Inventory / Companions): classes, summary, 3 × 2 abilities, feats, defense, abilities with uses, spells (Prepare | Play), inventory, companions
       ClassPicker.kt          class picker (cards, search, preview, subclass, race and deity for a new character)
       RaceUi.kt               RacePickerDialog, race summary (size, speed, ability modifiers)
       RacialTraitsUi.kt       alternate racial traits (link below the race, picker dialog)
@@ -134,7 +135,7 @@ tools/build_eidolons.py   eidolon – progression, forms, evolutions (d20pfsrd)
       AboutScreen.kt          About & licenses (GPL, Paizo CUP, OGL text)
     composeResources/
       files/                  bundled data (see data.md)
-      font/                   Alegreya, Alegreya Sans, IBM Plex Mono
+      font/                   Alegreya, Alegreya Sans, IBM Plex Mono, Caveat (handwriting – notes only)
   androidMain/   MainActivity, AndroidManifest, Platform.android.kt, DeckFileIo.android.kt
   desktopMain/   main.kt (window 1360×880, Esc = back), Platform.desktop.kt, DeckFileIo.desktop.kt
   iosMain/       MainViewController.kt, Platform.ios.kt, DeckFileIo.ios.kt
@@ -148,6 +149,8 @@ tools/build_class_abilities.py   subclass powers, hexes and revelations (Foundry
 tools/build_racial_traits.py   default and alternate racial traits (AoN)
 tools/build_archetypes.py   class archetypes (AoN)
 tools/build_prestige_classes.py   prestige classes (AoN)
+tools/build_companions.py   further animal companions and familiars (d20pfsrd)
+tools/build_eidolons.py   eidolon – progression, forms, evolutions (d20pfsrd)
 ```
 
 ## State and navigation

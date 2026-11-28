@@ -199,7 +199,8 @@ private fun CharacterItem(character: Character, selected: Boolean, onClick: () -
 @Composable
 private fun CompanionItem(c: Character, selected: Boolean, onClick: () -> Unit) {
     val s = str
-    val base = Modifier.padding(start = 22.dp).fillMaxWidth().clip(Nb.shape)
+    // sponka: mazlíček visí pod pánem jako připnutý lístek
+    val base = Modifier.padding(start = 22.dp).fillMaxWidth().paperclip(right = 12.dp).clip(Nb.shape)
     Column(
         (if (selected) base.background(Nb.inset).dashedBorder() else base.background(Nb.panel.copy(alpha = 0.6f)))
             .clickable(onClick = onClick)

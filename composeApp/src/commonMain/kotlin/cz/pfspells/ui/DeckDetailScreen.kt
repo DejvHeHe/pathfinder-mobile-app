@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.pfspells.AppState
+import cz.pfspells.CharacterTab
 import cz.pfspells.Screen
 import cz.pfspells.Strings
 import cz.pfspells.data.casterLevel
@@ -111,92 +116,122 @@ fun DeckDetailScreen(
     }
     val missing = c.classes.sumOf { e -> e.spells.keys.count { db.get(it) == null } }
 
+    // mazlíček nemá vlastní mazlíčky (familiár familiára…) – bez záložky Mazlíčci
+    val tabs = if (c.isCompanion) CharacterTab.entries - CharacterTab.COMPANIONS else CharacterTab.entries
+    val tab = state.characterTab.takeIf { it in tabs } ?: CharacterTab.CHARACTER
+    val play = state.gameMode
     NbScreen(
         title = c.name,
         subtitle = if (wide) "${classesSummary(s, c)} · ${s.statsLine(stats)}" else classesSummary(s, c),
         onBack = if (wide) null else ({ state.pop() }),
         wide = wide,
-        // v herním režimu se kouzla nepřidávají – tlačítko by překrývalo sloty
-        primary = if (state.gameMode) null else casters.singleOrNull()?.let { e -> s.addSpells to { openPicker(e.classId) } },
+        // „Přidat kouzla“ jen na záložce Kouzla v přípravě – ve hře by tlačítko překrývalo sloty
+        primary = if (tab != CharacterTab.SPELLS || play) null else casters.singleOrNull()?.let { e -> s.addSpells to { openPicker(e.classId) } },
         actions = {
             NbIconButton(NbIcons.Share, s.exportCharacter, { export = true }, Nb.inkMuted, 19.dp)
             NbIconButton(NbIcons.Pencil, s.rename, { rename = true }, Nb.inkMuted, 19.dp)
             NbIconButton(NbIcons.Trash, s.deleteCharacter, { confirmDelete = true }, Nb.inkMuted, 19.dp)
         },
     ) {
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = if (wide) 0.dp else 16.dp, end = if (wide) 0.dp else 16.dp, top = 6.dp, bottom = 96.dp),
-        ) {
-            if (c.isCompanion) item(key = "companion") { CompanionHeader(state, c, wide) }
-            item(key = "classes") {
-                ClassesPanel(
-                    state, c, wide,
-                    onAdd = { addClass = true }, onRemove = { removeClass = it }, onSubclass = { subclassFor = it }, onRace = { pickRace = true }, onDeity = { editDeity = true },
-                )
-            }
-            if (!wide) {
-                item(key = "stats") {
-                    Text(s.statsLine(stats), fontSize = 13.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 8.dp))
-                }
-            }
-            item(key = "abilities") {
-                Column(Modifier.padding(top = 4.dp)) {
-                    SectionHeader(s.abilitiesHeader)
-                    AbilityRow(s, c) { editAbility = it }
-                    c.raceInfo?.let { r ->
-                        val mods = characterRaceModsText(s, c)
-                        if (Ability.entries.any { c.raceMod(it) != 0 }) {
-                            Text(s.raceIncludedHint(mods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 6.dp))
+        // rozdělovník „Deník dobrodruha“: mobil – záložky nahoře, široké okno – svisle u pravého okraje
+        Column(Modifier.fillMaxSize().then(if (wide) Modifier else Modifier.notebookMargin())) {
+        if (!wide) NbIndexTabs(s, tab, { state.characterTab = it }, Modifier.padding(start = MarginStart, end = 16.dp), tabs)
+        Row(Modifier.fillMaxSize()) {
+            LazyColumn(
+                Modifier.weight(1f).fillMaxHeight().pageTurn(tab),
+                contentPadding = PaddingValues(start = if (wide) 0.dp else MarginStart, end = if (wide) 0.dp else 16.dp, top = if (wide) 6.dp else 14.dp, bottom = 96.dp),
+            ) {
+                when (tab) {
+                    CharacterTab.CHARACTER -> {
+                        if (c.isCompanion) item(key = "companion") { CompanionHeader(state, c, wide) }
+                        item(key = "classes") {
+                            ClassesPanel(
+                                state, c, wide,
+                                onAdd = { addClass = true }, onRemove = { removeClass = it }, onSubclass = { subclassFor = it }, onRace = { pickRace = true }, onDeity = { editDeity = true },
+                            )
+                        }
+                        item(key = "stats") {
+                            StatsTable(
+                                listOf(
+                                    s.levelShort to "${stats.level}", s.babShort to stats.bab.signedText(),
+                                    s.fortShort to stats.fort.signedText(), s.refShort to stats.ref.signedText(), s.willShort to stats.will.signedText(),
+                                ),
+                                Modifier.padding(top = 10.dp),
+                            )
+                        }
+                        item(key = "abilities") {
+                            Column(Modifier.padding(top = 4.dp)) {
+                                SectionHeader(s.abilitiesHeader)
+                                AbilityGrid(s, c, columns = if (wide) 6 else 3, main = casters.firstOrNull()?.caster?.ability) { editAbility = it }
+                                c.raceInfo?.let { r ->
+                                    val mods = characterRaceModsText(s, c)
+                                    if (Ability.entries.any { c.raceMod(it) != 0 }) {
+                                        Text(s.raceIncludedHint(mods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 6.dp))
+                                    }
+                                }
+                                // zvířecí společník: Str/Dex bonus z tabulky a vylepšení druhu
+                                val companionMods = Ability.entries.mapNotNull { a ->
+                                    c.companionMod(a).takeIf { it != 0 }?.let { v -> (if (v < 0) "−${-v}" else "+$v") + " " + s.abilityShort(a) }
+                                }
+                                if (companionMods.isNotEmpty()) {
+                                    Text(s.companionIncludedHint(companionMods.joinToString(", ")), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
+                                }
+                                // nasazené vybavení z propojeného inventáře (Headband of Vast Intelligence…)
+                                val gearMods = gearAbilityText(s, c)
+                                if (gearMods.isNotEmpty()) {
+                                    Text(s.gearIncludedHint(gearMods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
+                                }
+                            }
+                        }
+                        item(key = "feats") { FeatsPanel(state, c, wide, selectedFeatPick) }
+                        item(key = "class-abilities") { ClassAbilitiesPanel(state, c) }
+                        item(key = "skills") { SkillsPanel(state, c) }
+                    }
+                    CharacterTab.COMBAT -> {
+                        item(key = "defense") { DefensePanel(state, c) }
+                        if (c.resources().isNotEmpty()) {
+                            item(key = "mode") {
+                                ModeBar(s, play, { state.gameMode = it }, { state.rest(c.id) }, Modifier.padding(top = 14.dp))
+                            }
+                        }
+                        item(key = "resources") { ResourcesPanel(state, c, wide) }
+                    }
+                    CharacterTab.SPELLS -> {
+                        if (casters.isNotEmpty()) {
+                            item(key = "mode") {
+                                Column {
+                                    ModeBar(s, play, { state.gameMode = it }, { state.rest(c.id) })
+                                    HandNote(if (play) s.modeHintPlay else s.modeHintPrepare, Modifier.padding(top = 4.dp))
+                                }
+                            }
+                        }
+                        if (missing > 0) {
+                            item(key = "missing") {
+                                Text(s.missingSpells(missing), color = Nb.error, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                            }
+                        }
+                        if (casters.isEmpty()) {
+                            item(key = "no-casters") {
+                                NbEmptyState(Sketch.QUILL, s.emptyNoCasterTitle, s.noCasterClasses, Modifier.padding(top = 16.dp))
+                            }
+                        }
+                        casters.forEach { e ->
+                            classSpells(state, db, c, e, wide, selectedSpellId, showAddButton = casters.size > 1, openPicker)
+                            e.caster?.let { cls ->
+                                subclassBonusSpells(state, db, c, e, cls, wide, selectedSpellId) { subclassFor = e.classId }
+                            }
                         }
                     }
-                    // zvířecí společník: Str/Dex bonus z tabulky a vylepšení druhu
-                    val companionMods = Ability.entries.mapNotNull { a ->
-                        c.companionMod(a).takeIf { it != 0 }?.let { v -> (if (v < 0) "−${-v}" else "+$v") + " " + s.abilityShort(a) }
+                    CharacterTab.INVENTORY -> {
+                        item(key = "inventory") { InventoryLink(state, c, wide) }
                     }
-                    if (companionMods.isNotEmpty()) {
-                        Text(s.companionIncludedHint(companionMods.joinToString(", ")), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
-                    }
-                    // nasazené vybavení z propojeného inventáře (Headband of Vast Intelligence…)
-                    val gearMods = gearAbilityText(s, c)
-                    if (gearMods.isNotEmpty()) {
-                        Text(s.gearIncludedHint(gearMods), fontSize = 12.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(top = 4.dp))
+                    CharacterTab.COMPANIONS -> {
+                        item(key = "companions") { CompanionsPanel(state, c, wide) }
                     }
                 }
             }
-            item(key = "defense") { DefensePanel(state, c) }
-            item(key = "inventory") { InventoryLink(state, c, wide) }
-            // mazlíček nemá vlastní mazlíčky (familiár familiára…)
-            if (!c.isCompanion) item(key = "companions") { CompanionsPanel(state, c, wide) }
-            item(key = "feats") { FeatsPanel(state, c, wide, selectedFeatPick) }
-            item(key = "class-abilities") { ClassAbilitiesPanel(state, c) }
-            item(key = "skills") { SkillsPanel(state, c) }
-            item(key = "resources") { ResourcesPanel(state, c, wide) }
-            if (casters.isNotEmpty() || c.resources().isNotEmpty()) {
-                item(key = "game") {
-                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        NbCheck(state.gameMode, s.gameMode) { state.gameMode = it }
-                        Spacer(Modifier.weight(1f))
-                        if (state.gameMode) NbDashedButton(s.rest, { state.rest(c.id) })
-                    }
-                }
-            }
-            if (missing > 0) {
-                item(key = "missing") {
-                    Text(s.missingSpells(missing), color = Nb.error, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
-                }
-            }
-            if (casters.isEmpty()) {
-                item(key = "no-casters") {
-                    Text(s.noCasterClasses, color = Nb.inkMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 16.dp))
-                }
-            }
-            casters.forEach { e ->
-                classSpells(state, db, c, e, wide, selectedSpellId, showAddButton = casters.size > 1, openPicker)
-                e.caster?.let { cls ->
-                    subclassBonusSpells(state, db, c, e, cls, wide, selectedSpellId) { subclassFor = e.classId }
-                }
-            }
+            if (wide) NbIndexTabsVertical(s, tab, { state.characterTab = it }, Modifier.padding(start = 16.dp, top = 14.dp), tabs)
+        }
         }
     }
 
@@ -309,7 +344,7 @@ private fun ClassesPanel(
 ) {
     val s = str
     val fonts = LocalNbFonts.current
-    NbPanel(Modifier.fillMaxWidth().padding(top = if (wide) 14.dp else 0.dp), color = Nb.inset) {
+    NbPanel(Modifier.fillMaxWidth().padding(top = if (wide) 14.dp else 0.dp).paperclip(), color = Nb.inset) {
         // rasa: název + velikost, rychlost, úpravy atributů; klepnutím výběr
         MonoLabel(s.raceLabel)
         val race = c.raceInfo
@@ -444,23 +479,43 @@ private fun InventoryLink(state: AppState, c: Character, wide: Boolean) {
     }
 }
 
-/** Šest dlaždic atributů (hodnota + modifikátor); klepnutím se upraví. */
+fun Int.signedText(): String = if (this < 0) "−${-this}" else "+$this"
+
+/**
+ * Dlaždice atributů (hodnota + modifikátor) – na mobilu 3 × 2, na širokém okně 6 v řadě. Hlavní atribut sesílání
+ * je zakroužkovaný a má ruční poznámku. Klepnutím se upraví.
+ */
 @Composable
-private fun AbilityRow(s: Strings, c: Character, onEdit: (Ability) -> Unit) {
+private fun AbilityGrid(s: Strings, c: Character, columns: Int, main: Ability?, onEdit: (Ability) -> Unit) {
     val fonts = LocalNbFonts.current
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Ability.entries.forEach { a ->
-            val v = c.scores[a]
-            val mod = abilityMod(v)
-            Column(
-                Modifier.weight(1f).clip(Nb.shape).background(Nb.panel).dashedBorder()
-                    .clickable(onClickLabel = s.abilityLong(a)) { onEdit(a) }
-                    .padding(vertical = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                MonoLabel(s.abilityShort(a), color = Nb.rust, size = 10.5.sp)
-                Text("$v", fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Nb.ink)
-                Text(if (mod < 0) "−${-mod}" else "+$mod", fontFamily = fonts.mono, fontSize = 11.sp, color = Nb.inkMuted)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Ability.entries.chunked(columns).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { a ->
+                    val v = c.scores[a]
+                    val isMain = a == main
+                    Box(Modifier.weight(1f).staggerIn(Ability.entries.indexOf(a))) {
+                        Column(
+                            Modifier.fillMaxWidth().clip(Nb.shape).background(Nb.panel).dashedBorder()
+                                .clickable(onClickLabel = s.abilityLong(a)) { onEdit(a) }
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                        ) {
+                            MonoLabel(s.abilityShort(a), color = Nb.rust, size = 11.sp)
+                            Row(
+                                Modifier.handCircled(isMain).padding(end = 6.dp),
+                                verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                RewriteText(
+                                    "$v",
+                                    style = androidx.compose.ui.text.TextStyle(fontFamily = fonts.serif, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Nb.ink),
+                                )
+                                Text(abilityMod(v).signedText(), Modifier.padding(bottom = 3.dp), fontFamily = fonts.mono, fontSize = 13.sp, color = Nb.inkMuted)
+                            }
+                        }
+                        if (isMain) HandNote(s.mainAbilityNote, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-12).dp).graphicsLayer { rotationZ = 8f }, size = 18f)
+                    }
+                }
+                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -518,9 +573,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 }
             }
             if (entries.isEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
-                    Text(s.characterNoSpells, textAlign = TextAlign.Center, color = Nb.inkMuted)
-                }
+                NbEmptyState(Sketch.BOOK, s.emptySpellsTitle, s.characterNoSpells, action = (s.addSpells to { openPicker(e.classId) }).takeIf { !game })
             }
         }
     }
@@ -539,7 +592,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 }
             }
         }
-        items(list, key = { "${e.classId}-${it.first.id}" }) { (spell, count) ->
+        itemsIndexed(list, key = { _, it -> "${e.classId}-${it.first.id}" }) { index, (spell, count) ->
             // herní režim: připravující classa odškrtává kopie, spontánní sesílá ze slotu levelu
             val gameControl: (@Composable () -> Unit)? = when {
                 !game -> null
@@ -557,6 +610,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 })
             }
             DeckSpellRow(
+                modifier = Modifier.staggerIn(index),
                 spell = spell,
                 count = count,
                 single = cls.distinctSpells,
@@ -570,6 +624,17 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classSpells(
                 onClick = { state.showSpell(spell.id, c.id, e.classId) },
                 onCount = { state.setSpellCount(c.id, e.classId, spell.id, it) },
             )
+        }
+        // příprava: volná místa ve spell levelu jako čárkovaný box s ruční poznámkou
+        if (!game && level in 0..maxLevel) {
+            val slots = e.levelSlots(cls, score, level, casterLevel)
+            val chosen = if (cls.distinctSpells) list.size else list.sumOf { it.second }
+            val free = (slots.limit ?: 0) - chosen
+            if (slots.limit != null && free > 0 && slots.abilityOk) {
+                item(key = "${e.classId}-free$level") {
+                    DashedNoteBox(str.freeSlots(free), { openPicker(e.classId) }, Modifier.padding(top = 6.dp))
+                }
+            }
         }
     }
 }
@@ -600,12 +665,15 @@ private fun LevelHeader(s: Strings, cls: CasterClass, slots: LevelSlots, chosen:
         if (schoolSlot > 0) add(s.schoolSlot)
         if (!slots.abilityOk) add(s.abilityNeeded(s.abilityShort(cls.ability), 10 + slots.spellLevel))
     }.joinToString(" · ")
-    SectionHeader(s.spellLevelLabel(slots.spellLevel), size = 16.sp) {
-        Text(
-            info, textAlign = TextAlign.End,
-            fontFamily = fonts.mono, fontSize = 11.5.sp,
-            color = if (over || !slots.abilityOk) Nb.error else Nb.inkMuted,
-        )
+    Box {
+        SectionHeader(s.spellLevelLabel(slots.spellLevel), size = 16.sp) {
+            Text(
+                info, textAlign = TextAlign.End,
+                fontFamily = fonts.mono, fontSize = 11.5.sp,
+                color = if (over || !slots.abilityOk) Nb.error else Nb.inkMuted,
+            )
+        }
+        if (over) NbStamp(s.stampOverLimit, Modifier.align(Alignment.TopEnd).offset(x = (-40).dp, y = 2.dp))
     }
 }
 
@@ -651,26 +719,10 @@ private fun GameLevelHeader(
     if (total > 0) CastPips(total, used, Modifier.padding(bottom = 4.dp)) { onCast(key, it) }
 }
 
-/** Řada slotů / kopií: plný = sesláno. Klepnutí na plný ho (i následující) uvolní, na prázdný doplní až po něj. */
+/** Řada slotů / kopií: kroužky (použitý = křížek). Ťuk na použitý ho (i následující) uvolní, na volný doplní až po něj. */
 @Composable
 internal fun CastPips(total: Int, used: Int, modifier: Modifier = Modifier, onSet: (Int) -> Unit) {
-    val s = str
-    if (total > 8) {
-        // hodně kopií – místo puntíků počítadlo
-        CountStepper(used.coerceAtMost(total), onSet, min = 0, max = total, size = 32.dp, numberSize = 14.sp)
-        return
-    }
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (i in 0 until total) {
-            val filled = i < used
-            Box(
-                Modifier.size(24.dp).clip(Nb.shape)
-                    .background(if (filled) Nb.accent else Nb.inset)
-                    .border(1.dp, if (filled) Nb.accent else Nb.rule, Nb.shape)
-                    .clickable(onClickLabel = s.slotLabel) { onSet(if (filled) i else i + 1) },
-            )
-        }
-    }
+    SlotCircles(total, used, str.slotLabel, modifier, onSet = onSet)
 }
 
 /** „Evocation [fire] · 1 standard action“ */
@@ -683,6 +735,7 @@ fun spellSubline(s: Strings, spell: Spell): String = buildString {
 
 @Composable
 private fun DeckSpellRow(
+    modifier: Modifier = Modifier,
     spell: Spell,
     count: Int,
     /** spontánní / arcanist: místo počtu kopií jen odebrání */
@@ -701,7 +754,7 @@ private fun DeckSpellRow(
     onCount: (Int) -> Unit,
 ) {
     val fonts = LocalNbFonts.current
-    val base = Modifier.fillMaxWidth()
+    val base = modifier.fillMaxWidth()
     val rowMod = if (selected) base.clip(Nb.shape).background(Nb.panel).dashedBorder() else base.bottomRule(if (wide) Nb.ruleSoft else Nb.rule)
     Row(
         rowMod.clickable(onClick = onClick).padding(horizontal = if (wide) 10.dp else 0.dp, vertical = 6.dp),
@@ -711,9 +764,8 @@ private fun DeckSpellRow(
         val name: @Composable (Modifier) -> Unit = { m ->
             Row(m, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    spell.name, Modifier.weight(1f, fill = false),
+                    spell.name, Modifier.weight(1f, fill = false).handStrike(spent),
                     fontSize = if (wide) 16.sp else 15.5.sp, fontWeight = FontWeight.SemiBold, color = if (spent) Nb.inkMuted else Nb.ink,
-                    textDecoration = if (spent) TextDecoration.LineThrough else null,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (favorite) Icon(NbIcons.StarFilled, str.favorite, tint = Nb.rust, modifier = Modifier.padding(start = 6.dp).size(13.dp))

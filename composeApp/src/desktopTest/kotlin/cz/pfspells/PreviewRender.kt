@@ -204,13 +204,15 @@ class PreviewRender {
         val out = File("build/previews").apply { mkdirs() }
 
         suspend fun shot(name: String, w: Int, h: Int, overlay: (@Composable () -> Unit)? = null, nav: AppState.() -> Unit) {
-            withContext(Dispatchers.Main) { state.nav() }
+            // detail postavy začíná na záložce Postava, pokud náhled neřekne jinak
+            withContext(Dispatchers.Main) { state.characterTab = CharacterTab.CHARACTER; state.nav() }
             ImageComposeScene(w, h, Density(1f)) {
                 App(state)
                 overlay?.let { PfTheme { CompositionLocalProvider(LocalStrings provides state.strings) { it() } } }
             }.use { scene ->
                 var t = 0L
-                repeat(12) { scene.render(t); t += 50_000_000; delay(40) }
+                // 1,5 s – animace deníku (dopsání, zakroužkování se zpožděním) doběhnou do konečného stavu
+                repeat(30) { scene.render(t); t += 50_000_000; delay(40) }
                 val img = scene.render(t)
                 File(out, "$name.png").writeBytes(img.encodeToData(EncodedImageFormat.PNG)!!.bytes)
             }
@@ -251,31 +253,43 @@ class PreviewRender {
         }
         shot("cs-phone-multiclass", 390, 844) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Brother Thomas" }.id)) }
         shot("cs-desktop-multiclass", 1440, 1000) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Brother Thomas" }.id)) }
-        shot("phone-spontaneous", 390, 844) { openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
+        shot("phone-spontaneous", 390, 844) { characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
         shot("cs-phone-game-spontaneous", 390, 844) {
             val n = characters.first { it.name == "Nyx" }
             gameMode = true
             setCast(n.id, cz.pfspells.data.Character.slotKey("sorcerer", 1), 4)
-            openRoot(Screen.CharacterDetail(n.id))
+            characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(n.id))
         }
         shot("cs-phone-game-prepared", 390, 844) {
             gameMode = true
             setCast(elara.id, cz.pfspells.data.Character.castKey("wizard", "magic-missile"), 1)
             setCast(elara.id, cz.pfspells.data.Character.castKey("wizard", "shield"), 1)
-            openRoot(Screen.CharacterDetail(elara.id))
+            characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(elara.id))
         }
-        shot("cs-desktop-game", 1440, 1000) { gameMode = true; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-desktop-game", 1440, 1000) { gameMode = true; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(elara.id)) }
         val thomasId = state.characters.first { it.name == "Brother Thomas" }.id
         shot("cs-phone-feats", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(thomasId)) }
         shot("cs-phone-featpicker", 390, 844) { openRoot(Screen.CharacterDetail(thomasId)); push(Screen.FeatPicker(thomasId)) }
         shot("cs-desktop-feat", 1440, 1000) { featFilter = FeatFilter(query = "power att"); openRoot(Screen.FeatPicker(thomasId)); showFeat("power-attack", thomasId) }
-        shot("cs-phone-domains", 390, 2000) { gameMode = false; openRoot(Screen.CharacterDetail(thomasId)) }
-        shot("cs-phone-bloodline", 390, 1300) { gameMode = false; openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
+        shot("cs-phone-domains", 390, 2000) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(thomasId)) }
+        shot("cs-phone-bloodline", 390, 1300) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(characters.first { it.name == "Nyx" }.id)) }
         shot("cs-phone-wizard", 390, 1700) { gameMode = false; openRoot(Screen.CharacterDetail(elara.id)) }
+        // Deník dobrodruha: záložky rozdělovníku
+        shot("cs-phone-tab-combat", 390, 844) { gameMode = false; characterTab = CharacterTab.COMBAT; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-phone-tab-spells", 390, 844) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-phone-tab-spells-play", 390, 844) {
+            gameMode = true; characterTab = CharacterTab.SPELLS
+            setCast(elara.id, cz.pfspells.data.Character.castKey("wizard", "magic-missile"), 1)
+            openRoot(Screen.CharacterDetail(elara.id))
+        }
+        shot("cs-phone-combat-down", 390, 844) { gameMode = true; characterTab = CharacterTab.COMBAT; setDamage(elara.id, 18); openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-phone-combat-down-after", 390, 844) { setDamage(elara.id, 0); gameMode = false; characterTab = CharacterTab.COMBAT; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-phone-tab-inventory", 390, 844) { gameMode = false; characterTab = CharacterTab.INVENTORY; openRoot(Screen.CharacterDetail(elara.id)) }
+        shot("cs-desktop-tab-spells", 1440, 1000) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(elara.id)); showSpell("fireball", elara.id) }
         shot("cs-phone-resources-game", 390, 1500) {
             gameMode = true
             setCast(thomasId, "res:cleric-channel", 2)
-            openRoot(Screen.CharacterDetail(thomasId))
+            characterTab = CharacterTab.COMBAT; openRoot(Screen.CharacterDetail(thomasId))
         }
         shot("cs-phone-myitems", 390, 844) { itemFilter = ItemFilter(mine = true); openRoot(Screen.Decks); push(Screen.InventoryDetail(inv.id)); push(Screen.ItemPicker(inv.id)) }
         shot("cs-desktop-myitem", 1440, 1000) {
@@ -292,15 +306,19 @@ class PreviewRender {
         shot("cs-phone-archetypes-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(seelah.id)) }
         shot("cs-phone-familiar", 390, 1100) { gameMode = false; openRoot(Screen.CharacterDetail(mittens.id)) }
         shot("cs-phone-eidolon", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(doloran.id)) }
+        shot("cs-phone-tab-companions", 390, 844) { gameMode = false; characterTab = CharacterTab.COMPANIONS; openRoot(Screen.CharacterDetail(ezren.id)) }
+        shot("cs-desktop-tab-companions", 1440, 1000) { gameMode = false; characterTab = CharacterTab.COMPANIONS; openRoot(Screen.CharacterDetail(ezren.id)) }
+        // mazlíček záložku Mazlíčci nemá – zůstane na Postavě
+        shot("cs-phone-companion-tabs", 390, 844) { characterTab = CharacterTab.COMPANIONS; openRoot(Screen.CharacterDetail(mittens.id)) }
         shot("cs-phone-prestige-panel", 390, 1000) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
-        shot("cs-phone-prestige-spells", 390, 2600) { gameMode = false; openRoot(Screen.CharacterDetail(ezren.id)) }
+        shot("cs-phone-prestige-spells", 390, 2600) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(ezren.id)) }
         shot("cs-phone-prestige-dialog", 390, 844, overlay = {
             cz.pfspells.ui.PrestigeDialog(state, state.character(ezren.id)!!, cz.pfspells.data.ClassCatalog.get("eldritch_knight")!!.prestige!!) { }
         }) { openRoot(Screen.Decks) }
         shot("desktop-prestige-dialog", 1440, 1000, overlay = {
             cz.pfspells.ui.PrestigeDialog(state, state.character(ezren.id)!!, cz.pfspells.data.ClassCatalog.get("mystic_theurge")!!.prestige!!) { }
         }) { openRoot(Screen.CharacterDetail(ezren.id)) }
-        shot("cs-phone-archetypes-casting", 390, 1400) { gameMode = false; openRoot(Screen.CharacterDetail(kael.id)) }
+        shot("cs-phone-archetypes-casting", 390, 1400) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(kael.id)) }
         shot("cs-phone-archetypes", 390, 844, overlay = {
             cz.pfspells.ui.ArchetypesDialog(state, state.character(seelah.id)!!, "paladin") { }
         }) { openRoot(Screen.Decks) }
@@ -355,11 +373,11 @@ class PreviewRender {
         shot("cs-phone-racepicker", 390, 844, overlay = { RacePickerDialog("dwarf", onDismiss = {}) { } }) { openRoot(Screen.Decks) }
         shot("cs-desktop-racepicker", 1440, 1000, overlay = { RacePickerDialog(null, onDismiss = {}) { } }) { openRoot(Screen.Decks) }
         val spellDb = (state.db as DbState.Ready).db
-        shot("cs-phone-spirit", 390, 2900) { gameMode = false; openRoot(Screen.CharacterDetail(kaya.id)) }
+        shot("cs-phone-spirit", 390, 2900) { gameMode = false; characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(kaya.id)) }
         shot("cs-phone-spirit-game", 390, 2900) {
             gameMode = true
             setCast(kaya.id, cz.pfspells.data.Character.castKey("shaman", "spirit:1"), 1)
-            openRoot(Screen.CharacterDetail(kaya.id))
+            characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(kaya.id))
         }
         shot("cs-phone-warpriest-subclass", 390, 844, overlay = {
             val b = state.character(brannoc.id)!!
@@ -379,7 +397,7 @@ class PreviewRender {
             val e = b.classes[1].copy(subclass = mapOf(cz.pfspells.data.SubclassSlot.INQUISITION to "banishment"))
             cz.pfspells.ui.SubclassDialog(state, spellDb, b, e) { }
         }) { openRoot(Screen.Decks) }
-        shot("cs-phone-witch-patron", 390, 2400) { openRoot(Screen.CharacterDetail(morgana.id)) }
+        shot("cs-phone-witch-patron", 390, 2400) { characterTab = CharacterTab.SPELLS; openRoot(Screen.CharacterDetail(morgana.id)) }
         shot("cs-phone-shaman-subclass", 390, 1000, overlay = {
             val k = state.character(kaya.id)!!
             cz.pfspells.ui.SubclassDialog(state, spellDb, k, k.classes[0]) { }
@@ -390,6 +408,76 @@ class PreviewRender {
                 initialSubclass = mapOf(cz.pfspells.data.SubclassSlot.PATRON to "agility"), onDismiss = {},
             ) { }
         }) { openRoot(Screen.Decks) }
+        // nasazené předměty jako obrysy na postavičce
+        val gear = state.createInventory("Výbava")
+        fun eq(name: String, cat: cz.pfspells.data.ItemCategory, slot: cz.pfspells.data.ItemSlot?) =
+            cz.pfspells.data.InvEntry(id = "eq-" + name.hashCode(), name = name, category = cat.name, equipped = true, slot = slot)
+        state.updateInventory(gear.id) {
+            it.copy(entries = listOf(
+                eq("Helm of Comprehend Languages", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.HEAD),
+                eq("Cloak of Resistance +1", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.SHOULDERS),
+                eq("Amulet of Natural Armor +1", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.NECK),
+                eq("Full Plate", cz.pfspells.data.ItemCategory.ARMOR, cz.pfspells.data.ItemSlot.ARMOR),
+                eq("Belt of Giant Strength +2", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.BELT),
+                eq("Bracers of Armor +1", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.WRISTS),
+                eq("Ring of Protection +1", cz.pfspells.data.ItemCategory.RING, cz.pfspells.data.ItemSlot.RING),
+                eq("Boots of Elvenkind", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.FEET),
+                eq("Longsword", cz.pfspells.data.ItemCategory.WEAPON, cz.pfspells.data.ItemSlot.MAIN_HAND),
+                eq("Heavy Steel Shield", cz.pfspells.data.ItemCategory.ARMOR, cz.pfspells.data.ItemSlot.SHIELD),
+            ))
+        }
+        shot("cs-phone-gear-outlines", 390, 844) { openRoot(Screen.Decks); push(Screen.InventoryDetail(gear.id)) }
+        shot("cs-desktop-gear-outlines", 1440, 1000) { openRoot(Screen.InventoryDetail(gear.id)) }
+        val mage = state.createInventory("Mág")
+        state.updateInventory(mage.id) {
+            it.copy(entries = listOf(
+                eq("Wizard's Hat", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.HEAD),
+                eq("Robe of Bones", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.BODY),
+                eq("Goggles of Night", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.EYES),
+                eq("Quarterstaff", cz.pfspells.data.ItemCategory.WEAPON, cz.pfspells.data.ItemSlot.MAIN_HAND),
+                eq("Dagger", cz.pfspells.data.ItemCategory.WEAPON, cz.pfspells.data.ItemSlot.SHIELD),
+                eq("Ring of Feather Falling", cz.pfspells.data.ItemCategory.RING, cz.pfspells.data.ItemSlot.RING),
+                eq("Ring of Swimming", cz.pfspells.data.ItemCategory.RING, cz.pfspells.data.ItemSlot.RING),
+            ))
+        }
+        shot("cs-desktop-gear-mage", 1440, 1000) { openRoot(Screen.InventoryDetail(mage.id)) }
+        // zvířata: postavička podle tvaru (čtyřnožec / pták / had), sloty podle PF1, sedlo podle jména
+        val horse = state.createCompanion(seelah.id, "Hrom", cz.pfspells.data.CompanionKind.MOUNT, "animal", 4,
+            cz.pfspells.data.CreatureSize.LARGE, true, species = "horse", companionLevel = 4)
+        val horseInv = state.createInventoryFor(horse.id)!!
+        state.updateInventory(horseInv.id) {
+            it.copy(entries = listOf(
+                eq("Chain Barding", cz.pfspells.data.ItemCategory.ARMOR, cz.pfspells.data.ItemSlot.ARMOR),
+                eq("Collar of the True Companion", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.NECK),
+                eq("Horseshoes of Speed", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.FEET),
+                eq("Military Saddle", cz.pfspells.data.ItemCategory.GEAR, null),
+                eq("Saddlebags", cz.pfspells.data.ItemCategory.GEAR, null),
+                eq("Bit and Bridle", cz.pfspells.data.ItemCategory.GEAR, null),
+            ))
+        }
+        shot("cs-desktop-gear-horse", 1440, 1000) { openRoot(Screen.InventoryDetail(horseInv.id)) }
+        shot("cs-phone-gear-horse", 390, 844) { openRoot(Screen.Decks); push(Screen.InventoryDetail(horseInv.id)) }
+        val raven = state.createCompanion(morgana.id, "Krákor", cz.pfspells.data.CompanionKind.FAMILIAR, "animal", 1,
+            cz.pfspells.data.CreatureSize.TINY, false, companionLevel = 10, familiar = "raven")
+        val ravenInv = state.createInventoryFor(raven.id)!!
+        state.updateInventory(ravenInv.id) {
+            it.copy(entries = listOf(
+                eq("Hat of Disguise", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.HEAD),
+                eq("Amulet of Natural Armor +1", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.NECK),
+                eq("Feather Step Slippers", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.FEET),
+            ))
+        }
+        shot("cs-desktop-gear-raven", 1440, 1000) { openRoot(Screen.InventoryDetail(ravenInv.id)) }
+        val viper = state.createCompanion(morgana.id, "Syčák", cz.pfspells.data.CompanionKind.FAMILIAR, "animal", 1,
+            cz.pfspells.data.CreatureSize.TINY, false, companionLevel = 10, familiar = "viper")
+        val viperInv = state.createInventoryFor(viper.id)!!
+        state.updateInventory(viperInv.id) {
+            it.copy(entries = listOf(
+                eq("Circlet of Persuasion", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.HEAD),
+                eq("Amulet of Natural Armor +1", cz.pfspells.data.ItemCategory.WONDROUS, cz.pfspells.data.ItemSlot.NECK),
+            ))
+        }
+        shot("cs-desktop-gear-viper", 1440, 1000) { openRoot(Screen.InventoryDetail(viperInv.id)) }
         shot("desktop-classpicker-wizard", 1440, 1000, overlay = {
             ClassPickerDialog("New character", "Create", withName = true, subclasses = subIdx, initialClassId = "wizard", onDismiss = {}) { }
         }) { changeLang(Lang.EN); openRoot(Screen.Decks) }

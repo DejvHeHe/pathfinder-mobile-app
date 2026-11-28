@@ -25,7 +25,23 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
 - Export/import decků i inventářů, design „Linkovaný zápisník“ podle návrhu uživatele, platformy Android, iOS, desktop, web.
 - Rozhraní v **angličtině i češtině**, přepínač „EN | CZ“ v hlavičce (výchozí podle jazyka systému, volba se pamatuje).
 
-## Stav (27. 11. 2026)
+## Stav (28. 11. 2026)
+- ✅ **Vydáno `v2.0.0`** (28. 11. 2026): **redesign „Deník dobrodruha“** podle handoffu z Claude Design
+  (plátno https://claude.ai/artifact/DAh1N5pF5gYAAF5RVEYcPK, stránka „Deník dobrodruha“; design system
+  „Linkovaný zápisník“ https://claude.ai/artifact/ANhEfSAXRGsM4yy5tfpDap). Detail postavy má **záložky**
+  `CharacterTab` (Postava / Boj / Kouzla / Inventář / Mazlíčci – ta chybí u mazlíčka; `AppState.characterTab`,
+  tón `Nb.tabCompanions` #C3D1CC, 5 záložek na mobilu 14 sp), mobil `NbIndexTabs` pod hlavičkou,
+  desktop `NbIndexTabsVertical` vpravo; přepínač **Příprava | Hra** (`NbModeSwitch`, dál `AppState.gameMode`) na
+  Kouzlech i Boji. Papírové prvky a animace v `ui/Journal.kt` (viz Struktura), ruční písmo **Caveat** (`NbFonts.hand`,
+  jen poznámky – šipky a ✓ Caveat nemá), nové tokeny v `Nb` (tóny záložek, `ochreInk`, `indexCard`, `indexRule`,
+  `noteAlert`, `tape`, `clip`), `expect fun systemReducedMotion()` → `LocalReduceMotion`. Vynecháno: útoky
+  (appka je nemá), HP po 5 (zůstává po 1), metamagie se zaškrtávátky. Inventář 2.0: nasazené předměty se na siluetě
+  kreslí obrysem podle slotu a jména (`outlines`, `handItem`, `mirror` v `EquipmentBoard.kt`; náhledy `cs-*-gear-*`).
+  Zvířata: `BodyShape` (HUMANOID / QUADRUPED / BIRD / SERPENT, `bodyShapeOf(inv, owner)` – forma eidolona, druh / familiár
+  podle slov, jinak `Inventory.quadruped`), sloty podle Ultimate Equipment (`shapeSlots`; sloty s nasazeným předmětem
+  zůstanou), siluety 200 × 160, `animalOutlines` (+ sedlo / brašny / uzda podle jména u předmětů bez slotu); na mobilu
+  je zvíře nad dlaždicemi. Náhledy `cs-phone-tab-*`, `cs-phone-combat-down`,
+  `cs-desktop-tab-spells`; `PreviewRender` renderuje 1,5 s a před každým snímkem vrací záložku na Postavu.
 - ✅ **Vydáno `v1.9.2`** (27. 11. 2026, commit `6454e04`): **desktopová aktualizace** – `appUpdater` (desktopMain `Platform.desktop.kt`)
   stáhne `.msi` / `.dmg` / `.deb` do `~/Downloads` (s průběhem, stejně jako Android), dialog „Nainstalovat a zavřít appku“
   (`Strings.installAndClose`) spustí instalátor (`msiexec /i` / `open` / `xdg-open`, záloha `Desktop.open`) a za 1,5 s `exitProcess(0)`;
@@ -114,7 +130,7 @@ Poznámky pro Claude Code: kontext projektu, rozhodnutí, stav a pravidla spolup
   schopnosti bloodline čaroděje z AoN tam, kde je Foundry nemá (Foundry má přednost; air/earth/fire/water → elemental). Testy 125 zelené.
 - Odloženo uživatelem: CMB / CMD a útoky zbraní (appka zatím útoky nemá).
 - Design: inventář 2.0 je hotový podle plátna uživatele v Claude Design (artboardy `Inv2_*` na stránce „Inventory 2.0 – figurka
-  a equip sloty“); další v plánu je redesign detailu postavy – čeká na návrh (brief v `docs/design-brief.md`).
+  a equip sloty“); redesign detailu postavy „Deník dobrodruha“ je implementovaný (viz začátek Stavu).
 - ✅ **Tag `v1.3.0`** (24. 11. 2026): ikona appky, Umami události, no-cache pro web, štítky druhu magie na kartách class, přísný režim,
   mazlíčci a zvířecí společníci (17 zvířat CRB, progrese, rarita, pravidla návratu), nasazené vybavení s bonusy (pozdější vydání mají workflowy zelené).
   Na Linux PC uživatele (`/home/davids/…`) se Gradle nespouští bez požádání; push přes SSH (`git@github.com:DejvHeHe/pathfinder-mobile-app.git`), HTTPS nemá přihlášení.
@@ -214,6 +230,11 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/Theme.kt             tokeny Nb.*, fonty, PfTheme, modifikátory (ruledPaper, dashedBorder…), NbIcons
   ui/Common.kt            NbScreen (kostra obrazovky) + společné komponenty
   ui/WideLayout.kt        třísloupcové rozložení (hlavička se záložkami | sidebar · hlavní · detail)
+  ui/Journal.kt          „Deník dobrodruha“: NbIndexTabs / NbIndexTabsVertical, NbModeSwitch + ModeBar, animace (rememberRevealProgress –
+                         jednou přehraná se nevrací, pageTurn, writeIn, lineIn, staggerIn, starPop, RewriteText; LocalReduceMotion),
+                         NbSlotCircle / SlotCircles, handStrike, NbMarginMark + InMargin, handCircled, NbStamp, NbHandStamp, NbIndexCard,
+                         NbTornNote, tape(), paperclip(), notebookMargin() (okraj listu, obsah od MarginStart 46 dp), StatsTable,
+                         DashedNoteBox, NbEmptyState (Sketch), HandNote
   ui/DeckListScreen.kt    úvod se záložkami Spellbook/Inventory, seznam postav, AppMenu (⋮), nová postava přes ClassPickerDialog
   ui/DeckDetailScreen.kt (detail postavy: classy, atributy, kouzla po classách), ui/ClassPicker.kt (výběr classy + podtřídy), SpellBrowserScreen.kt (picker + kompendium), SpellDetailScreen.kt
   ui/SkillsUi.kt         SkillsPanel (přehled skillů s ranky / úprava všech)
@@ -235,7 +256,7 @@ composeApp/src/commonMain/kotlin/cz/pfspells/
   ui/AboutScreen.kt       About & licenses (GPL, Paizo CUP, OGL text)
 composeApp/src/commonMain/composeResources/
   files/  SpellList.json, Feats.json (featy z AoN, jen přibalené), ClassAbilities.json (hexy a zjevení z Foundry), SubclassAbilities.json (hexy duchů z AoN), Archetypes.json (archetypy z AoN), RacialTraits.json (alternativní rasové traity z AoN), ItemsBase.json, Weapons.csv, Ammunition.csv, MagicItems.csv, OGL.txt
-  font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono
+  font/   Alegreya Bold (+Italic), Alegreya Sans, IBM Plex Mono, Caveat SemiBold / Bold (ruční písmo)
 composeApp/src/androidMain   MainActivity (AppFiles.init, AndroidDeckFileIo.register, Zpět → pop), Platform/DeckFileIo actualy
 composeApp/src/desktopMain   main.kt (okno 1360×880, Esc → zpět), actualy (~/.pfspells, AWT FileDialog)
 composeApp/src/iosMain       MainViewController.kt, actualy (Documents, UIActivityViewController)
@@ -266,7 +287,7 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
   `UiMessage` (lambda nad `Strings`), chyby importu typované `ImportError`, `Load` a `SaveAction` jako enumy – text dodá UI.
 - Postava ↔ inventář: `Character.inventoryId`; `linkInventory`, `createInventoryFor`, `setInventoryStrength` – STR se zrcadlí do `Inventory.strength` (nosnost), smazání inventáře postavu odpojí.
 - Počítadla: `Character.trackers` (vlastní) + `FeaturePresets` podle class (skryté v `hiddenPresets`); použití v `castToday` pod „res:<id>“ → Odpočinek je vynuluje.
-- Herní režim: `AppState.gameMode` (jen UI), seslané v `Character.castToday` – klíče `Character.castKey(classId, spellId)` (prepared kopie) a `slotKey(classId, level)` (spontánní/arcanist sloty), `rest()` vymaže.
+- Detail postavy: záložka `AppState.characterTab` (jen UI, společná pro postavy). Herní režim: `AppState.gameMode` (jen UI, v UI „Příprava | Hra“), seslané v `Character.castToday` – klíče `Character.castKey(classId, spellId)` (prepared kopie) a `slotKey(classId, level)` (spontánní/arcanist sloty), `rest()` vymaže.
 - Filtry a scroll prohlížečů žijí v `AppState`. Android: `configChanges` + `AppState` v `by lazy` (přežije rotaci, ne process death).
 
 ## Data
@@ -313,7 +334,11 @@ docker/, Dockerfile, compose.yaml, compose.build.yaml   web v kontejneru
 - Zdroj: designové plátno uživatele v Claude Design (artboardy „4a · Linkovaný zápisník“ mobil + desktop, „Inventory“, „Add item“).
 - `ui/Theme.kt`: papír #E6D8BF s linkami po 28 dp, panel #F2E8D5, inset #EADCC2, štítek #DCCBAA, inkoust #2E2418/#5E4D38,
   olivová #4E5D2B = hlavní akce, rezavá #8A4B2A = nadpisy sekcí, čárkované okraje #9C8662, radius 4 dp.
-- Fonty (OFL): Alegreya Bold/Bold Italic (statické instance z variabilního fontu přes fonttools), Alegreya Sans, IBM Plex Mono.
+- Fonty (OFL): Alegreya Bold/Bold Italic (statické instance z variabilního fontu přes fonttools), Alegreya Sans, IBM Plex Mono,
+  Caveat 600/700 (statické TTF z Google Fonts css2 se starým User-Agentem; jen poznámky a nápověda, nikdy data).
+- „Deník dobrodruha“ (redesign 28. 11. 2026): tóny záložek #CFD4B2 / #E3C3AE / #E8D39F / #D9C9A6, text varování `ochreInk` #7A5410
+  (`ochre` na drobný text nestačí), kartotéční lístek #FAF4E6 + horní linka #B5523B, roztržený lístek #F5E4D8, páska, sponka;
+  nejvýš jedna páska na obrazovku, animace respektují omezení pohybu.
 - Náhledy: `./gradlew :composeApp:desktopTest --tests "cz.pfspells.PreviewRender" -Ppreviews=true` → `composeApp/build/previews/*.png`
   (dočasné úložiště, skutečná data nemění).
 

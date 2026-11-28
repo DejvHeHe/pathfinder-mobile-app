@@ -1,5 +1,17 @@
 package cz.pfspells.ui
 
+import androidx.compose.ui.graphics.drawscope.translate
+
+import cz.pfspells.data.ItemCategory
+
+import androidx.compose.runtime.key
+
+import androidx.compose.ui.graphics.StrokeJoin
+
+import androidx.compose.ui.graphics.StrokeCap
+
+import androidx.compose.ui.graphics.PathMeasure
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,8 +81,57 @@ private val RIGHT = listOf(
 )
 private val HANDS = listOf(SlotPos(ItemSlot.MAIN_HAND), SlotPos(ItemSlot.SHIELD))
 
-/** Počet dlaždic slotů (bez „bez slotu“) – „8 z 16 slotů“. */
-private val SLOT_COUNT = LEFT.size + RIGHT.size + HANDS.size
+/**
+ * Tvar těla nositele inventáře: humanoid, nebo zvíře (mazlíček / čtyřnohý inventář). Zvířata mají sloty podle
+ * Ultimate Equipment – bez rukou, prstenů, zápěstí a zbraní; had navíc bez ramen, opasku a nohou.
+ */
+enum class BodyShape { HUMANOID, QUADRUPED, BIRD, SERPENT }
+
+private val BIRD_WORDS = listOf(
+    "bird", "raven", "owl", "hawk", "eagle", "falcon", "parrot", "crow", "roc", "vulture", "thrush", "bat", "pteranodon",
+    "archaeopteryx", "axe beak", "condor", "heron", "stork", "seagull", "gull", "rooster", "chicken", "goose", "duck",
+)
+private val SNAKE_WORDS = listOf("snake", "viper", "constrictor", "serpent", "python", "cobra", "eel", "adder")
+
+/** Tvar podle mazlíčka propojeného s inventářem (druh zvířete, familiár, forma eidolona), jinak podle „čtyřnohý“. */
+fun bodyShapeOf(inv: Inventory, owner: cz.pfspells.data.Character?): BodyShape {
+    if (owner != null && owner.isCompanion) {
+        when (owner.eidolonForm?.removePrefix("u_")) {
+            "biped" -> return BodyShape.HUMANOID
+            "quadruped" -> return BodyShape.QUADRUPED
+            "serpentine" -> return BodyShape.SERPENT
+            "avian" -> return BodyShape.BIRD
+        }
+        val name = (cz.pfspells.data.SpeciesCatalog.get(owner.species)?.name
+            ?: cz.pfspells.data.FamiliarCatalog.get(owner.familiar)?.name ?: owner.name).lowercase()
+        when {
+            SNAKE_WORDS.any { it in name } -> return BodyShape.SERPENT
+            BIRD_WORDS.any { Regex("\\b$it").containsMatchIn(name) } -> return BodyShape.BIRD
+        }
+        if (owner.species != null || owner.familiar != null || owner.quadruped) return BodyShape.QUADRUPED
+    }
+    return if (inv.quadruped) BodyShape.QUADRUPED else BodyShape.HUMANOID
+}
+
+/** Sloty, které tvar těla má (pořadí dlaždic). */
+private fun shapeSlots(shape: BodyShape): Set<ItemSlot> = when (shape) {
+    BodyShape.HUMANOID -> ItemSlot.entries.toSet()
+    BodyShape.QUADRUPED, BodyShape.BIRD -> setOf(
+        ItemSlot.HEAD, ItemSlot.HEADBAND, ItemSlot.EYES, ItemSlot.NECK, ItemSlot.SHOULDERS,
+        ItemSlot.CHEST, ItemSlot.BODY, ItemSlot.ARMOR, ItemSlot.BELT, ItemSlot.FEET,
+    )
+    BodyShape.SERPENT -> setOf(ItemSlot.HEAD, ItemSlot.HEADBAND, ItemSlot.EYES, ItemSlot.NECK, ItemSlot.CHEST, ItemSlot.BODY, ItemSlot.ARMOR)
+}
+
+/** Dlaždice desky: sloty tvaru + sloty, ve kterých něco nasazeného je (ať se předmět „neztratí“). */
+private fun boardLayout(shape: BodyShape, inv: Inventory): Triple<List<SlotPos>, List<SlotPos>, List<SlotPos>> {
+    if (shape == BodyShape.HUMANOID) return Triple(LEFT, RIGHT, HANDS)
+    val used = inv.entries.filter { it.equipped && it.slot != null }.map { it.slot!! }.toSet()
+    val keep = shapeSlots(shape) + used
+    val all = (LEFT + RIGHT + HANDS).filter { it.slot in keep && (it.slot != ItemSlot.RING || it.index < inv.equippedIn(ItemSlot.RING).size) }
+    val half = (all.size + 1) / 2
+    return Triple(all.take(half), all.drop(half), emptyList())
+}
 
 private enum class TileState { EMPTY, FILLED, SELECTED, CONFLICT }
 
@@ -79,10 +140,11 @@ private fun Inventory.tileEntry(p: SlotPos): InvEntry? = equippedIn(p.slot).getO
 
 /** Nadpis sekce „Vybavení · 8 z 16 slotů“. */
 @Composable
-fun EquipmentHeader(inv: Inventory) {
+fun EquipmentHeader(inv: Inventory, shape: BodyShape = BodyShape.HUMANOID) {
     val s = str
-    val filled = (LEFT + RIGHT + HANDS).count { inv.tileEntry(it) != null }
-    SectionHeader(s.equipmentHeader) { MonoLabel(s.slotsFilled(filled, SLOT_COUNT)) }
+    val (l, r, h) = boardLayout(shape, inv)
+    val all = l + r + h
+    SectionHeader(s.equipmentHeader) { MonoLabel(s.slotsFilled(all.count { inv.tileEntry(it) != null }, all.size)) }
 }
 
 /** Banner konfliktu slotu: „Ramena: 2 předměty, platí jen první. Vyřešit“ (pro každý přeplněný slot). */
@@ -91,20 +153,13 @@ fun SlotConflictBanners(inv: Inventory, onResolve: (ItemSlot) -> Unit) {
     val s = str
     inv.slotConflicts().forEach { slot ->
         val n = inv.equippedIn(slot).sumOf { it.qty.coerceAtLeast(1) }
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(Nb.shape)
-                .background(Nb.error.copy(alpha = 0.07f)).border(1.5.dp, Nb.error, Nb.shape)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(NbIcons.Warn, null, tint = Nb.error, modifier = Modifier.size(18.dp))
-            Text(s.conflictBanner(s.itemSlot(slot), n), Modifier.weight(1f), fontSize = 13.5.sp, color = Nb.error)
-            Text(
-                s.resolve, Modifier.clip(Nb.shape).clickable { onResolve(slot) }.padding(4.dp),
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Nb.error, textDecoration = TextDecoration.Underline,
-            )
-        }
+        // roztržený lístek: konflikt slotu
+        NbTornNote(
+            title = s.conflictBanner(s.itemSlot(slot), n),
+            text = inv.equippedIn(slot).joinToString(" · ") { it.name },
+            action = s.resolve, onAction = { onResolve(slot) },
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
     }
 }
 
@@ -113,25 +168,42 @@ fun SlotConflictBanners(inv: Inventory, onResolve: (ItemSlot) -> Unit) {
  * [selectedEntryId] = položka otevřená v detailu (dlaždice „vybraná“); klepnutí → [onSlot] (null = bez slotu).
  */
 @Composable
-fun EquipmentBoard(inv: Inventory, wide: Boolean, selectedEntryId: String?, onSlot: (ItemSlot?) -> Unit) {
+fun EquipmentBoard(
+    inv: Inventory,
+    wide: Boolean,
+    selectedEntryId: String?,
+    shape: BodyShape = BodyShape.HUMANOID,
+    onSlot: (ItemSlot?) -> Unit,
+) {
     val s = str
     val slotless = inv.entries.filter { it.equipped && it.slot == null }
+    val (left, right, hands) = boardLayout(shape, inv)
+    val animal = shape != BodyShape.HUMANOID
+    // zvíře je na šířku – na mobilu nad dlaždicemi přes celou šířku, ne v úzkém prostředním sloupci
+    val figureOnTop = animal && !wide
     val figureW = if (wide) 200.dp else 92.dp
     val body: @Composable ColumnScope.() -> Unit = {
+        if (figureOnTop) {
+            Box(Modifier.fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.Center) {
+                Silhouette(inv, 240.dp, shape, left + right + hands)
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(if (wide) 18.dp else 8.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (wide) 8.dp else 6.dp)) {
-                LEFT.forEach { p -> BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } }
+                left.forEach { p -> BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } }
             }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Silhouette(inv, figureW)
-                if (wide) MonoLabel(s.creatureSize(inv.creatureSize) + if (inv.quadruped) " · ${s.quadruped}" else "")
+            if (!figureOnTop) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Silhouette(inv, figureW, shape, left + right + hands)
+                    if (wide) MonoLabel(s.creatureSize(inv.creatureSize) + if (inv.quadruped) " · ${s.quadruped}" else "")
+                }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (wide) 8.dp else 6.dp)) {
-                RIGHT.forEach { p -> BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } }
+                right.forEach { p -> BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = if (wide) 12.dp else 8.dp), horizontalArrangement = Arrangement.spacedBy(if (wide) 8.dp else 6.dp)) {
-            HANDS.forEach { p -> Box(Modifier.weight(1f)) { BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } } }
+            hands.forEach { p -> Box(Modifier.weight(1f)) { BoardTile(inv, p, wide, selectedEntryId) { onSlot(p.slot) } } }
             // předměty bez slotu (ioun stones…): na desktopu vždy, na mobilu jen když nějaké jsou
             if (wide || slotless.isNotEmpty()) {
                 Box(Modifier.weight(1f)) {
@@ -210,51 +282,246 @@ private val BODY_PATH = PathParser().parsePathString(
         "L130,190 L136,112 L146,152 L154,206 L160,228 L173,222 L168,204 L162,150 L154,90 L140,76 L110,62 Z",
 ).toPath()
 
-/** Kde na siluetě leží tečka slotu (souřadnice viewBoxu 200 × 360; sloty po dvou mají dvě tečky). */
-private fun dots(slot: ItemSlot, index: Int): List<Offset> = when (slot) {
-    ItemSlot.HEAD -> listOf(Offset(100f, 16f))
-    ItemSlot.HEADBAND -> listOf(Offset(100f, 28f))
-    ItemSlot.EYES -> listOf(Offset(100f, 40f))
-    ItemSlot.NECK -> listOf(Offset(100f, 66f))
-    ItemSlot.SHOULDERS -> listOf(Offset(72f, 82f), Offset(128f, 82f))
-    ItemSlot.CHEST -> listOf(Offset(100f, 108f))
-    ItemSlot.BODY -> listOf(Offset(100f, 128f))
-    ItemSlot.ARMOR -> listOf(Offset(100f, 150f))
-    ItemSlot.BELT -> listOf(Offset(100f, 192f))
-    ItemSlot.WRISTS -> listOf(Offset(46f, 186f), Offset(154f, 186f))
-    ItemSlot.HANDS -> listOf(Offset(36f, 222f), Offset(164f, 222f))
-    ItemSlot.RING -> listOf(if (index == 0) Offset(30f, 236f) else Offset(170f, 236f))
-    ItemSlot.FEET -> listOf(Offset(84f, 344f), Offset(116f, 344f))
-    ItemSlot.MAIN_HAND -> listOf(Offset(22f, 210f))
-    ItemSlot.SHIELD -> listOf(Offset(178f, 210f))
+/** Obrys nasazeného předmětu na siluetě (viewBox 200 × 360): cesta, výplň (jen uzavřené tvary), kreslení za tělem. */
+private class Outline(val d: String, val filled: Boolean = true, val behind: Boolean = false)
+
+/** Druh věci v ruce podle jména / kategorie předmětu. */
+private enum class HandItem { SWORD, DAGGER, AXE, MACE, POLE, STAFF, BOW, WAND, SHIELD, BUCKLER, TOWER }
+
+private fun handItem(e: InvEntry): HandItem {
+    val n = e.name.lowercase()
+    fun has(vararg w: String) = w.any { it in n }
+    return when {
+        has("tower shield") -> HandItem.TOWER
+        has("buckler") -> HandItem.BUCKLER
+        has("shield") -> HandItem.SHIELD
+        has("bow") -> HandItem.BOW
+        e.cat == ItemCategory.STAFF || has("staff") -> HandItem.STAFF
+        e.cat == ItemCategory.WAND || e.cat == ItemCategory.ROD || has("wand", "rod of") -> HandItem.WAND
+        has("spear", "lance", "glaive", "halberd", "pike", "trident", "guisarme", "ranseur", "bardiche", "scythe", "naginata") -> HandItem.POLE
+        has("axe") -> HandItem.AXE
+        has("dagger", "knife", "kukri", "sickle", "dirk", "stiletto") -> HandItem.DAGGER
+        has("mace", "hammer", "club", "morningstar", "flail", "maul") -> HandItem.MACE
+        else -> HandItem.SWORD
+    }
+}
+
+/** Věc v hlavní ruce (levá strana siluety, ruka kolem x 33, y 225); pro druhou ruku se zrcadlí. */
+private fun handOutline(h: HandItem): List<Outline> = when (h) {
+    HandItem.SWORD -> listOf(Outline("M27 213 L14 124 L19 122 L33 211 Z"), Outline("M20 216 L40 212", false), Outline("M31 216 L35 240", false))
+    HandItem.DAGGER -> listOf(Outline("M28 214 L21 176 L26 175 L33 212 Z"), Outline("M21 216 L39 213", false))
+    HandItem.AXE -> listOf(Outline("M34 240 L20 136", false), Outline("M22 148 L6 140 C1 152 3 166 10 172 L24 160 Z"))
+    HandItem.MACE -> listOf(Outline("M34 240 L22 162", false), Outline("M11 150 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z"))
+    HandItem.POLE -> listOf(Outline("M38 268 L16 100", false), Outline("M16 100 L9 80 L22 97 Z"))
+    HandItem.STAFF -> listOf(Outline("M40 300 L17 110", false), Outline("M10 104 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 Z"))
+    HandItem.BOW -> listOf(Outline("M30 140 Q4 222 30 304", false), Outline("M30 140 L30 304", false))
+    HandItem.WAND -> listOf(Outline("M33 224 L22 186", false), Outline("M19 183 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 Z"))
+    HandItem.SHIELD -> listOf(Outline("M4 196 L40 196 L40 224 Q22 250 4 224 Z"), Outline("M22 200 L22 240", false))
+    HandItem.BUCKLER -> listOf(Outline("M8 214 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z"), Outline("M19 214 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 Z"))
+    HandItem.TOWER -> listOf(Outline("M2 168 L44 168 L44 264 L2 264 Z"), Outline("M23 172 L23 260", false))
+}
+
+/** Obrys věci ve slotu (u rukou podle druhu věci, druhá ruka zrcadlově). */
+private fun outlines(slot: ItemSlot, index: Int, e: InvEntry): List<Outline> {
+    val n = e.name.lowercase()
+    return when (slot) {
+        ItemSlot.HEAD -> when {
+            listOf("hat", "cap", "hood").any { it in n } -> listOf(Outline("M66 27 L134 27", false), Outline("M80 27 C80 2 120 2 120 27 Z"))
+            listOf("circlet", "crown", "tiara").any { it in n } -> listOf(Outline("M78 22 L84 9 L92 19 L100 5 L108 19 L116 9 L122 22 Z"))
+            else -> listOf(Outline("M74 34 C74 6 126 6 126 34 L126 40 L74 40 Z"), Outline("M100 40 L100 52", false))
+        }
+        ItemSlot.HEADBAND -> listOf(Outline("M77 27 C90 22 110 22 123 27", false), Outline("M96 24 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z"))
+        ItemSlot.EYES -> listOf(
+            Outline("M84 38 a7 6 0 1 0 14 0 a7 6 0 1 0 -14 0 Z"), Outline("M102 38 a7 6 0 1 0 14 0 a7 6 0 1 0 -14 0 Z"),
+            Outline("M98 37 L102 37", false),
+        )
+        ItemSlot.NECK -> listOf(Outline("M86 60 Q100 76 114 60", false), Outline("M96 78 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z"))
+        // plášť za zády – vidět je jen to, co přesahuje tělo
+        ItemSlot.SHOULDERS -> listOf(Outline("M86 62 L58 74 L34 236 Q100 252 166 236 L142 74 L114 62 Z", behind = true))
+        ItemSlot.CHEST -> listOf(Outline("M74 80 L90 70 L100 86 L110 70 L126 80 L124 132 L76 132 Z"))
+        ItemSlot.BODY -> listOf(Outline("M72 74 L128 74 L148 266 Q100 278 52 266 Z"))
+        ItemSlot.ARMOR -> buildList {
+            add(Outline("M68 78 L132 78 L130 152 Q100 168 70 152 Z"))
+            add(Outline("M100 82 L100 160", false))
+            // těžká zbroj: nárameníky
+            if (listOf("plate", "banded", "splint", "lamellar").any { it in n }) {
+                add(Outline("M56 92 C58 76 72 72 80 78", false)); add(Outline("M144 92 C142 76 128 72 120 78", false))
+            }
+        }
+        ItemSlot.BELT -> listOf(Outline("M68 184 L132 184 L132 196 L68 196 Z"), Outline("M94 182 L106 182 L106 198 L94 198 Z"))
+        ItemSlot.WRISTS -> listOf(Outline("M36 178 L52 180 L49 202 L33 200 Z"), Outline("M164 178 L148 180 L151 202 L167 200 Z"))
+        ItemSlot.HANDS -> listOf(
+            Outline("M25 222 a9 8 0 1 0 18 0 a9 8 0 1 0 -18 0 Z"), Outline("M157 222 a9 8 0 1 0 18 0 a9 8 0 1 0 -18 0 Z"),
+        )
+        ItemSlot.RING -> if (index == 0) listOf(Outline("M26 238 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z")) else listOf(Outline("M166 238 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z"))
+        ItemSlot.FEET -> listOf(Outline("M64 326 L96 326 L97 354 L58 354 Z"), Outline("M104 326 L136 326 L142 354 L103 354 Z"))
+        ItemSlot.MAIN_HAND -> handOutline(handItem(e))
+        ItemSlot.SHIELD -> handOutline(handItem(e)).map { Outline(mirror(it.d), it.filled, it.behind) }
+    }
+}
+
+// ---------- zvířata (viewBox 200 × 200, hlava vlevo) ----------
+
+private val QUADRUPED_PATH = PathParser().parsePathString(
+    "M18 80 L28 62 L40 54 L50 54 L56 42 L62 50 L62 64 L72 82 L148 82 C160 82 166 90 166 100 L180 74 L186 78 L172 108 " +
+        "L166 116 L164 172 L152 172 L150 132 L146 132 L144 172 L132 172 L130 124 L100 124 L98 172 L86 172 L86 130 " +
+        "L82 130 L80 172 L68 172 L66 116 C60 108 56 98 54 90 L42 90 L28 88 Z",
+).toPath()
+private val BIRD_PATH = PathParser().parsePathString(
+    "M56 48 C58 36 76 32 86 42 C94 50 92 60 96 68 C122 80 142 104 162 150 L152 154 C134 136 118 128 102 126 " +
+        "C90 130 82 128 76 118 C66 104 64 88 70 74 L60 66 L36 62 L56 56 Z",
+).toPath()
+private const val BIRD_LEGS = "M90 126 L88 150 M102 126 L104 150 M82 150 L94 150 M98 150 L110 150"
+private val SERPENT_PATH = PathParser().parsePathString(
+    "M34 58 C36 42 60 38 68 52 C74 64 70 74 82 80 C104 90 142 76 152 100 C162 126 124 134 102 134 " +
+        "C74 134 58 148 72 164 C82 174 128 172 164 166 L166 176 C124 186 70 190 56 172 C40 150 64 122 98 122 " +
+        "C122 122 146 118 140 102 C134 88 102 100 76 92 C58 86 60 72 54 66 C48 60 40 70 34 66 Z",
+).toPath()
+
+/** Obrys předmětu na zvířeti (podle slotu; sedlo, brašny a uzda podle jména předmětu bez slotu). */
+private fun animalOutlines(shape: BodyShape, slot: ItemSlot?, e: InvEntry): List<Outline> {
+    val n = e.name.lowercase()
+    if (slot == null) {
+        return when {
+            shape == BodyShape.SERPENT -> emptyList()
+            "saddlebag" in n -> if (shape == BodyShape.BIRD) listOf(Outline("M108 96 L124 102 L120 118 L104 112 Z"))
+                else listOf(Outline("M132 84 L152 84 L152 106 L132 106 Z"))
+            "saddle" in n -> if (shape == BodyShape.BIRD) listOf(Outline("M86 80 C92 70 108 72 114 86 Z"))
+                else listOf(Outline("M96 82 C100 66 132 66 136 82 Z"), Outline("M116 82 L116 110 M110 110 L122 110", false))
+            "bridle" in n || "bit and" in n || "harness" in n -> if (shape == BodyShape.BIRD) emptyList()
+                else listOf(Outline("M20 80 L44 72 L58 52", false), Outline("M44 72 L64 84", false))
+            else -> emptyList()
+        }
+    }
+    return when (shape) {
+        BodyShape.QUADRUPED -> when (slot) {
+            ItemSlot.HEAD -> listOf(Outline("M28 62 C32 46 50 42 58 54 L54 62 L32 64 Z"))
+            ItemSlot.HEADBAND -> listOf(Outline("M32 64 C40 60 50 60 58 64", false), Outline("M42 60 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 Z"))
+            ItemSlot.EYES -> listOf(Outline("M34 68 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0 Z"))
+            ItemSlot.NECK -> listOf(Outline("M54 70 L62 64 L74 86 L66 90 Z"), Outline("M64 96 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z"))
+            ItemSlot.SHOULDERS -> listOf(Outline("M68 80 L106 80 L102 114 L72 106 Z"))
+            ItemSlot.CHEST -> listOf(Outline("M58 94 L72 86 L78 118 L66 120 Z"))
+            ItemSlot.BODY -> listOf(Outline("M80 82 L150 82 L148 120 L82 120 Z"))
+            ItemSlot.ARMOR -> listOf(Outline("M70 82 L154 82 C164 86 166 98 164 112 L160 124 L72 124 Z"), Outline("M54 70 L64 64 L74 86 L64 90 Z"), Outline("M112 82 L112 124", false))
+            ItemSlot.BELT -> listOf(Outline("M106 82 L114 82 L116 124 L108 124 Z"))
+            ItemSlot.FEET -> listOf(
+                Outline("M68 166 L80 166 L80 174 L68 174 Z"), Outline("M86 166 L98 166 L98 174 L86 174 Z"),
+                Outline("M132 166 L144 166 L144 174 L132 174 Z"), Outline("M152 166 L164 166 L164 174 L152 174 Z"),
+            )
+            else -> emptyList()
+        }
+        BodyShape.BIRD -> when (slot) {
+            ItemSlot.HEAD -> listOf(Outline("M58 46 C62 30 84 30 88 42 Z"))
+            ItemSlot.HEADBAND -> listOf(Outline("M60 48 C70 44 80 44 90 48", false))
+            ItemSlot.EYES -> listOf(Outline("M66 52 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0 Z"))
+            ItemSlot.NECK -> listOf(Outline("M70 72 C78 78 88 78 96 72", false), Outline("M80 82 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 Z"))
+            ItemSlot.SHOULDERS -> listOf(Outline("M82 78 L120 92 L112 114 L80 100 Z"))
+            ItemSlot.CHEST -> listOf(Outline("M70 80 L84 82 L84 112 L74 110 Z"))
+            ItemSlot.BODY -> listOf(Outline("M78 86 L132 106 L122 126 L82 118 Z"))
+            ItemSlot.ARMOR -> listOf(Outline("M70 76 L124 96 L130 120 L86 126 C72 114 68 96 70 76 Z"))
+            ItemSlot.BELT -> listOf(Outline("M94 84 L102 86 L100 126 L92 126 Z"))
+            ItemSlot.FEET -> listOf(Outline("M84 140 L94 140 L94 148 L84 148 Z"), Outline("M98 140 L108 140 L108 148 L98 148 Z"))
+            else -> emptyList()
+        }
+        BodyShape.SERPENT -> when (slot) {
+            ItemSlot.HEAD -> listOf(Outline("M34 52 C38 36 62 36 66 50 Z"))
+            ItemSlot.HEADBAND -> listOf(Outline("M38 54 C46 50 56 50 64 54", false))
+            ItemSlot.EYES -> listOf(Outline("M42 56 a5 4 0 1 0 10 0 a5 4 0 1 0 -10 0 Z"))
+            ItemSlot.NECK -> listOf(Outline("M64 66 L78 64 L84 82 L72 86 Z"))
+            ItemSlot.CHEST -> listOf(Outline("M96 86 L110 84 L112 102 L98 104 Z"))
+            ItemSlot.BODY -> listOf(Outline("M114 90 L148 96 L150 118 L116 124 Z"))
+            ItemSlot.ARMOR -> listOf(Outline("M76 82 C104 92 140 78 150 100 C158 122 124 132 100 132 L98 122 C122 122 146 118 140 102 C134 88 102 100 76 92 Z"))
+            else -> emptyList()
+        }
+        BodyShape.HUMANOID -> emptyList()
+    }
+}
+
+/** Zrcadlení cesty kolem svislé osy siluety (x → 200 − x) – druhá ruka. Relativní oblouky „a“ jen otočí směr. */
+private fun mirror(d: String): String {
+    val out = StringBuilder()
+    val tokens = Regex("""[A-Za-z]|-?\d*\.?\d+""").findAll(d).map { it.value }.toList()
+    var cmd = 'M'
+    var i = 0
+    var argIndex = 0
+    while (i < tokens.size) {
+        val tk = tokens[i]
+        if (tk[0].isLetter()) { cmd = tk[0]; argIndex = 0; out.append(tk).append(' '); i++; continue }
+        val v = tk.toFloat()
+        val mirrored = when (cmd) {
+            'M', 'L', 'Q', 'C' -> if (argIndex % 2 == 0) 200f - v else v
+            // relativní oblouk: rx ry rot large sweep dx dy – obrátit sweep a dx
+            'a' -> when (argIndex % 7) { 4 -> 1f - v; 5 -> -v; else -> v }
+            else -> v
+        }
+        out.append(mirrored).append(' ')
+        argIndex++
+        i++
+    }
+    return out.toString().trim()
 }
 
 @Composable
-private fun Silhouette(inv: Inventory, width: Dp) {
+private fun Silhouette(inv: Inventory, width: Dp, shape: BodyShape, tiles: List<SlotPos>) {
     val fill = Nb.tag.copy(alpha = 0.65f)
     val dash = Nb.dash
-    val ok = Nb.accent
-    val bad = Nb.error
-    val ring = Nb.panel
-    val marks = (LEFT + RIGHT + HANDS).mapNotNull { p ->
+    val animal = shape != BodyShape.HUMANOID
+    // nasazené předměty jako obrysy na postavičce (helma, plášť, meč, štít…), konflikt slotu červeně
+    val slotted = tiles.mapNotNull { p ->
         val e = inv.tileEntry(p) ?: return@mapNotNull null
         val conflict = inv.equippedIn(p.slot).sumOf { it.qty.coerceAtLeast(1) } > p.slot.capacity
-        dots(p.slot, p.index).map { it to conflict }
-            .takeIf { inv.isWorking(e) || conflict }
-    }.flatten()
-    Canvas(Modifier.size(width, width * 1.8f)) {
+        if (!inv.isWorking(e) && !conflict) return@mapNotNull null
+        Triple(e.id + p.slot.name + p.index, if (animal) animalOutlines(shape, p.slot, e) else outlines(p.slot, p.index, e), conflict)
+    }
+    // zvíře: sedlo, brašny a uzda (nasazené předměty bez slotu, podle jména)
+    val tack = if (!animal) emptyList() else inv.entries.filter { it.equipped && it.slot == null }
+        .map { Triple(it.id + "-tack", animalOutlines(shape, null, it), false) }.filter { it.second.isNotEmpty() }
+    val items = slotted + tack
+    // každý obrys se při nasazení dokreslí tahem
+    val progress = items.map { (key, _, _) -> key(key) { rememberRevealProgress(key, durationMs = 600) } }
+    Canvas(Modifier.size(width, if (animal) width * .8f else width * 1.8f)) {
         val k = size.width / 200f
-        scale(k, k, pivot = Offset.Zero) {
-            val stroke = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)))
-            drawCircle(fill, 24f, Offset(100f, 36f))
-            drawCircle(dash, 24f, Offset(100f, 36f), style = stroke)
-            drawPath(BODY_PATH, fill)
-            drawPath(BODY_PATH, dash, style = stroke)
-            marks.forEach { (o, conflict) ->
-                drawCircle(ring, 7f, o)
-                drawCircle(if (conflict) bad else ok, 5f, o)
+        val line = (2.4f).coerceAtLeast(1.3.dp.toPx() / k)
+        scale(k, k, pivot = Offset.Zero) { translate(top = if (animal) -30f else 0f) {
+            fun drawItems(behind: Boolean) = items.forEachIndexed { i, (_, list, conflict) ->
+                val color = if (conflict) Nb.error else Nb.accent
+                val p = progress[i].value
+                list.filter { it.behind == behind }.forEach { o ->
+                    val path = PathParser().parsePathString(o.d).toPath()
+                    if (o.filled && p >= 1f) drawPath(path, color.copy(alpha = if (behind) .10f else .16f))
+                    if (p >= 1f) drawPath(path, color, style = Stroke(line, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    else {
+                        val m = PathMeasure().apply { setPath(path, false) }
+                        val dst = androidx.compose.ui.graphics.Path()
+                        m.getSegment(0f, m.length * p, dst, true)
+                        drawPath(dst, color, style = Stroke(line, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    }
+                }
             }
-        }
+            drawItems(behind = true)
+            val stroke = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)))
+            if (animal) {
+                val body = when (shape) {
+                    BodyShape.BIRD -> BIRD_PATH
+                    BodyShape.SERPENT -> SERPENT_PATH
+                    else -> QUADRUPED_PATH
+                }
+                drawPath(body, fill)
+                drawPath(body, dash, style = stroke)
+                if (shape == BodyShape.BIRD) drawPath(PathParser().parsePathString(BIRD_LEGS).toPath(), dash, style = Stroke(2f, cap = StrokeCap.Round))
+                // oko
+                val eye = when (shape) { BodyShape.BIRD -> Offset(72f, 52f); BodyShape.SERPENT -> Offset(47f, 56f); else -> Offset(40f, 68f) }
+                drawCircle(dash, 2.5f, eye)
+            } else {
+                // neprůhledný podklad těla – plášť za zády přes postavu neprosvítá
+                if (items.any { (_, list, _) -> list.any { it.behind } }) drawPath(BODY_PATH, Nb.inset)
+                drawCircle(fill, 24f, Offset(100f, 36f))
+                drawCircle(dash, 24f, Offset(100f, 36f), style = stroke)
+                drawPath(BODY_PATH, fill)
+                drawPath(BODY_PATH, dash, style = stroke)
+            }
+            drawItems(behind = false)
+        } }
     }
 }
 

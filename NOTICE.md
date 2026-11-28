@@ -68,6 +68,7 @@ follow the Core Rulebook, Advanced Player's Guide, Advanced Race Guide and other
 | Alegreya (bold instances generated from the variable font) | SIL Open Font License 1.1 – [`licenses/OFL-Alegreya.txt`](licenses/OFL-Alegreya.txt) |
 | Alegreya Sans | SIL Open Font License 1.1 – [`licenses/OFL-AlegreyaSans.txt`](licenses/OFL-AlegreyaSans.txt) |
 | IBM Plex Mono | SIL Open Font License 1.1 – [`licenses/OFL-IBMPlexMono.txt`](licenses/OFL-IBMPlexMono.txt) |
+| Caveat (static SemiBold / Bold instances from Google Fonts) | SIL Open Font License 1.1 – [`licenses/OFL-Caveat.txt`](licenses/OFL-Caveat.txt) |
 
 ## Libraries
 

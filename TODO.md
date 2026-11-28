@@ -102,6 +102,17 @@ Databáze featů a jejich výběr pro postavu – podobně jako spelly v decku.
 - [x] Metamagické featy propojit se spelly (u spellu výsledná úroveň slotu, u featu zvýšení – parsováno z textu AoN)
 - [x] Export/import featů spolu s postavou (i samostatně); nový zdroj dat v `NOTICE.md`, OGL Section 15 a About
 
+## Design
+
+- [x] **Redesign „Deník dobrodruha“** (handoff z Claude Design, 28. 11. 2026): záložky detailu postavy (Postava / Boj /
+  Kouzla / Inventář, desktop svisle), Příprava | Hra, ruční písmo Caveat na poznámky, okraj listu, kroužky slotů,
+  značky v okraji, razítka, kartotéční lístek, roztržený lístek, pruh zatížení se šrafováním, HP panel, prázdné stavy,
+  animace s ohledem na omezení pohybu
+  - [ ] (nápad) útoky na záložce Boj (čeká na CMB / CMD a útoky zbraní), metamagie se zaškrtávátky a přepočtem slotu
+  - [x] Mazlíčci jako samostatná záložka; figurka zvířete v inventáři (čtyřnožec / pták / had, sloty podle Ultimate Equipment)
+  - [ ] (nápad) víc tvarů zvířat – ne všem sedí čtyřnožec / pták / had (ryby, hmyz, dinosauři, chobotnice…)
+  - [ ] (nápad) tmavá varianta palety
+
 ## Další nápady
 
 - [x] **Mazlíčci a společníci** (zvířecí společník, jezdecké zvíře, familiár, eidolon) jako postava s vlastníkem – rasové HD Animal / Magical Beast, velikost → nosnost

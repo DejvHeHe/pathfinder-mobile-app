@@ -107,6 +107,10 @@ actual val deckFileIo: DeckFileIo = object : DeckFileIo {
 /** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
 actual val edgeSwipeBack: Boolean = false
 
+private fun prefersReducedMotion(): Boolean = js("window.matchMedia('(prefers-reduced-motion: reduce)').matches")
+
+actual fun systemReducedMotion(): Boolean = prefersReducedMotion()
+
 // ---------- analytika (Umami) ----------
 
 /** `umami.track` jen když skript Umami na stránce je (vkládá ho `docker/40-umami.sh`); chyby se ignorují. */

@@ -38,6 +38,12 @@ expect fun currentTimeMillis(): Long
 expect val edgeSwipeBack: Boolean
 
 /**
+ * Systémové „omezit pohyb“ (Android: animace vypnuté, iOS: Reduce Motion, web: prefers-reduced-motion) –
+ * animace deníku pak rovnou ukážou konečný stav.
+ */
+expect fun systemReducedMotion(): Boolean
+
+/**
  * Anonymní událost pro analytiku webu (Umami, jen když ji provozovatel webu nastavil – jinak i na ostatních
  * platformách nic). Posílat jen název akce a obecné údaje (druh, classa, počet) – nikdy jména, texty ani id.
  */

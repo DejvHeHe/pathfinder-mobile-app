@@ -50,6 +50,8 @@ actual fun nowDisplayText(): String {
 
 actual val edgeSwipeBack: Boolean = true
 
+actual fun systemReducedMotion(): Boolean = platform.UIKit.UIAccessibilityIsReduceMotionEnabled()
+
 /** Analytika jen na webu. */
 actual fun trackEvent(name: String, data: Map<String, String>) {}
 

@@ -2,6 +2,19 @@
 
 [Česky](CHANGELOG.cs.md)
 
+## v2.0.0 – 28 Nov 2026 – Adventurer's Journal
+- **New look:** the character sheet is a notebook with index tabs – **Character, Combat, Spells, Inventory and
+  Companions** (vertical tabs on the right on desktop).
+- **Prepare | Play** switch on Spells and Combat; spell slots and limited uses are circles you cross out, spent spells
+  are struck through by hand.
+- Handwritten notes (Caveat font), notebook margin with marks, stamps (*over limit*, *unconscious*, *overloaded*),
+  index cards for spell and item stats, a new HP panel and a hatched load bar.
+- **Companions have their own tab** instead of sitting in the inventory.
+- **Worn items are drawn on the figure** as outlines (hat, cloak, armor, boots, weapons in hand…).
+- **Animal inventories:** companions get a quadruped, bird or snake figure with the slots animals can use
+  (Ultimate Equipment); saddle, saddlebags and bridle are drawn by name.
+- Animations respect the system's reduced-motion setting.
+
 ## v1.9.2 – 27 Nov 2026
 - **Desktop updates without the browser:** the app downloads the new installer itself, starts it with
   **Install and close the app** and quits so the installer can replace it.

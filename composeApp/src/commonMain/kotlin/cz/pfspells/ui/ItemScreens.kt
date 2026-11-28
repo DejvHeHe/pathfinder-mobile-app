@@ -407,8 +407,9 @@ fun ItemDetailContent(
             item?.damageType?.let { NbTag(it, Nb.rust) }
             if (item == null || item.isCustom) NbTag(if (item?.isCustom == true) s.myItems else s.customItem, Nb.rust)
         }
-        NbPanel(Modifier.fillMaxWidth(), color = if (aside) Nb.paper else if (sheet) Nb.paper else Nb.panel) {
-            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        // kartotéční lístek se statistikami (návrh „Deník dobrodruha“)
+        NbIndexCard(Modifier.fillMaxWidth().padding(top = 4.dp), tilt = aside) {
+            Column {
                 Stat(s.cost, priceLabel(price, revealed), always = true)
                 Stat(s.weight, formatWeight(weight), always = true)
                 Stat(s.damageS, item?.damageSmall)
@@ -503,10 +504,7 @@ fun ItemDetailContent(
 @Composable
 private fun Stat(label: String, value: String?, always: Boolean = false) {
     if (value.isNullOrBlank() || value == "—" && !always) return
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(label, Modifier.width(120.dp).padding(top = 1.dp), fontFamily = LocalNbFonts.current.mono, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Nb.rust)
-        Text(value, Modifier.weight(1f), fontSize = 14.sp, color = Nb.ink)
-    }
+    IndexCardLine(label, value)
 }
 
 // ---------- vlastní item ----------

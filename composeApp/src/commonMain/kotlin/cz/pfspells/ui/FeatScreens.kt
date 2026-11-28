@@ -112,13 +112,25 @@ fun FeatsPanel(state: AppState, c: Character, wide: Boolean, selectedPick: Int?)
         c.feats.forEachIndexed { i, pick ->
             val feat = pick.featId?.let { db?.get(it) }
             val status = feat?.let { FeatPrereqs.overall(FeatPrereqs.evaluate(c, db, it.prereq, state.spellDb)) }
-            val base = Modifier.fillMaxWidth()
+            val base = Modifier.fillMaxWidth().staggerIn(i)
             Row(
                 (if (selectedPick == i) base.clip(Nb.shape).background(Nb.panel).dashedBorder() else base.bottomRule(if (wide) Nb.ruleSoft else Nb.rule))
                     .clickable { state.showFeat(pick.featId, c.id, i) }
                     .padding(horizontal = if (wide) 10.dp else 0.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (status != null) {
+                    InMargin(inMargin = !wide) {
+                        NbMarginMark(
+                            when (status) {
+                                PrereqStatus.MET -> MarginMark.OK
+                                PrereqStatus.UNMET -> MarginMark.NO
+                                PrereqStatus.UNKNOWN -> MarginMark.UNKNOWN
+                            },
+                            s.prereqStatus(status), delayMs = 300 + i * 80,
+                        )
+                    }
+                }
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -127,9 +139,6 @@ fun FeatsPanel(state: AppState, c: Character, wide: Boolean, selectedPick: Int?)
                             fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold, color = Nb.ink,
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
-                        if (status == PrereqStatus.UNMET) {
-                            Icon(NbIcons.Warn, s.prereqUnmet, tint = Nb.error, modifier = Modifier.padding(start = 6.dp).size(16.dp))
-                        }
                     }
                     Text(
                         when {

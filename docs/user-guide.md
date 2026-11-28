@@ -19,6 +19,25 @@ Názvy a popisy spellů a itemů zůstávají v originále (anglicky); classy a 
   2. uprostřed otevřená postava / inventář / výběr,
   3. vpravo detail spellu nebo itemu (zavře se křížkem nebo klávesou **Esc**).
 
+### Detail postavy – záložky deníku
+
+Detail postavy je rozdělený **záložkami** jako rozdělovník v deníku (na telefonu barevné záložky pod hlavičkou,
+na desktopu svisle u pravého okraje):
+
+| Záložka | Obsah |
+|---|---|
+| **Postava** | rasa, přesvědčení, božstvo, classy, souhrn (úroveň, ZÚB, záchrany), atributy, featy, hexy / zjevení, dovednosti |
+| **Boj** | obrana (AC, dotyk, zaskočený), životy, schopnosti s počtem použití |
+| **Kouzla** | přepínač **Příprava \| Hra**, **Odpočinek**, kouzla po classách a úrovních |
+| **Inventář** | propojený inventář |
+| **Mazlíčci** | zvířecí společníci, familiáři, eidolon, mazlíčci (u mazlíčka samotného záložka není) |
+
+Stránka se při přepnutí „otočí“, nadpisy se dopíšou a řádky postupně objeví. Máte-li v systému zapnuté omezení
+pohybu (Android: odstranit animace, iOS: omezit pohyb, prohlížeč: prefers-reduced-motion), animace se vynechají.
+Stav prerekvizit featů je v okraji listu (✓ splněno, ✗ nesplněno, ? neověřeno), hlavní atribut sesílání je
+zakroužkovaný, stavy měnící pravidla mají razítko („NAD LIMIT“, „BEZ VĚDOMÍ“, „PŘETÍŽENO“). Ručním písmem jsou
+jen poznámky a nápověda.
+
 ## Spellbook
 
 ### Postava
@@ -92,7 +111,10 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
   Amulet of Natural Armor, Bracers of Armor…), ostatním ho přidáte tlačítkem **Přidat bonus**.
 - **Detail inventáře**: na mobilu záložky **Vybavení** a **Předměty**. Vybavení = figurka se sloty ve dvou sloupcích
   (hlava, čelenka, oči, krk, ramena, hruď, tělo | zbroj, opasek, zápěstí, ruce, 2 prsteny, nohy), pod ní hlavní
-  a druhá ruka a předměty bez slotu; tečky na siluetě ukazují nasazená místa. Klepnutím na slot se otevře výběr: který
+  a druhá ruka a předměty bez slotu; na siluetě se nasazené předměty kreslí obrysem (helma, plášť, zbroj, boty, meč, luk, štít… – podle slotu a jména předmětu, konflikt červeně).
+  Inventář mazlíčka (nebo inventář se zapnutým „Čtyřnohý“) má místo postavy **zvíře**: čtyřnožce, ptáka (havran, sova…)
+  nebo hada podle druhu mazlíčka, se sloty podle PF1 (bez rukou, prstenů, zápěstí a zbraní; had i bez ramen, opasku
+  a nohou). Nasazené sedlo, sedlové brašny a uzda (předměty bez slotu) se na zvířeti dokreslí podle jména. Klepnutím na slot se otevře výběr: který
   předmět platí, **Ostatní odložit do batohu**, **Nasadit jiný předmět** (na desktopu plný slot rovnou otevře detail).
   Když je ve slotu víc předmětů, než se vejde, platí jen první – ukáže to červený banner s **Vyřešit**.
   Seznam předmětů je rozdělený na **Nasazeno** (štítek slotu) a **Neseno**; na desktopu je v bočním panelu filtr „Nasazeno“.
@@ -183,7 +205,8 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
 - Nepotřebnou schopnost skryjete ×, „Zobrazit skryté“ je vrátí.
 - **Přidat počítadlo** = vlastní položka (název, maximum, jednotka: za den / kol za den / body, poznámka) – rasové
   schopnosti, magické předměty, náboje hůlky…
-- V **herním režimu** se použití odklikává (puntíky, u velkých čísel − / +), **Odpočinek** vše obnoví.
+- Ve **Hře** (přepínač Příprava | Hra na záložce Boj) se použití odklikává v kroužcích (u velkých čísel − / +),
+  **Odpočinek** vše obnoví.
 
 ### Hexy a zjevení (revelations)
 - Čarodějnice a šaman mají v detailu postavy sekci **Hexy**, orákulum sekci **Zjevení**. Vpravo je počet „vybrané / dostupné“
@@ -252,9 +275,11 @@ Původní „decky“ se při prvním spuštění nové verze automaticky převe
    Spontánní classy (sorcerer, bard, oracle…) a arcanist mají každé kouzlo jen jednou – odebírá se křížkem.
    U každého spell levelu je vpravo limit: „3 / 3+1 připraveno“ (základ + bonus z atributu) nebo
    „2 / 4 známých · 6+1 za den“. Červeně = překročený limit nebo příliš nízký atribut sesílání.
-4. **Herní režim** (zaškrtávátko pod atributy) slouží u stolu: připravující classy odklikávají seslané kopie
-   (seslané kouzlo se přeškrtne), spontánní classy a arcanist mají u každého spell levelu řadu slotů
-   a u kouzla tlačítko **Seslat**. Triky jsou libovolně. **Odpočinek** vše obnoví. Seslaná kouzla se ukládají u postavy.
+4. **Příprava | Hra** (přepínač nahoře na záložce Kouzla): v **Přípravě** se mění počty kopií a pod úrovní s volným
+   místem je čárkovaný box „+ 2 volná místa – připrav kouzlo“ (otevře výběr). Ve **Hře** připravující classy
+   odklikávají seslané kopie v kroužcích (ťuk = sesláno, všechny seslané → kouzlo se ručně přeškrtne), spontánní classy
+   a arcanist mají u každého spell levelu řadu kroužků slotů a u kouzla tlačítko **Seslat**. Triky jsou libovolně.
+   **Odpočinek** vše obnoví („sloty obnoveny“). Seslaná kouzla se ukládají u postavy.
 5. Klepnutím na spell se otevře detail: casting time, components, range, duration, save, SR, celý popis,
    mythic verze, zdroj a odkaz na Archives of Nethys.
 

@@ -3,6 +3,10 @@ package cz.pfspells.ui
 import cz.pfspells.data.CreatureSize
 import cz.pfspells.data.Load
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.FlowRow
@@ -185,11 +189,14 @@ fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(
-                s.loadName(load),
-                Modifier.clip(Nb.shape).background(color).padding(horizontal = 10.dp, vertical = 4.dp),
-                color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(color))
+                Text(
+                    s.loadName(load), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                    color = if (load == Load.MEDIUM) Nb.ochreInk else if (load == Load.LIGHT) Nb.ink else Nb.error,
+                )
+                if (load == Load.OVERLOADED) NbStamp(s.stampOverloaded)
+            }
             if (inv.coinWeight > 0) {
                 Text(s.coinsWeight(formatWeight(inv.coinWeight)), Modifier.padding(top = 4.dp), fontSize = 12.5.sp, color = Nb.inkMuted)
             }
@@ -227,30 +234,55 @@ fun LoadBar(state: AppState, inv: Inventory, showStrength: Boolean = true) {
 }
 
 /**
- * Pruh (návrh Inventory 2.0): pastelové úseky light / medium / heavy (a přetížení), úseky za aktuálním stavem
- * vybledlé, tmavý ukazatel aktuální váhy přesahující pruh.
+ * Pruh zatížení (Deník dobrodruha): úseky light / medium / heavy s čárkovanými předěly, přes ně šrafování do
+ * aktuální váhy a nad pruhem trojúhelníkový ukazatel; změna váhy se animuje.
  */
 @Composable
 private fun LoadMeter(w: Double, light: Double, medium: Double, heavy: Double, @Suppress("UNUSED_PARAMETER") color: Color) {
     val scaleMax = maxOf(heavy, w).takeIf { it > 0 } ?: 1.0
+    val frac by androidx.compose.animation.core.animateFloatAsState(
+        (w / scaleMax).toFloat().coerceIn(0f, 1f),
+        androidx.compose.animation.core.tween(if (LocalReduceMotion.current) 0 else 350), label = "load",
+    )
     val ink = Nb.ink
-    val rule = Nb.rule
+    val edge = Nb.inkMuted
     val zones = listOf(Color(0xFFB9C29A), Color(0xFFD9B76A), Color(0xFFD7A899), Color(0xFFD7A899))
-    Canvas(Modifier.fillMaxWidth().height(18.dp)) {
+    Canvas(Modifier.fillMaxWidth().height(28.dp)) {
         val width = size.width
-        val barTop = 4.dp.toPx()
-        val barH = size.height - 2 * barTop
+        val top = 10.dp.toPx()
+        val barH = 16.dp.toPx()
         fun x(v: Double) = (v / scaleMax).toFloat().coerceIn(0f, 1f) * width
         val bounds = listOf(0.0, light, medium, heavy, scaleMax)
         for (i in 0 until 4) {
-            val x0 = x(bounds[i])
-            val x1 = x(bounds[i + 1])
-            // úsek, do kterého aktuální váha ještě nedosáhla, je vybledlý
-            if (x1 > x0) drawRect(zones[i].copy(alpha = if (w > bounds[i]) 1f else 0.45f), Offset(x0, barTop), Size(x1 - x0, barH))
+            val x0 = x(bounds[i]); val x1 = x(bounds[i + 1])
+            if (x1 > x0) drawRect(zones[i], Offset(x0, top), Size(x1 - x0, barH))
+            // čárkovaný předěl
+            if (i in 1..3 && x0 > 0f && x0 < width) {
+                drawLine(edge, Offset(x0, top), Offset(x0, top + barH), 1.5.dp.toPx(),
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 2.dp.toPx())))
+            }
         }
-        drawRect(rule, Offset(0f, barTop), Size(width, barH), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
-        val px = x(w).coerceIn(1.5.dp.toPx(), width - 1.5.dp.toPx())
-        drawLine(ink, Offset(px, 0f), Offset(px, size.height), strokeWidth = 3.dp.toPx())
+        // šrafování do aktuální váhy
+        translate(0f, top) {
+            clipRect(0f, 0f, width, barH) { drawHatchRect(width * frac, barH, ink.copy(alpha = .6f)) }
+        }
+        drawRoundRect(edge, Offset(0f, top), Size(width, barH), androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
+        // trojúhelníkový ukazatel nad pruhem
+        val px = (width * frac).coerceIn(7.dp.toPx(), width - 7.dp.toPx())
+        val tri = androidx.compose.ui.graphics.Path().apply {
+            moveTo(px - 6.dp.toPx(), 0f); lineTo(px + 6.dp.toPx(), 0f); lineTo(px, 8.dp.toPx()); close()
+        }
+        drawPath(tri, ink)
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHatchRect(width: Float, h: Float, color: Color) {
+    if (width <= 0f) return
+    val g = 5.dp.toPx()
+    val dx = h / kotlin.math.tan(55.0 * kotlin.math.PI / 180).toFloat()
+    clipRect(0f, 0f, width, h) {
+        var x = -dx
+        while (x < width + dx) { drawLine(color, Offset(x, h), Offset(x + dx, 0f), 1.5.dp.toPx()); x += g }
     }
 }
 

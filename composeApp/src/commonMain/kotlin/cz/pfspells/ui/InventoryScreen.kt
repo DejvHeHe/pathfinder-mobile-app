@@ -219,8 +219,10 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
                 item(key = "conflicts-top") { if (!wide) SlotConflictBanners(inv) { sheet = it to Unit } }
                 item(key = "equipment") {
                     Column {
-                        if (wide) EquipmentHeader(inv) else Box(Modifier.padding(top = 6.dp))
-                        EquipmentBoard(inv, wide, selectedEntryId, openSlot)
+                        // tvar postavičky: humanoid, nebo zvíře podle propojeného mazlíčka / „čtyřnohý“
+                        val shape = bodyShapeOf(inv, state.characterOfInventory(inv.id))
+                        if (wide) EquipmentHeader(inv, shape) else Box(Modifier.padding(top = 6.dp))
+                        EquipmentBoard(inv, wide, selectedEntryId, shape, openSlot)
                     }
                 }
                 if (wide) item(key = "conflicts") { Box(Modifier.padding(top = 8.dp)) { SlotConflictBanners(inv) { sheet = it to Unit } } }
@@ -235,10 +237,7 @@ fun InventoryScreen(state: AppState, invId: String, wide: Boolean = false, selec
                 if (wide) item(key = "table-head") { InventoryTableHeader() }
                 if (inv.entries.isEmpty()) {
                     item(key = "empty") {
-                        Text(
-                            s.inventoryEmpty,
-                            Modifier.fillMaxWidth().padding(32.dp), textAlign = TextAlign.Center, color = Nb.inkMuted,
-                        )
+                        NbEmptyState(Sketch.BAG, s.emptyInventoryTitle, s.inventoryEmpty, Modifier.padding(top = 12.dp))
                     }
                 }
                 listOf(s.equippedOnly to equipped, s.carriedGroup to carried).forEach { (label, list) ->

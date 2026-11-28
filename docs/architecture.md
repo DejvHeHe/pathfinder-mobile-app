@@ -82,8 +82,6 @@ composeApp/src/
       ArchetypeMods.kt        ručně zadané efekty známých archetypů (ARCHETYPE_MODS)
       Prestige.kt             prestižní classy (PrestigeInfo, Prestige – classy ke zvýšení, Character.casterLevel, PrestigeRequirements, PrestigeTextRepository)
       PrestigeTable.kt        GENEROVANÉ: 118 prestižních class (AoN, tools/build_prestige_classes.py)
-tools/build_companions.py   další zvířecí společníci a familiáři (d20pfsrd)
-tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
       ClassFeatures.kt        FeaturePresets (Smite Evil, Rage…), Character.resources()
       ClassAbilities.kt       schopnosti podtříd (SubclassPowers), vzorce Foundry (FoundryFormula), hexy a zjevení (ClassAbility, AbilityPick, AbilityRules)
       ClassAbilityTable.kt    GENEROVANÉ: schopnosti domén, bloodline, škol a blessingů, kouzla patronů / spiritů / disciplín (Foundry, tools/build_class_abilities.py)
@@ -106,8 +104,11 @@ tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
       Theme.kt                barvy Nb.*, fonty, PfTheme, modifikátory (linkovaný papír, čárkované okraje), ikony
       Common.kt               společné komponenty + NbScreen (kostra obrazovky)
       WideLayout.kt           třísloupcové rozložení
+      Journal.kt              prvky „Deníku dobrodruha“: záložky rozdělovníku (NbIndexTabs, svislé NbIndexTabsVertical), Příprava | Hra, animace
+                              (rememberRevealProgress, pageTurn, writeIn, staggerIn, omezení pohybu LocalReduceMotion), kroužky slotů, značky v okraji,
+                              razítka, kartotéční lístek, roztržený lístek, páska, sponka, okraj listu, prázdné stavy
       DeckListScreen.kt       úvod (záložky), seznam postav, menu ⋮, nová postava
-      DeckDetailScreen.kt     detail postavy: classy, atributy, inventář, featy, schopnosti, kouzla po classách, herní režim
+      DeckDetailScreen.kt     detail postavy se záložkami deníku (Postava / Boj / Kouzla / Inventář / Mazlíčci): classy, souhrn, atributy 3 × 2, featy, obrana, schopnosti, kouzla (Příprava | Hra), inventář, mazlíčci
       ClassPicker.kt          výběr classy (karty, hledání, náhled, rovnou i podtřída)
       DeityUi.kt              DeityPickerDialog (výběr božstva, vlastní text)
       SkillsUi.kt             SkillsPanel (dovednosti postavy: ranky, body, class skills)
@@ -134,7 +135,7 @@ tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
       AboutScreen.kt          About & licenses (GPL, Paizo CUP, text OGL)
     composeResources/
       files/                  přibalená data (viz docs/data.md)
-      font/                   Alegreya, Alegreya Sans, IBM Plex Mono
+      font/                   Alegreya, Alegreya Sans, IBM Plex Mono, Caveat (ruční písmo – jen poznámky)
   androidMain/   MainActivity, AndroidManifest, Platform.android.kt, DeckFileIo.android.kt
   desktopMain/   main.kt (okno 1360×880, Esc = zpět), Platform.desktop.kt, DeckFileIo.desktop.kt
   iosMain/       MainViewController.kt, Platform.ios.kt, DeckFileIo.ios.kt
@@ -148,6 +149,8 @@ tools/build_class_abilities.py   schopnosti podtříd, hexy a zjevení (Foundry)
 tools/build_racial_traits.py   výchozí a alternativní rasové traity (AoN)
 tools/build_archetypes.py   archetypy class (AoN)
 tools/build_prestige_classes.py   prestižní classy (AoN)
+tools/build_companions.py   další zvířecí společníci a familiáři (d20pfsrd)
+tools/build_eidolons.py   eidolon – progrese, formy, evoluce (d20pfsrd)
 ```
 
 ## Stav a navigace

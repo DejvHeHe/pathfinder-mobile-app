@@ -2,6 +2,7 @@ package cz.pfspells.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,7 +47,7 @@ fun ResourcesPanel(state: AppState, c: Character, wide: Boolean) {
     Column(Modifier.padding(top = 4.dp)) {
         SectionHeader(s.resourcesHeader)
         if (list.isEmpty()) Text(s.noResources, fontSize = 13.5.sp, color = Nb.inkMuted, modifier = Modifier.padding(vertical = 4.dp))
-        list.forEach { r -> ResourceRow(state, c, r, game, wide) { r.tracker?.let { editing = it } } }
+        list.forEachIndexed { i, r -> Box(Modifier.staggerIn(i)) { ResourceRow(state, c, r, game, wide) { r.tracker?.let { editing = it } } } }
         Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             NbDashedButton(s.addTracker, { adding = true }, icon = NbIcons.Plus)
             if (hidden > 0) {
@@ -77,35 +78,40 @@ private fun ResourceRow(state: AppState, c: Character, r: Resource, game: Boolea
     val s = str
     val used = c.cast(r.key)
     val max = r.max
-    Row(
+    // ve hře kroužky použití na vlastním řádku pod názvem (návrh „Deník dobrodruha“)
+    val circles = game && max != null && max <= 8
+    Column(
         Modifier.fillMaxWidth().bottomRule(if (wide) Nb.ruleSoft else Nb.rule)
             .then(if (r.tracker != null && !game) Modifier.clickable(onClick = onEdit) else Modifier)
             .padding(horizontal = if (wide) 10.dp else 0.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                r.name, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold,
-                color = if (game && max != null && used >= max) Nb.inkMuted else Nb.ink,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                buildString {
-                    r.classId?.let { append(s.classNameOf(it)).append(" · ") }
-                    if (game && max != null) append(s.remaining((max - used).coerceAtLeast(0), max))
-                    else append(s.resourceAmount(max, r.unit))
-                    r.tracker?.note?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
-                },
-                fontSize = 12.5.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    r.name, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (game && max != null && used >= max) Nb.inkMuted else Nb.ink,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    buildString {
+                        r.classId?.let { append(s.classNameOf(it)).append(" · ") }
+                        if (game && max != null) append(s.remaining((max - used).coerceAtLeast(0), max))
+                        else append(s.resourceAmount(max, r.unit))
+                        r.tracker?.note?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
+                    },
+                    fontSize = 12.5.sp, color = Nb.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            when {
+                circles -> {}
+                game && max != null -> CountStepper(used.coerceAtMost(max), { state.setCast(c.id, r.key, it) }, min = 0, max = max, size = 32.dp, numberSize = 14.sp)
+                game -> {}
+                r.preset != null -> NbIconButton(NbIcons.Close, s.hideFeature, { state.setPresetHidden(c.id, r.preset.id, true) }, Nb.inkMuted, 16.dp)
+                else -> NbIconButton(NbIcons.Pencil, s.editTracker, onEdit, Nb.inkMuted, 16.dp)
+            }
         }
-        when {
-            game && max != null && max <= 8 -> CastPips(max, used) { state.setCast(c.id, r.key, it) }
-            game && max != null -> CountStepper(used.coerceAtMost(max), { state.setCast(c.id, r.key, it) }, min = 0, max = max, size = 32.dp, numberSize = 14.sp)
-            game -> {}
-            r.preset != null -> NbIconButton(NbIcons.Close, s.hideFeature, { state.setPresetHidden(c.id, r.preset.id, true) }, Nb.inkMuted, 16.dp)
-            else -> NbIconButton(NbIcons.Pencil, s.editTracker, onEdit, Nb.inkMuted, 16.dp)
+        if (circles) {
+            SlotCircles(max!!, used, s.slotLabel, Modifier.padding(top = 2.dp), ring = Nb.inkMuted, crossColor = Nb.error) { state.setCast(c.id, r.key, it) }
         }
     }
 }

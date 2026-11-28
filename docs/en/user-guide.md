@@ -19,6 +19,25 @@ are shown in Czech (the class list also shows the English original, e.g. "Kouzel
   2. middle – the open character / inventory / picker,
   3. right – spell or item details (close with × or the **Esc** key).
 
+### Character sheet – journal tabs
+
+The character sheet is split into **tabs** like the dividers of a journal (coloured tabs under the header on a phone,
+vertical tabs at the right edge on desktop):
+
+| Tab | Contents |
+|---|---|
+| **Character** | race, alignment, deity, classes, summary (level, BAB, saves), abilities, feats, hexes / revelations, skills |
+| **Combat** | defense (AC, touch, flat-footed), hit points, abilities with uses |
+| **Spells** | **Prepare \| Play** switch, **Rest**, spells by class and level |
+| **Inventory** | the linked inventory |
+| **Companions** | animal companions, familiars, eidolon, pets (not shown on a companion's own sheet) |
+
+Switching tabs "turns the page", headings write themselves in and rows appear one after another. With reduced motion
+turned on in the system (Android: remove animations, iOS: reduce motion, browser: prefers-reduced-motion) the
+animations are skipped. Feat prerequisites are marked in the page margin (✓ met, ✗ not met, ? unverified), the main
+casting ability is circled and rule-changing states get a stamp ("OVER LIMIT", "UNCONSCIOUS", "OVERLOADED").
+Handwriting is used only for notes and hints.
+
 ## Spellbook
 
 ### Character
@@ -96,7 +115,10 @@ The old "decks" were converted to characters (with all their spells) on the firs
   Natural Armor, Bracers of Armor…); add others with **Add bonus**.
 - **Inventory detail**: on a phone there are **Equipment** and **Items** tabs. Equipment = a figure with slots in two
   columns (head, headband, eyes, neck, shoulders, chest, body | armor, belt, wrists, hands, 2 rings, feet), below it the
-  main and off hand and slotless items; dots on the silhouette mark what is worn. Tapping a slot opens a picker: which
+  main and off hand and slotless items; worn items are drawn as outlines on the silhouette (helmet, cloak, armor, boots, sword, bow, shield… – by slot and item name, conflicts in red).
+  A companion's inventory (or one with "Quadruped" on) shows an **animal** instead: a quadruped, a bird (raven, owl…)
+  or a snake by the companion's species, with PF1 slots (no hands, rings, wrists or weapons; the snake also without
+  shoulders, belt and feet). A worn saddle, saddlebags and bridle (slotless items) are drawn on the animal by name. Tapping a slot opens a picker: which
   item works, **Move the others to Carried**, **Equip another item** (on desktop a filled slot opens the item detail).
   When a slot holds more items than it fits, only the first works – a red banner with **Resolve** says so.
   The item list is split into **Equipped** (slot badge) and **Carried**; on desktop the sidebar has an "Equipped" filter.
@@ -192,7 +214,8 @@ The old "decks" were converted to characters (with all their spells) on the firs
 - Hide an ability you do not need with ×, "Show hidden" brings it back.
 - **Add counter** = your own entry (name, maximum, unit: per day / rounds per day / points, note) – racial abilities,
   magic items, wand charges…
-- In **game mode** uses are ticked off (dots, − / + for large numbers), **Rest** restores everything.
+- In **Play** (Prepare | Play switch on the Combat tab) uses are ticked off in circles (− / + for large numbers),
+  **Rest** restores everything.
 
 ### Hexes and revelations
 - The witch and the shaman have a **Hexes** section in the character detail, the oracle a **Revelations** section.
@@ -267,9 +290,11 @@ The old "decks" were converted to characters (with all their spells) on the firs
    Spontaneous classes (sorcerer, bard, oracle…) and the arcanist have each spell once – removed with ×.
    Each spell level shows its limit on the right: "3 / 3+1 prepared" (base + ability bonus) or
    "2 / 4 known · 6+1 per day". Red = limit exceeded or casting ability too low.
-4. **Game mode** (checkbox under the abilities) is for the table: preparing classes tick off cast copies
-   (a cast spell is struck through), spontaneous classes and the arcanist have a row of slots per spell level and a
-   **Cast** button at each spell. Cantrips are unlimited. **Rest** restores everything. Cast spells are saved with the character.
+4. **Prepare | Play** (switch at the top of the Spells tab): in **Prepare** you change the copy counts, and a level
+   with free room shows a dashed box "+ 2 free slots – prepare a spell" (opens the picker). In **Play** preparing
+   classes tick off cast copies in circles (tap = cast; when all are cast the spell is struck through by hand),
+   spontaneous classes and the arcanist have a row of slot circles per spell level and a **Cast** button at each spell.
+   Cantrips are unlimited. **Rest** restores everything ("slots restored"). Cast spells are saved with the character.
 5. Tap a spell to open its detail: casting time, components, range, duration, save, SR, full description,
    mythic version, source and a link to Archives of Nethys.
 

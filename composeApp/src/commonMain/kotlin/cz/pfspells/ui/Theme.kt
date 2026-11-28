@@ -35,6 +35,8 @@ import cz.pfspells.resources.alegreya_bold_italic
 import cz.pfspells.resources.alegreya_sans_bold
 import cz.pfspells.resources.alegreya_sans_medium
 import cz.pfspells.resources.alegreya_sans_regular
+import cz.pfspells.resources.caveat_bold
+import cz.pfspells.resources.caveat_semibold
 import cz.pfspells.resources.plex_mono_medium
 import cz.pfspells.resources.plex_mono_regular
 import cz.pfspells.resources.plex_mono_semibold
@@ -59,13 +61,39 @@ object Nb {
     val line = Color(0x214E5D2B)
     val error = Color(0xFF9A2A1A)
 
+    // „Deník dobrodruha“: tóny záložek rozdělovníku (text na nich vždy ink)
+    val tabCharacter = Color(0xFFCFD4B2)
+    val tabCombat = Color(0xFFE3C3AE)
+    val tabSpells = Color(0xFFE8D39F)
+    val tabInventory = Color(0xFFD9C9A6)
+    /** záložka Mazlíčci – šedozelená (odstín tyrkysové z ikony appky) */
+    val tabCompanions = Color(0xFFC3D1CC)
+    /** text varování – `ochre` na drobný text nestačí (4,8 : 1 na paper) */
+    val ochreInk = Color(0xFF7A5410)
+    /** kartotéční lístek (statistiky kouzla / featu / předmětu) */
+    val indexCard = Color(0xFFFAF4E6)
+    /** horní linka kartotéčního lístku */
+    val indexRule = Color(0xFFB5523B)
+    /** banner konfliktu („roztržený lístek“) */
+    val noteAlert = Color(0xFFF5E4D8)
+    /** washi páska (jen dekorace, nejvýš jedna na obrazovku) */
+    val tape = Color(0xCCB9C29A)
+    /** sponka, sponky ze sešívačky */
+    val clip = Color(0xFF7D6F5C)
+
     val shape = RoundedCornerShape(4.dp)
 }
 
 @Immutable
-data class NbFonts(val serif: FontFamily, val sans: FontFamily, val mono: FontFamily)
+data class NbFonts(
+    val serif: FontFamily,
+    val sans: FontFamily,
+    val mono: FontFamily,
+    /** ruční písmo (Caveat) – jen poznámky a nápověda, nikdy data, čísla, tlačítka ani popisky polí */
+    val hand: FontFamily,
+)
 
-val LocalNbFonts = staticCompositionLocalOf { NbFonts(FontFamily.Serif, FontFamily.SansSerif, FontFamily.Monospace) }
+val LocalNbFonts = staticCompositionLocalOf { NbFonts(FontFamily.Serif, FontFamily.SansSerif, FontFamily.Monospace, FontFamily.Cursive) }
 
 @Composable
 fun PfTheme(content: @Composable () -> Unit) {
@@ -84,6 +112,10 @@ fun PfTheme(content: @Composable () -> Unit) {
             Font(Res.font.plex_mono_regular, FontWeight.Normal),
             Font(Res.font.plex_mono_medium, FontWeight.Medium),
             Font(Res.font.plex_mono_semibold, FontWeight.SemiBold),
+        ),
+        hand = FontFamily(
+            Font(Res.font.caveat_semibold, FontWeight.SemiBold),
+            Font(Res.font.caveat_bold, FontWeight.Bold),
         ),
     )
     val base = Typography()
@@ -205,6 +237,8 @@ object NbIcons {
     val Warn = stroke("warn", 2f, "M12 4l9 16H3L12 4z", "M12 10v4", "M12 17v.01")
     val Refresh = stroke("refresh", 2f, "M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7")
     val ChevronDown = stroke("chevron-down", 2f, "M6 9l6 6 6-6")
+    /** Odpočinek (měsíc) */
+    val Moon = stroke("moon", 2f, "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z")
 
     private const val STAR = "M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"
     val Star = stroke("star", 1.8f, STAR)

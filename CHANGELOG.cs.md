@@ -2,6 +2,19 @@
 
 [English](CHANGELOG.md)
 
+## v2.0.0 – 28. 11. 2026 – Deník dobrodruha
+- **Nový vzhled:** list postavy je zápisník se záložkami – **Postava, Boj, Kouzla, Inventář a Mazlíčci**
+  (na desktopu svislé záložky vpravo).
+- Přepínač **Příprava | Hra** na Kouzlech i Boji; sloty kouzel a schopnosti s počtem použití jsou kroužky
+  k odškrtnutí, seslaná kouzla se ručně přeškrtnou.
+- Ručně psané poznámky (písmo Caveat), okraj listu se značkami, razítka (*nad limit*, *bez vědomí*, *přetíženo*),
+  kartotéční lístky s údaji kouzel a předmětů, nový panel HP a šrafovaný pruh zatížení.
+- **Mazlíčci mají vlastní záložku** místo místa v inventáři.
+- **Nasazené předměty se kreslí na figurce** obrysem (klobouk, plášť, zbroj, boty, zbraně v ruce…).
+- **Inventář zvířat:** mazlíček má figurku čtyřnožce, ptáka nebo hada se sloty, které zvíře může používat
+  (Ultimate Equipment); sedlo, sedlové brašny a uzda se dokreslí podle jména.
+- Animace respektují omezení pohybu v systému.
+
 ## v1.9.2 – 27. 11. 2026
 - **Aktualizace na desktopu bez prohlížeče:** appka si nový instalátor stáhne sama, tlačítko **Nainstalovat a zavřít
   appku** ho spustí a appka se zavře, aby ji mohl nahradit.

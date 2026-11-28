@@ -113,7 +113,7 @@ fun CompanionsPanel(state: AppState, c: Character, wide: Boolean) {
     val list = state.companionsOf(c.id)
     Column(Modifier.padding(top = 4.dp)) {
         SectionHeader(s.companionsHeader)
-        if (list.isEmpty()) Text(s.companionsHint, fontSize = 13.sp, color = Nb.inkMuted)
+        if (list.isEmpty()) NbEmptyState(Sketch.PAW, s.emptyCompanionsTitle, s.companionsHint)
         list.forEach { p ->
             Row(
                 Modifier.fillMaxWidth().padding(top = 6.dp).clip(Nb.shape).background(Nb.panel).dashedBorder()

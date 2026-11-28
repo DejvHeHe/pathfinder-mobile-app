@@ -48,7 +48,8 @@ codebase runs on **Android, iOS, desktop (Windows, macOS, Linux) and in the brow
   carrying capacity with load penalties, and hidden prices for expensive loot (tap 10× to reveal).
 - **Export / import** of characters, feats and inventories as readable JSON – share them with your party.
 - **Up-to-date data** – spell and item databases can be re-downloaded from their sources with one tap.
-- **English and Czech** UI, a hand-drawn "ruled notebook" design, phone and three-column desktop layouts.
+- **English and Czech** UI, a hand-drawn "adventurer's journal" design with index tabs (Character, Combat, Spells,
+  Inventory, Companions), worn items drawn on the figure (also for animals), phone and three-column desktop layouts.
 
 > **AI-first / vibe-coded project.** Nearly all of the code, data tooling and documentation was written by an AI
 > ([Claude Code](https://claude.com/claude-code) by Anthropic) – the author designed the app, steered every feature,

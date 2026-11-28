@@ -1,5 +1,9 @@
 # Design brief – PF1 Spellbook („Linkovaný zápisník“)
 
+> **Stav 28. 11. 2026:** podle tohoto briefu vznikl v Claude Design redesign **„Deník dobrodruha“** a je implementovaný
+> (záložky detailu postavy, papírové prvky, animace – viz `ui/Journal.kt`). Tokeny a komponenty jsou v design systému
+> „Linkovaný zápisník“ v Claude Design. Body 1–6 v části „Co doladit“ návrh pokryl, tmavá varianta zůstává otevřená.
+
 Podklad pro Claude Design: současný vzhled appky a co na něm doladit. Jen UI – funkce zůstávají, jak jsou.
 Původní návrh: artboardy „4a · Linkovaný zápisník“ (mobil + desktop), „Inventory“, „Add item“. Část novějších
 obrazovek a panelů vznikla bez návrhu a potřebuje sjednotit.

@@ -25,7 +25,7 @@ v Kotlin Multiplatform + Compose Multiplatform.
 | Hexy a zjevení | ~120 hexů čarodějnice a šamana, ~300 zjevení orákula s plným textem, počet podle úrovně classy |
 | Inventář | ~6 060 itemů (d20pfsrd + Foundry VTT PF1), vlastní katalog, lektvary/svitky/hůlky ze spellů, měšec, nosnost, poznámky, export/import |
 | Aktualizace | spelly i itemy jdou tlačítkem stáhnout znovu ze zdroje |
-| Vzhled | design „Linkovaný zápisník“, mobil i třísloupcové široké okno |
+| Vzhled | design „Deník dobrodruha“ se záložkami (Postava, Boj, Kouzla, Inventář, Mazlíčci), nasazené předměty kreslené na figurce (i u zvířat), mobil i třísloupcové široké okno |
 | Jazyk | rozhraní anglicky i česky (přepínač EN / CZ v hlavičce) |
 
 > **AI-first / „vibe-coded“ projekt.** Téměř všechen kód, nástroje pro data i dokumentaci napsala AI

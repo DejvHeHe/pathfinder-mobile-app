@@ -1,6 +1,7 @@
 package cz.pfspells.data
 
 import android.content.Context
+import android.provider.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import java.io.File
@@ -10,9 +11,12 @@ import java.util.Locale
 
 actual object AppFiles {
     private var dir: File? = null
+    internal var appContext: Context? = null
+        private set
 
     /** Volá MainActivity před prvním použitím. */
     fun init(context: Context) {
+        appContext = context.applicationContext
         dir = context.applicationContext.filesDir
     }
 
@@ -40,6 +44,12 @@ actual fun nowDisplayText(): String = SimpleDateFormat("d. M. yyyy HH:mm", Local
 
 /** Android má systémové gesto Zpět, desktop a web Esc / tlačítko prohlížeče. */
 actual val edgeSwipeBack: Boolean = false
+
+/** Vývojářské volby / přístupnost „Odstranit animace“ nastaví měřítko animací na 0. */
+actual fun systemReducedMotion(): Boolean {
+    val resolver = AppFiles.appContext?.contentResolver ?: return false
+    return Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+}
 
 /** Analytika jen na webu. */
 actual fun trackEvent(name: String, data: Map<String, String>) {}

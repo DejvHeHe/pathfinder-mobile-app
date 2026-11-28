@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,8 @@ private val WideBreakpoint = 1000.dp
 fun App(state: AppState) {
     val s = state.strings
     PfTheme {
-        CompositionLocalProvider(LocalStrings provides s) { AppContent(state, s) }
+        val reduceMotion = remember { cz.pfspells.data.systemReducedMotion() }
+        CompositionLocalProvider(LocalStrings provides s, cz.pfspells.ui.LocalReduceMotion provides reduceMotion) { AppContent(state, s) }
     }
 }
 

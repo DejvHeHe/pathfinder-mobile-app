@@ -325,6 +325,42 @@ interface Strings {
     val featAlreadyTaken: String
     val gameMode: String
     val rest: String
+    /** záložky rozdělovníku v detailu postavy (Deník dobrodruha) */
+    val tabCharacter: String
+    val tabCombat: String
+    val tabCompanions: String
+    val tabSpells: String
+    val sectionsLabel: String
+    /** přepínač režimu kouzel / schopností: příprava (úpravy) | hra (odklikávání) */
+    val modePrepare: String
+    val modePlay: String
+    val modeHintPrepare: String
+    val modeHintPlay: String
+    /** souhrn postavy jako tabulka (ÚR., ZÚB, záchrany) */
+    val levelShort: String
+    val babShort: String
+    val fortShort: String
+    val refShort: String
+    val willShort: String
+    /** ruční poznámka u hlavního atributu sesílání */
+    val mainAbilityNote: String
+    /** razítka stavů, které mění pravidla */
+    val stampOverLimit: String
+    val stampUnconscious: String
+    val stampOverloaded: String
+    /** kladné razítko po odpočinku */
+    val restDone: String
+    /** ruční nápověda u životů */
+    val hpHandHint: String
+    /** čárkovaný box volných míst ve spell levelu (příprava) */
+    fun freeSlots(n: Int): String
+    /** nadpisy prázdných stavů (ručním písmem) */
+    val emptySpellsTitle: String
+    val emptyInventoryTitle: String
+    val emptyCompanionsTitle: String
+    val emptyNoCasterTitle: String
+    /** hlavička širokého okna: data jsou jen v zařízení */
+    val savedOffline: String
     val restedToast: String
     val castSpell: String
     /** „2 / 5 cast“ */
@@ -1058,6 +1094,32 @@ object EnStrings : Strings {
     override val featAlreadyTaken = "Already taken"
     override val gameMode = "Game mode"
     override val rest = "Rest"
+    override val tabCharacter = "Character"
+    override val tabCombat = "Combat"
+    override val tabCompanions = "Companions"
+    override val tabSpells = "Spells"
+    override val sectionsLabel = "Sections"
+    override val modePrepare = "Prepare"
+    override val modePlay = "Play"
+    override val modeHintPrepare = "prepare for tomorrow"
+    override val modeHintPlay = "tap a circle = cast"
+    override val levelShort = "LVL"
+    override val babShort = "BAB"
+    override val fortShort = "FORT"
+    override val refShort = "REF"
+    override val willShort = "WILL"
+    override val mainAbilityNote = "main!"
+    override val stampOverLimit = "OVER LIMIT"
+    override val stampUnconscious = "UNCONSCIOUS"
+    override val stampOverloaded = "OVERLOADED"
+    override val restDone = "slots restored"
+    override val emptySpellsTitle = "An empty spellbook"
+    override val emptyInventoryTitle = "Your pack is empty"
+    override val emptyCompanionsTitle = "No companions yet"
+    override val emptyNoCasterTitle = "No spellcasting here"
+    override val savedOffline = "saved offline"
+    override val hpHandHint = "tap − to record damage, + to heal"
+    override fun freeSlots(n: Int) = "+ $n free ${if (n == 1) "slot" else "slots"} – prepare a spell"
     override val restedToast = "Rested – spells, slots and abilities are back, 1 HP per level healed."
     override val castSpell = "Cast"
     override fun castOf(used: Int, total: Int) = "$used / $total cast"
@@ -1620,7 +1682,7 @@ object EnStrings : Strings {
     override val sourceWeapons = "Weapons, ammunition, magic items"
     override val sourceGear = "Gear, armor, alchemical items, mounts"
     override val fonts = "Fonts"
-    override val fontsText = "Alegreya, Alegreya Sans and IBM Plex Mono – SIL Open Font License 1.1."
+    override val fontsText = "Alegreya, Alegreya Sans, IBM Plex Mono and Caveat – SIL Open Font License 1.1."
     override val libraries = "Libraries"
     override val librariesText = "Kotlin, Compose Multiplatform, kotlinx.coroutines, kotlinx.serialization, Ktor, Multiplatform Settings, " +
         "AndroidX – Apache License 2.0."
@@ -2018,6 +2080,36 @@ object CsStrings : Strings {
     override val featAlreadyTaken = "Postava ho už má"
     override val gameMode = "Herní režim"
     override val rest = "Odpočinek"
+    override val tabCharacter = "Postava"
+    override val tabCombat = "Boj"
+    override val tabCompanions = "Mazlíčci"
+    override val tabSpells = "Kouzla"
+    override val sectionsLabel = "Sekce"
+    override val modePrepare = "Příprava"
+    override val modePlay = "Hra"
+    override val modeHintPrepare = "připrav na zítřek"
+    override val modeHintPlay = "ťukni na kroužek = sesláno"
+    override val levelShort = "ÚR."
+    override val babShort = "ZÚB"
+    override val fortShort = "ODOL"
+    override val refShort = "REFL"
+    override val willShort = "VŮLE"
+    override val mainAbilityNote = "hlavní!"
+    override val stampOverLimit = "NAD LIMIT"
+    override val stampUnconscious = "BEZ VĚDOMÍ"
+    override val stampOverloaded = "PŘETÍŽENO"
+    override val restDone = "sloty obnoveny"
+    override val emptySpellsTitle = "Prázdná kniha kouzel"
+    override val emptyInventoryTitle = "Batoh zeje prázdnotou"
+    override val emptyCompanionsTitle = "Zatím bez parťáka"
+    override val emptyNoCasterTitle = "Tahle postava nečaruje"
+    override val savedOffline = "uloženo offline"
+    override val hpHandHint = "ťukni na − a zapiš zranění, + léčí"
+    override fun freeSlots(n: Int) = "+ $n " + when {
+        n == 1 -> "volné místo"
+        n in 2..4 -> "volná místa"
+        else -> "volných míst"
+    } + " – připrav kouzlo"
     override val restedToast = "Odpočinuto – kouzla, sloty a schopnosti zpět, vyléčeno 1 HP za úroveň."
     override val castSpell = "Seslat"
     override fun castOf(used: Int, total: Int) = "$used / $total sesláno"
@@ -2636,7 +2728,7 @@ object CsStrings : Strings {
     override val sourceWeapons = "Zbraně, střelivo, magické předměty"
     override val sourceGear = "Výbava, zbroje, alchymie, zvířata"
     override val fonts = "Písma"
-    override val fontsText = "Alegreya, Alegreya Sans a IBM Plex Mono – SIL Open Font License 1.1."
+    override val fontsText = "Alegreya, Alegreya Sans, IBM Plex Mono a Caveat – SIL Open Font License 1.1."
     override val libraries = "Knihovny"
     override val librariesText = "Kotlin, Compose Multiplatform, kotlinx.coroutines, kotlinx.serialization, Ktor, Multiplatform Settings, " +
         "AndroidX – Apache License 2.0."

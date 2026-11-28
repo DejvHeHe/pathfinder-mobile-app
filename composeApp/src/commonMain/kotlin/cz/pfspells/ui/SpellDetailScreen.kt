@@ -73,12 +73,15 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
                     color = Nb.ink, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 val fav = state.isFavorite(spell.id)
-                NbIconButton(
-                    if (fav) NbIcons.StarFilled else NbIcons.Star,
-                    if (fav) s.removeFavorite else s.addFavorite,
-                    { state.toggleFavorite(spell.id) },
-                    if (fav) Nb.rust else Nb.inkMuted,
-                )
+                // hvězda „poskočí“ při přidání do oblíbených (.4 → 1,25 → 1)
+                Box(Modifier.starPop(fav)) {
+                    NbIconButton(
+                        if (fav) NbIcons.StarFilled else NbIcons.Star,
+                        if (fav) s.removeFavorite else s.addFavorite,
+                        { state.toggleFavorite(spell.id) },
+                        if (fav) Nb.rust else Nb.inkMuted,
+                    )
+                }
                 if (aside) NbIconButton(NbIcons.Close, s.closeDetails, { state.pop() }, Nb.inkMuted)
             }
             SelectionContainer(Modifier.weight(1f)) {
@@ -96,17 +99,16 @@ fun SpellDetailScreen(state: AppState, db: SpellDatabase, spellId: String, charI
                         if (!spell.pfsLegal) NbTag(s.notPfsLegal, Nb.error)
                     }
 
-                    NbPanel(Modifier.fillMaxWidth(), color = if (aside) Nb.paper else Nb.panel) {
-                        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            StatLine(s.castingTime, spell.castingTime)
-                            StatLine(s.components, spell.components)
-                            StatLine(s.range, spell.range)
-                            StatLine(s.effect, spell.effect)
-                            StatLine(s.target, spell.targets)
-                            StatLine(s.duration, spell.duration)
-                            StatLine(s.savingThrow, spell.savingThrow)
-                            StatLine(s.spellResistance, spell.spellResistance)
-                        }
+                    // kartotéční lístek se statistikami (návrh „Deník dobrodruha“)
+                    NbIndexCard(Modifier.fillMaxWidth().padding(top = 4.dp), tilt = aside) {
+                        IndexCardLine(s.castingTime, spell.castingTime)
+                        IndexCardLine(s.components, spell.components)
+                        IndexCardLine(s.range, spell.range)
+                        IndexCardLine(s.effect, spell.effect)
+                        IndexCardLine(s.target, spell.targets)
+                        IndexCardLine(s.duration, spell.duration)
+                        IndexCardLine(s.savingThrow, spell.savingThrow)
+                        IndexCardLine(s.spellResistance, spell.spellResistance)
                     }
 
                     // kouzlo podtřídy (doména, mystérium…) – mimo class list, ale postava ho má
